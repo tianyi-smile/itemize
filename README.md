@@ -433,7 +433,7 @@ Effect:
 
 ![alt text](./assert/label-test4.png)
 
-## Other Styles for `item` and `list`
+## Other Styles for `enum` and `list`
 
 The `paragraph-enum-list` method (and `paragraph-enum`, `paragraph-list`) allows aligning `label`s with paragraphs. These methods have the same parameters as `default-enum-list`.
 For example:
