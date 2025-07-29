@@ -142,6 +142,28 @@ The `label` will be formatted as:
 - All levels: Bold weight.
 - Level 1: `15pt` font size; subsequent levels: `12pt`.
 
+```typst
+#show: el.default-enum-list.with(
+  fill: (red, blue, green, yellow, auto),
+  weight: "bold",
+  size: (15pt, 12pt)
+)
++ one
++ two
+  + A
+    - Good
+      - #lorem(10)
+        - #lorem(10)
+        - #lorem(10)
+    - Bad
+  + B
+    + #lorem(10)
+      + #lorem(10)
+      + #lorem(10)
++ three
+```
+
+
 Effect:
 
 ![alt text](./assert/label.png)
@@ -498,14 +520,14 @@ Include the following at the beginning of your document:
 > Note: The key difference is that `set_default` requires **parentheses**!
 ```typst
 #let item = [
-  + one
-  + two
+  + #lorem(10)
+  + #lorem(10)
     + #lorem(10)
     + + #lorem(10)
       + #lorem(10)
     + - #lorem(10)
       - #lorem(10)
-  + tree
+  + #lorem(10)
 ]
 
 #show: el.set_default()
