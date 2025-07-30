@@ -29,32 +29,14 @@
       default: auto,
       folds: false,
     ),
-    field(
-      "body-indent",
-      types.any,
-      default: auto,
-      folds: false,
-      named: true,
-    ),
-    field(
-      "label-indent",
-      types.any,
-      default: auto,
-      folds: false,
-      named: true,
-    ),
-    field("is-full-width", bool, default: true, folds: false, named: true),
-    field(
-      "item-spacing",
-      types.any,
-      default: auto,
-      folds: false,
-      named: true,
-    ),
-    field("enum-spacing", types.any, default: auto, folds: auto),
-    field("enum-margin", types.any, default: auto, folds: auto),
-    field("hanging-indent", types.any, default: auto, folds: auto),
-    field("line-indent", types.any, default: auto, folds: auto),
+    field("body-indent", types.any, default: auto, folds: false),
+    field("label-indent", types.any, default: auto, folds: false),
+    field("is-full-width", bool, default: true, folds: false),
+    field("item-spacing", types.any, default: auto, folds: false),
+    field("enum-spacing", types.any, default: auto, folds: false),
+    field("enum-margin", types.any, default: auto, folds: false),
+    field("hanging-indent", types.any, default: auto, folds: false),
+    field("line-indent", types.any, default: auto, folds: false),
     field(
       "args",
       types.wrap(types.union(dictionary, auto), fold: prev-fold => (outer, inner) => {
@@ -95,36 +77,15 @@
   },
   fields: (
     field("doc", types.any, folds: false, required: true),
-    field(
-      "indent",
-      types.any,
-      default: auto,
-      folds: false,
-    ),
-    field(
-      "body-indent",
-      types.any,
-      default: auto,
-      folds: false,
-    ),
-    field(
-      "label-indent",
-      types.any,
-      default: auto,
-      folds: false,
-    ),
+    field("indent", types.any, default: auto, folds: false),
+    field("body-indent", types.any, default: auto, folds: false),
+    field("label-indent", types.any, default: auto, folds: false),
     field("is-full-width", bool, default: true, folds: false),
-    field(
-      "item-spacing",
-      types.any,
-      default: auto,
-      folds: false,
-      named: true,
-    ),
-    field("enum-spacing", types.any, default: auto, folds: auto),
-    field("enum-margin", types.any, default: auto, folds: auto),
-    field("hanging-indent", types.any, default: auto, folds: auto),
-    field("line-indent", types.any, default: auto, folds: auto),
+    field("item-spacing", types.any, default: auto, folds: false),
+    field("enum-spacing", types.any, default: auto, folds: false),
+    field("enum-margin", types.any, default: auto, folds: false),
+    field("hanging-indent", types.any, default: auto, folds: false),
+    field("line-indent", types.any, default: auto, folds: false),
     field(
       "args",
       types.wrap(types.union(dictionary, auto), fold: prev-fold => (outer, inner) => {
@@ -229,7 +190,7 @@
 }
 
 /// Configures default styling for enumerations and lists.
-#let set_default = set_.with("classic")
+#let set-default = set_.with("classic")
 
 /// Configures paragraph styling for enumerations and lists.
-#let set_paragraph = set_.with("paragraph")
+#let set-paragraph = set_.with("paragraph")
