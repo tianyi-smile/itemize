@@ -6,7 +6,7 @@ The `itemize` package allows users to easily customize and format enumerations a
 
 To use this package, include the following at the beginning of your document:
 ```typst
-#import "@preview/itemize:0.1.0" as el
+#import "@preview/itemize:0.1.1" as el
 ```
 
 ## Basic Usage
@@ -19,7 +19,9 @@ Enhancements for `enum` and `list` can be applied by adding the following at the
 
 Now you can use `enum` and `list` as usual. Below is a comparison of the effects.
 ![alt text](./assert/fix.png)
-The source code is as follows:
+<details>
+<summary>The source code is as follows:</summary>
+
 ```typst
 #let item-test = [
   + one $vec(1, 1, 1)$
@@ -44,6 +46,8 @@ The source code is as follows:
   ],
 )
 ```
+</details>
+
 
 ## Referencing `enum` Numbers
 
@@ -125,6 +129,7 @@ The model for `itemize` is as follows:
 
 ![alt text](./assert/item.svg)
 
+
 ### Passing `array` Parameters
 
 If a parameter accepts an `array`, each element controls the style for the corresponding level of the list. The last element's value applies to subsequent levels.
@@ -165,7 +170,6 @@ The `label` will be formatted as:
 
 
 Effect:
-
 ![alt text](./assert/label.png)
 
 ### Passing `function` Parameters
@@ -191,6 +195,9 @@ For horizontal spacing parameters (`indent`, `body-indent`, `hanging-indent`, `l
   ```
 
 Here's an example using a `function` to align all `label`s to the left:
+![alt text](./assert/spacing-test3.png)
+<details>
+<summary>Code</summary>
 
 ```typst
 #let ex1 = [
@@ -245,8 +252,8 @@ Here's an example using a `function` to align all `label`s to the left:
     ],
   )
 ```
+</details>
 
-![alt text](./assert/spacing-test3.png)
 
 ### `default-enum` and `default-list` Methods
 
@@ -264,9 +271,11 @@ These methods work the same as `default-enum-list`, but note that levels are cou
   - #lorem(5)
 ```
 
-Effect:
+<details>
+<summary>Output</summary>
 
 ![alt text](./assert/enum-list.png)
+</details>
 
 ## Using Counters
 
@@ -336,7 +345,8 @@ Effect:
 
 ![alt text](./assert/label-test3-2.png)
 
-For fun:
+<details>
+<summary>For fun</summary>
 
 ```typst
 #import emoji: *
@@ -381,6 +391,8 @@ For fun:
 Effect:
 
 ![alt text](./assert/label-test3-3.png)
+
+</details>
 
 ### Formatting `list.marker`
 
@@ -436,6 +448,9 @@ Effect:
 
 The `paragraph-enum-list` method (and `paragraph-enum`, `paragraph-list`) allows aligning `label`s with paragraphs. These methods have the same parameters as `default-enum-list`.
 For example:
+![alt text](./assert/par-test0.png)
+<details>
+<summary>Code</summary>
 
 ```typst
 #set page(width: 350mm, height: auto, margin: 25pt)
@@ -502,7 +517,7 @@ For example:
 )
 ```
 
-![alt text](./assert/par-test0.png)
+</details>
 
 ## Using `set rule`
 
@@ -547,7 +562,13 @@ Include the following at the beginning of your document:
 #show: el.set-default()
 #item
 ```
+<details>
+<summary>Output</summary>
+
 ![alt text](./assert/set-rule-test0.png)
+
+</details>
+
 
 > Note: Property values set via `#set enum` and `#set list` cannot be restored using `#show: el.set-default()`.
 

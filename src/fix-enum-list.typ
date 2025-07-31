@@ -257,6 +257,134 @@ Helper methods for fixing and enhancing enum and list functionality.
   }
 }
 
+/// Parses and calculates indentation and spacing values.
+///
+/// Parameters
+/// - it: The item object.
+/// - level: The nesting level of the item.
+/// - max-width: The maximum width available for the item.
+/// - absolute-level: If `true`, uses absolute nesting levels.
+/// - indent: The base indentation (default: auto).
+/// - body-indent: The body indentation (default: auto).
+/// - label-indent: The label indentation (default: auto).
+/// - is-full-width: Whether the item should take full width (default: true).
+/// - item-spacing: Spacing between items (default: auto).
+/// - enum-spacing: Spacing around enumeration (default: auto).
+/// - enum-margin: Margin for enumeration (default: auto).
+/// - hanging-type: The type of hanging indentation (default: "classic").
+/// - hanging-indent: Hanging indentation (default: auto).
+/// - line-indent: Line indentation (default: auto).
+///
+/// -> A tuple containing calculated values for indentation, spacing, and margins.
+#let parse(
+  it,
+  level,
+  max-width,
+  absolute-level,
+  indent: auto,
+  body-indent: auto,
+  label-indent: auto,
+  is-full-width: true,
+  item-spacing: auto,
+  enum-spacing: auto,
+  enum-margin: auto,
+  hanging-type: "classic", // paragraph
+  hanging-indent: auto,
+  line-indent: auto,
+) = {
+  let curr-indent = parse-len(indent, level, max-width, it, absolute-level, it.indent)
+
+  let curr-body-indent = parse-len(body-indent, level, max-width, it, absolute-level, it.body-indent)
+
+  let curr-label-indent = parse-len(label-indent, level, max-width, it, absolute-level, 0em)
+
+  let _hanging-indent = if item-level.get().len() == 0 {
+    par.hanging-indent
+  } else {
+    state("_parent-hanging-indent", 0em).get()
+  }
+
+  let _line-indent = if item-level.get().len() == 0 {
+    par.first-line-indent.amount
+  } else {
+    state("_parent-line-indent", 0em).get()
+  }
+
+
+  let curr-hanging-indent = parse-len(hanging-indent, level, max-width, it, absolute-level, _hanging-indent)
+
+  let curr-line-indent = parse-len(line-indent, level, max-width, it, absolute-level, _line-indent)
+
+  let enum-width = {
+    if is-full-width {
+      100%
+    } else {
+      if enum-margin != auto {
+        let _enum-margin = get_depth-value(enum-margin, level)
+        if _enum-margin == auto {
+          auto
+        } else if type(_enum-margin) in (length, relative, ratio) {
+          100% - _enum-margin
+        } else {
+          panic("invalid arguments: enum-margin should be a length")
+        }
+      } else {
+        auto
+      }
+    }
+  }
+
+  let spacing = get_spacing(it)
+
+  let (enum-above-spacing, enum-below-spacing) = {
+    let (default-above, default-below) = (if it.tight { par.leading } else { par.spacing }, par.spacing)
+    if enum-spacing == auto {
+      (default-above, default-below)
+    } else {
+      let _enum-spacing = get_depth-value(enum-spacing, level)
+      if _enum-spacing == auto {
+        (default-above, default-below)
+      } else {
+        let _type = type(_enum-spacing)
+        if _type in (length, relative, ratio) {
+          (_enum-spacing, _enum-spacing)
+        } else if _type == dictionary {
+          // 这里可以处理更仔细些
+          let (above, below) = _enum-spacing
+          (if above == auto { default-above } else { above }, if below == auto { default-below } else { below })
+        } else {
+          panic("invalid arguments")
+        }
+      }
+    }
+  }
+
+  let curr-item-spacing = {
+    if item-spacing == auto {
+      spacing
+    } else {
+      let _item-spacing = get_depth-value(item-spacing, level)
+      if _item-spacing == auto {
+        spacing
+      } else {
+        _item-spacing
+      }
+    }
+  }
+
+  return (
+    curr-indent,
+    curr-body-indent,
+    curr-label-indent,
+    curr-hanging-indent,
+    curr-line-indent,
+    enum-width,
+    enum-above-spacing,
+    enum-below-spacing,
+    curr-item-spacing,
+  )
+}
+
 
 /// Enhances the `enum` function with additional formatting options.
 ///
@@ -323,8 +451,6 @@ Helper methods for fixing and enhancing enum and list functionality.
         custom-text(numbering(it.numbering, number))
       }
     }
-  } else {
-    [#numbers]
   }
 
   let max-width = calc.max(..numbers.map(number => measure(resolved(number)).width))
@@ -332,39 +458,42 @@ Helper methods for fixing and enhancing enum and list functionality.
   label-width-enum.update(push(max-width))
   label-width-el.update(push(max-width))
 
-  // [#label-width-enum.get()]
-  let curr-indent = parse-len(indent, level, max-width, enum, absolute-level, it.indent)
-
-  let curr-body-indent = parse-len(body-indent, level, max-width, enum, absolute-level, it.body-indent)
-
-  let curr-label-indent = parse-len(label-indent, level, max-width, enum, absolute-level, 0em)
-
-  let _hanging-indent = if hanging-type == "classic" {
-    par.hanging-indent
-  } else if hanging-type == "paragraph" {
-    if item-level.get().len() == 0 { par.hanging-indent } else {
-      state("_parent-hanging-indent", 0em).get()
-    }
-  }
-
-  let _line-indent = if hanging-type == "classic" {
-    par.first-line-indent
-  } else if hanging-type == "paragraph" {
-    if item-level.get().len() == 0 { par.first-line-indent.amount } else {
-      state("_parent-line-indent", 0em).get()
-    }
-  }
-
-  if item-level.get().len() == 0 and hanging-type == "paragraph" {
+  if item-level.get().len() == 0 {
     state("_parent-hanging-indent", 0em).update(par.hanging-indent)
     state("_parent-line-indent", 0em).update(par.first-line-indent.amount)
   }
 
-  let curr-hanging-indent = parse-len(hanging-indent, level, max-width, list, absolute-level, _hanging-indent)
+  let (
+    curr-indent,
+    curr-body-indent,
+    curr-label-indent,
+    curr-hanging-indent,
+    curr-line-indent,
+    enum-width,
+    enum-above-spacing,
+    enum-below-spacing,
+    curr-item-spacing,
+  ) = parse(
+    it,
+    level,
+    max-width,
+    absolute-level,
+    indent: indent,
+    body-indent: body-indent,
+    label-indent: label-indent,
+    is-full-width: is-full-width,
+    item-spacing: item-spacing,
+    enum-spacing: enum-spacing,
+    enum-margin: enum-margin,
+    hanging-type: hanging-type,
+    hanging-indent: hanging-indent,
+    line-indent: line-indent,
+  )
 
-  let curr-line-indent = parse-len(line-indent, level, max-width, list, absolute-level, _line-indent)
 
-  set par(hanging-indent: curr-hanging-indent, first-line-indent: curr-line-indent) if hanging-type == "classic"
+  set par(hanging-indent: curr-hanging-indent, first-line-indent: (amount: curr-line-indent, all: true)) if (
+    hanging-type == "classic"
+  )
   set par(hanging-indent: -max-width - curr-body-indent + curr-hanging-indent, first-line-indent: (
     amount: -max-width - curr-body-indent + curr-line-indent,
     all: true,
@@ -373,63 +502,6 @@ Helper methods for fixing and enhancing enum and list functionality.
   let width = max-width + curr-indent + curr-body-indent
   let inset = if text.dir == rtl { (right: width) } else { (left: width) }
 
-
-  let enum-width = {
-    if is-full-width {
-      100%
-    } else {
-      if enum-margin != auto {
-        let _enum-margin = get_depth-value(enum-margin, level)
-        if _enum-margin == auto {
-          auto
-        } else if type(_enum-margin) in (length, relative, ratio) {
-          100% - _enum-margin
-        } else {
-          panic("invalid arguments: enum-margin should be relative")
-        }
-      } else {
-        auto
-      }
-    }
-  }
-
-  let spacing = get_spacing(it)
-
-  let (enum-above-spacing, enum-below-spacing) = {
-    let (default-above, default-below) = (if it.tight { par.leading } else { par.spacing }, par.spacing)
-    if enum-spacing == auto {
-      (default-above, default-below)
-    } else {
-      let _enum-spacing = get_depth-value(enum-spacing, level)
-      if _enum-spacing == auto {
-        (default-above, default-below)
-      } else {
-        let _type = type(_enum-spacing)
-        if _type in (length, relative, ratio) {
-          (_enum-spacing, _enum-spacing)
-        } else if _type == dictionary {
-          // 这里可以处理更仔细些
-          let (above, below) = _enum-spacing
-          (if above == auto { default-above } else { above }, if below == auto { default-below } else { below })
-        } else {
-          panic("invalid arguments")
-        }
-      }
-    }
-  }
-
-  let curr-item-spacing = {
-    if item-spacing == auto {
-      spacing
-    } else {
-      let _item-spacing = get_depth-value(item-spacing, level)
-      if _item-spacing == auto {
-        spacing
-      } else {
-        _item-spacing
-      }
-    }
-  }
 
   for i in range(numbers.len()) {
     let child = it.children.at(i)
@@ -601,46 +673,45 @@ Helper methods for fixing and enhancing enum and list functionality.
     measure(custom-text(marker)).width
   }
 
-  // set par(hanging-indent: -max-width - it.body-indent)
-
   label-width-list.update(push(max-width))
   label-width-el.update(push(max-width))
 
-  let curr-indent = parse-len(indent, level, max-width, list, absolute-level, it.indent)
-
-  let curr-body-indent = parse-len(body-indent, level, max-width, list, absolute-level, it.body-indent)
-
-  let curr-label-indent = parse-len(label-indent, level, max-width, list, absolute-level, 0em)
-
-  let _hanging-indent = if hanging-type == "classic" {
-    par.hanging-indent
-  } else if hanging-type == "paragraph" {
-    if item-level.get().len() == 0 { par.hanging-indent } else {
-      state("_parent-hanging-indent", 0em).get()
-    }
-  }
-
-  let _line-indent = if hanging-type == "classic" {
-    par.first-line-indent
-  } else if hanging-type == "paragraph" {
-    if item-level.get().len() == 0 { par.first-line-indent.amount } else {
-      state("_parent-line-indent", 0em).get()
-    }
-  }
-
-  if item-level.get().len() == 0 and hanging-type == "paragraph" {
+  if item-level.get().len() == 0 {
     state("_parent-hanging-indent", 0em).update(par.hanging-indent)
     state("_parent-line-indent", 0em).update(par.first-line-indent.amount)
   }
 
-  let curr-hanging-indent = parse-len(hanging-indent, level, max-width, list, absolute-level, _hanging-indent)
+  let (
+    curr-indent,
+    curr-body-indent,
+    curr-label-indent,
+    curr-hanging-indent,
+    curr-line-indent,
+    enum-width,
+    enum-above-spacing,
+    enum-below-spacing,
+    curr-item-spacing,
+  ) = parse(
+    it,
+    level,
+    max-width,
+    absolute-level,
+    indent: indent,
+    body-indent: body-indent,
+    label-indent: label-indent,
+    is-full-width: is-full-width,
+    item-spacing: item-spacing,
+    enum-spacing: enum-spacing,
+    enum-margin: enum-margin,
+    hanging-type: hanging-type,
+    hanging-indent: hanging-indent,
+    line-indent: line-indent,
+  )
 
-  let curr-line-indent = parse-len(line-indent, level, max-width, list, absolute-level, _line-indent)
 
-  set par(
-    hanging-indent: curr-hanging-indent,
-    first-line-indent: curr-line-indent,
-  ) if hanging-type == "classic"
+  set par(hanging-indent: curr-hanging-indent, first-line-indent: (amount: curr-line-indent, all: true)) if (
+    hanging-type == "classic"
+  )
   set par(hanging-indent: -max-width - curr-body-indent + curr-hanging-indent, first-line-indent: (
     amount: -max-width - curr-body-indent + curr-line-indent,
     all: true,
@@ -649,63 +720,13 @@ Helper methods for fixing and enhancing enum and list functionality.
   let width = max-width + curr-indent + curr-body-indent
   let inset = if text.dir == rtl { (right: width) } else { (left: width) }
 
-  let enum-width = {
-    if is-full-width {
-      100%
-    } else {
-      if enum-margin != auto {
-        let _enum-margin = get_depth-value(enum-margin, level)
-        if _enum-margin == auto {
-          auto
-        } else if type(_enum-margin) in (relative, ratio, length) {
-          100% - _enum-margin
-        } else {
-          panic("invalid arguments: enum-margin should be relative")
-        }
-      } else {
-        auto
-      }
-    }
-  }
-
-  let (enum-above-spacing, enum-below-spacing) = {
-    let (default-above, default-below) = (if it.tight { par.leading } else { par.spacing }, par.spacing)
-    if enum-spacing == auto {
-      (default-above, default-below)
-    } else {
-      let _enum-spacing = get_depth-value(enum-spacing, level)
-      let _type = type(_enum-spacing)
-      if _type in (length, relative, ratio) {
-        (_enum-spacing, _enum-spacing)
-      } else if _type == dictionary {
-        // 这里可以处理更仔细些
-        let (above, below) = _enum-spacing
-        (if above == auto { default-above } else { above }, if below == auto { default-below } else { below })
-      } else {
-        panic("invalid arguments")
-      }
-    }
-  }
-
-  let curr-item-spacing = {
-    if item-spacing == auto {
-      spacing
-    } else {
-      let _item-spacing = get_depth-value(item-spacing, level)
-      if _item-spacing == auto {
-        spacing
-      } else {
-        _item-spacing
-      }
-    }
-  }
   let len = it.children.len()
 
   let marker-display = n => {
     if type(marker) == function {
-      // form: level => n => value
       let temp = marker(marker-level + 1)
       if type(temp) == function {
+        // form: n => value
         return custom-text(temp(n))
       } else if type(temp) == array {
         if temp.len() != 0 {

@@ -1,5 +1,4 @@
-#import "@preview/itemize:0.1.0" as el
-
+#import "@preview/itemize:0.1.1" as el
 #set page(width: 350mm, height: auto, margin: 25pt) //,
 = constom label
 
