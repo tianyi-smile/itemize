@@ -435,18 +435,20 @@ Helper methods for fixing and enhancing enum and list functionality.
 
   let level = if absolute-level { item-level.get().len() } else { parent-level.len() }
   // [#args]
-  let custom-text(body) = text(..parse-args(..args, level: level), align(it.number-align, body))
+  let custom-text(body) = text(..parse-args(..args, level: level), align(it.number-align, [#body#sym.space.nobreak#h(
+      -measure(sym.space.nobreak).width,
+    )]))
 
   let resolved(number) = if number != none {
     if it.full {
       custom-text(numbering(it.numbering, ..parent-level, number))
     } else {
       if type(it.numbering) == str {
-        custom-text([#apply-numbering-kth(
-            it.numbering,
-            parent-level.len(),
-            number,
-          )#sym.space.nobreak#h(-measure(sym.space.nobreak).width)])
+        custom-text(apply-numbering-kth(
+          it.numbering,
+          parent-level.len(),
+          number,
+        ))
       } else {
         custom-text(numbering(it.numbering, number))
       }
