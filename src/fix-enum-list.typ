@@ -131,16 +131,16 @@ Helper methods for fixing and enhancing enum and list functionality.
 #let numbering-pattern-from-str(pattern) = {
   let pieces = ()
   let handled = 0
-
-  for (i, c) in pattern.codepoints().enumerate() {
+  let pattern-to-codepoints = pattern.codepoints()
+  for (i, c) in pattern-to-codepoints.enumerate() {
     let kind = numbering-kind-from-char(c)
     if kind == none { continue }
-    let prefix = pattern.slice(handled, i)
+    let prefix = pattern-to-codepoints.slice(handled, i).join()
     pieces.push((prefix, kind))
-    handled = c.len() + i
+    handled = 1 + i
   }
 
-  let suffix = pattern.slice(handled)
+  let suffix = pattern-to-codepoints.slice(handled).join()
   if pieces.len() == 0 {
     panic("invalid numbering pattern")
   }
