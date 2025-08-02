@@ -5,8 +5,9 @@ The `itemize` package allows users to easily customize and format enumerations a
 > If the `typst` team fixes and enhances `enum` and `list`, this package will be deprecated.
 
 To use this package, include the following at the beginning of your document:
+
 ```typst
-#import "@preview/itemize:0.1.1" as el
+#import "@preview/itemize:0.1.2" as el
 ```
 
 ## Basic Usage
@@ -19,6 +20,7 @@ Enhancements for `enum` and `list` can be applied by adding the following at the
 
 Now you can use `enum` and `list` as usual. Below is a comparison of the effects.
 ![alt text](./assert/fix.png)
+
 <details>
 <summary>The source code is as follows:</summary>
 
@@ -46,18 +48,21 @@ Now you can use `enum` and `list` as usual. Below is a comparison of the effects
   ],
 )
 ```
-</details>
 
+</details>
 
 ## Referencing `enum` Numbers
 
 To correctly reference `enum` numbers, first use:
+
 ```typst
 #show ref: el.ref-enum // add this
 #show: el.default-enum-list
 ```
+
 Now you can reference as usual.
 For example:
+
 ```typst
 #show ref: el.ref-enum
 #show: el.default-enum-list
@@ -92,11 +97,13 @@ The effect is:
 > Note: If referencing via `@some-label` does not work correctly, you need to use `#el.elabel(<some-label>)` or `#el.elabel("some-label")` to mark the `enum` item, such as `#el.elabel("eq")` here.
 
 ### Parameters for `ref-enum`
+
 - `full`: Default is `auto`, using the `full` value from `enum`. `true` displays the full number (including parent levels); `false` displays only the current item's number.
 - `numbering`: Numbering pattern or formatter. You can customize the style of the referenced item number.
 - `supplement`: Supplemental content for the reference.
 
 ## Parameters for `default-enum-list`
+
 ```typst
 #let default-enum-list(
   doc: any,
@@ -112,6 +119,7 @@ The effect is:
   line-indent: array | auto | function | length = auto,
 ) = any;
 ```
+
 This method allows you to freely customize the `label` style (i.e., `enum`'s `numbering` and `list`'s `marker`), control paragraph indentation (`line-indent`, `hanging-indent`), horizontal spacing (`indent`, `body-indent`, `enum-margin`, `is-full-width`, `label-indent`), and vertical spacing (`enum-spacing`, `item-spacing`) for nested enumerations and lists.
 
 These parameters can specify styles for specific levels of nested enumerations and lists.
@@ -129,12 +137,12 @@ The model for `itemize` is as follows:
 
 ![alt text](./assert/item.svg)
 
-
 ### Passing `array` Parameters
 
 If a parameter accepts an `array`, each element controls the style for the corresponding level of the list. The last element's value applies to subsequent levels.
 
 For example:
+
 ```typst
 #show: el.default-enum-list.with(
   fill: (red, blue, green, yellow, auto),
@@ -142,7 +150,9 @@ For example:
   size: (15pt, 12pt)
 )
 ```
+
 The `label` will be formatted as:
+
 - Levels 1-4: `red`, `blue`, `green`, `yellow`, then the current text color (due to `auto`).
 - All levels: Bold weight.
 - Level 1: `15pt` font size; subsequent levels: `12pt`.
@@ -168,16 +178,17 @@ The `label` will be formatted as:
 + three
 ```
 
-
 Effect:
 ![alt text](./assert/label.png)
 
 ### Passing `function` Parameters
 
 For horizontal spacing parameters (`indent`, `body-indent`, `hanging-indent`, `line-indent`, `label-indent`), you can pass a `function` with the following format:
+
 ```typst
 (level, label-width, level-type) => length | auto
 ```
+
 - `level`: The item's level.
 - `label-width`: Captures the label width for levels 1 to the current level (i.e., `[1, level]`).
   - Use `(label-width.get)(some-level)` to get the label width at `some-level`.
@@ -185,17 +196,19 @@ For horizontal spacing parameters (`indent`, `body-indent`, `hanging-indent`, `l
 - `level-type`: Captures the construction (`enum` or `list`) for levels 1 to the current level. Use `(level-type.get)(some-level)` or `level-type.current`.
 
 > Tip: If you don't need `label-width` or `level-type`, declare the function as:
-  ```typst
-  (level, ..args) => length | auto
-  // or
-  (level, _, _) => length | auto
-  // or
-  (level, label-width, _) => length | auto
-  // etc.
-  ```
+
+```typst
+(level, ..args) => length | auto
+// or
+(level, _, _) => length | auto
+// or
+(level, label-width, _) => length | auto
+// etc.
+```
 
 Here's an example using a `function` to align all `label`s to the left:
 ![alt text](./assert/spacing-test3.png)
+
 <details>
 <summary>Code</summary>
 
@@ -252,12 +265,13 @@ Here's an example using a `function` to align all `label`s to the left:
     ],
   )
 ```
-</details>
 
+</details>
 
 ### `default-enum` and `default-list` Methods
 
 These methods work the same as `default-enum-list`, but note that levels are counted independently. For example:
+
 ```typst
 #show enum: el.default-enum.with(
   fill: (red, blue, green),
@@ -275,6 +289,7 @@ These methods work the same as `default-enum-list`, but note that levels are cou
 <summary>Output</summary>
 
 ![alt text](./assert/enum-list.png)
+
 </details>
 
 ## Using Counters
@@ -313,6 +328,7 @@ Effect:
 ### Formatting `enum.numbering`
 
 Since `enum`'s `numbering` allows a `function`, you can use `level` to control the formatting of `label`s at different levels. For example:
+
 ```typst
 #show: el.default-enum-list
 #let ff = (..num) => {
@@ -397,21 +413,28 @@ Effect:
 ### Formatting `list.marker`
 
 Native `list`'s `marker` does not accept a `function`. But why not? As suggested in this issue:
+
 - [It would be great if I could do this through the `#list()` function's `marker` field using a function instead.](https://github.com/typst/typst/issues/619#issuecomment-2291338210)
 
 Now you can pass a `function` with the following format:
+
 ```typst
 level => n => content
 ```
+
 or
+
 ```typst
 level => array
 ```
+
 Here:
+
 - `level`: The relative nesting level of the `list`, cyclically used.
 - `n => content` or `array`: The `label` for each `item` in the same level.
 
 For example:
+
 ```typst
 #import emoji: *
 #show: el.default-enum-list
@@ -449,6 +472,7 @@ Effect:
 The `paragraph-enum-list` method (and `paragraph-enum`, `paragraph-list`) allows aligning `label`s with paragraphs. These methods have the same parameters as `default-enum-list`.
 For example:
 ![alt text](./assert/par-test0.png)
+
 <details>
 <summary>Code</summary>
 
@@ -526,10 +550,13 @@ In the current version of `typst` (0.13.1), we cannot use custom functions with 
 Here's how to use them:
 
 Include the following at the beginning of your document:
+
 ```typst
 #show: el.set-default() // need ()!!!
 ```
+
 > Note: The key difference is that `set-default` requires **parentheses**!
+
 ```typst
 #let item = [
   + #lorem(10)
@@ -562,6 +589,7 @@ Include the following at the beginning of your document:
 #show: el.set-default()
 #item
 ```
+
 <details>
 <summary>Output</summary>
 
@@ -569,15 +597,14 @@ Include the following at the beginning of your document:
 
 </details>
 
-
 > Note: Property values set via `#set enum` and `#set list` cannot be restored using `#show: el.set-default()`.
 
 # Acknowledge
 
 - [@pacaunt](https://github.com/typst/typst/issues/1204#issuecomment-2909417340)
-
 - [@Andrew](https://forum.typst.app/t/can-i-use-show-rule-only-in-content-of-enum-but-not-numbering/4590/2)
 
 # License
 
 This project is licensed under the MIT License.
+
