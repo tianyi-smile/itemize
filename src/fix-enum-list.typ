@@ -435,9 +435,7 @@ Helper methods for fixing and enhancing enum and list functionality.
 
   let level = if absolute-level { item-level.get().len() } else { parent-level.len() }
   // [#args]
-  let custom-text(body) = text(..parse-args(..args, level: level), align(it.number-align, [#body#sym.space.nobreak#h(
-      -measure(sym.space.nobreak).width,
-    )]))
+  let custom-text(body) = text(..parse-args(..args, level: level), overhang: false, align(it.number-align, body))
 
   let resolved(number) = if number != none {
     if it.full {
@@ -644,7 +642,7 @@ Helper methods for fixing and enhancing enum and list functionality.
 
   let level = if absolute-level { item-level.get().len() } else { list-level.get() }
 
-  let custom-text = text.with(..parse-args(..args, level: level))
+  let custom-text = text.with(..parse-args(..args, level: level), overhang: false)
 
   let spacing = get_spacing(it)
   let marker-level = list-level.get()
