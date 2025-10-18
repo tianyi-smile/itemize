@@ -99,6 +99,74 @@ See [manual.pdf](doc/manual.pdf) and also the source code [manual.typ](doc/manua
       <img src="examples/square-enum.png" width="250px">
   </td>
 </tr>
+<!----->
+<tr>
+  <td>Square label2</td>
+  <td>With left border</td>
+  <td>With background1</td>
+</tr>
+</tr>
+  <td>    
+    <a href="examples/gradient-enum.typ">
+      <img src="examples/gradient-enum.png" width="250px">
+    </a>
+  </td>
+  <td>
+      <a href="examples/v-line-el.typ">
+      <img src="examples/v-line-el.png" width="250px">
+      </a>
+  </td>
+  <td>
+      <a href="examples/background-list.typ">
+      <img src="examples/background-list.png" width="250px">
+      </a>
+  </td>
+</tr>
+<!----->
+<tr>
+  <td>With background2</td>
+  <td>Grid-like list</td>
+  <td>Grid-like list2</td>
+</tr>
+</tr>
+  <td>    
+      <a href="examples/orange-enum.typ">
+      <img src="examples/orange-enum.png" width="250px">
+      </a>
+  </td>
+  <td>
+      <a href="examples/grid-list.typ">
+      <img src="examples/grid-list.png" width="250px">
+  </td>
+  <td>    
+      <a href="examples/todo-list.typ">
+      <img src="examples/todo-list.png" width="250px">
+    </a>
+  </td>
+</tr>
+<!----->
+<tr>
+  <td>Leader board</td>
+  <td>Tree list</td>
+  <td>Checklist</td>
+</tr>
+</tr>
+  <td>    
+      <a href="examples/leaderboard.typ">
+      <img src="examples/leaderboard.png" width="250px">
+    </a>
+  </td>
+  <td>
+      <a href="examples/tree-list.typ">
+      <img src="examples/tree-list.png" width="250px">
+  </td>
+  <td>    
+      <a href="examples/checklist.typ">
+      <img src="examples/checklist.png" width="250px">
+      </a>
+  </td>
+</tr>
+</table>
 
 *Click on the example image to jump to the code.*
 
