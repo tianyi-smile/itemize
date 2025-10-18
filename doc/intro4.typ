@@ -17,7 +17,7 @@ If you were using ver0.1.x, please read this section carefully when upgrading to
   - Paragraph
 - Customize labels and bodies for enums and lists by level and item
   - [N] Allow per-item configuration
-  - [N] Enable loop usage of array parameters: `LOOP`
+  - [N] Enable loop usage of array element values: `LOOP`
   - [N] If a property can be set at both the level and item, it allows passing a function
     - The function format is now standardized as `it => ...`, where you can control it by accessing its properties, typically `it.level` and `it.n`
       - More properties may be added in the future
@@ -102,7 +102,7 @@ If you were using ver0.1.x, please read this section carefully when upgrading to
     - [S] Support for `enum.start`
     - [!] *Breaking change*: For compatibility with the native `list.marker` behavior, unlike the methods provided by `itemize`, the level here starts from 0 (see #link("https://github.com/tianyi-smile/itemize/issues/3", [`issue#3`])).
     - [x] Fixed: Incorrect label display when mixing enums and lists with `*-enum` and `*-list` configurations
-      - Now, we rewrite the behavior of enums and lists, but `*-enum` does not configure list formatting, and vice versa
+      - Now, we rewrite all the behaviors of `enum` and `list`, but `*-enum` does not configure list formatting, and vice versa
     - [x] Compatibility with typst 0.14 behavior (`[#6609]` and `[#6242]`)
 
 
