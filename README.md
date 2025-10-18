@@ -61,7 +61,7 @@ See [manual.pdf](doc/manual.pdf) and also the source code [manual.typ](doc/manua
   <td>Resuming enum</td>
 </tr>
 </tr>
-  <td>    
+  <td>  
       <a href="examples/align-label.typ">
       <img src="examples/align-label.png" width="250px">
       </a>
@@ -99,79 +99,6 @@ See [manual.pdf](doc/manual.pdf) and also the source code [manual.typ](doc/manua
       <img src="examples/square-enum.png" width="250px">
   </td>
 </tr>
-
-<!----->
-<tr>
-  <td>Square label2</td>
-  <td>With left border</td>
-  <td>With background1</td>
-</tr>
-</tr>
-  <td>    
-    <a href="examples/gradient-enum.typ">
-      <img src="examples/gradient-enum.png" width="250px">
-    </a>
-  </td>
-  <td>
-      <a href="examples/v-line-el.typ">
-      <img src="examples/v-line-el.png" width="250px">
-      </a>
-  </td>
-  <td>
-      <a href="examples/background-list.typ">
-      <img src="examples/background-list.png" width="250px">
-      </a>
-  </td>
-</tr>
-<!----->
-<tr>
-  <td>With background2</td>
-  <td>Grid-like list</td>
-  <td>Grid-like list2</td>
-</tr>
-</tr>
-  <td>    
-      <a href="examples/orange-enum.typ">
-      <img src="examples/orange-enum.png" width="250px">
-      </a>
-  </td>
-  <td>
-      <a href="examples/grid-list.typ">
-      <img src="examples/grid-list.png" width="250px">
-  </td>
-  <td>    
-      <a href="examples/todo-list.typ">
-      <img src="examples/todo-list.png" width="250px">
-    </a>
-  </td>
-</tr>
-<!----->
-<tr>
-  <td>Leader board</td>
-  <td>Tree list</td>
-  <td>Checklist</td>
-</tr>
-</tr>
-  <td>    
-      <a href="examples/leaderboard.typ">
-      <img src="examples/leaderboard.png" width="250px">
-    </a>
-  </td>
-  <td>
-      <a href="examples/tree-list.typ">
-      <img src="examples/tree-list.png" width="250px">
-  </td>
-  <td>    
-      <a href="examples/checklist.typ">
-      <img src="examples/checklist.png" width="250px">
-      </a>
-  </td>
-</tr>
-</table>
-
-
-
-
 
 *Click on the example image to jump to the code.*
 
@@ -323,7 +250,7 @@ It is important to remember Newton's third law @newton-third[], and Hook's law @
 ## Resuming Enum Numbering
 
 - To enable this feature, set the `auto-resuming` parameter to `auto` in `*-enum-list` (or `*-enum`).
-- Use the `resume()` method to continue numbering from the previous level.
+- Use the `resume()` method to continue numbering from the previous ones.
 
   ```typst
   #show: el.default-enum-list.with(auto-resuming: auto)
@@ -343,6 +270,7 @@ It is important to remember Newton's third law @newton-third[], and Hook's law @
 - Alternatively, use `resume-label(<some-label>)` to label the enum to resume, then use `resume-list(<some-label>)` in the desired enum to continue numbering.
 
   - If the following is added to the document:
+
     ```typst
     #show: el.config.ref-resume
     ```
@@ -547,7 +475,7 @@ If you were using ver0.1.x, please read this section carefully when upgrading to
 - Customize labels and bodies for enums and lists by level and item
 
   - 🆕 Allow per-item configuration
-  - 🆕 Enable loop usage of array parameters: `LOOP`
+  - 🆕 Enable loop usage of array element values: `LOOP`
   - 🆕 If a property can be set at both the level and item, it allows passing a function
 
     - The function format is now standardized as `it => ...`, where you can control it by accessing its properties, typically `it.level` and `it.n`
@@ -606,6 +534,7 @@ If you were using ver0.1.x, please read this section carefully when upgrading to
 
     - Now better handles blank content in typst, ensuring correct alignment
     - Due to limitations in typst, content within `context` cannot be retrieved in pure typst, making it impossible to correctly process cases like:
+
       ```typst
       #show: el.default-enum-list
       + #context {block[#text.fill]}
@@ -618,6 +547,7 @@ If you were using ver0.1.x, please read this section carefully when upgrading to
         ```
     - Similarly, output content in `ref(...)` cannot be processed
     - For block-level elements, our handling is more refined compared to native behavior:
+
       - If a block-level element behaves like a paragraph (`par`, `pad`, `block`, `repeat`, `layout`), it is treated as paragraph behavior, ensuring alignment of labels and bodies within the same paragraph
       - If it is not a paragraph (`block-equation`, `block-raw` `rect`, `table`, `grid`, `stack`, `heading`, `figure`, etc.), it follows native behavior
       - [?] `align` here is paragraph behavior but cannot be correctly implemented (currently follows native behavior)
@@ -631,7 +561,7 @@ If you were using ver0.1.x, please read this section carefully when upgrading to
     - ⚠️ *Breaking change*: For compatibility with the native `list.marker` behavior, unlike the methods provided by `itemize`, the level here starts from 0 (see [`issue#3`](https://github.com/tianyi-smile/itemize/issues/3)).
 
     - [X]  Fixed: Incorrect label display when mixing enums and lists with `*-enum` and `*-list` configurations
-      - Now, we rewrite the behavior of enums and lists, but `*-enum` does not configure list formatting, and vice versa
+      - Now, we rewrite both behaviors of `enum` and `list`, but `*-enum`does not configure list formatting, and similarly for`*-list`
     - [X]  Compatibility with typst 0.14 behavior (`[#6609]` and `[#6242]`)
 
 # Acknowledge
