@@ -1,6 +1,6 @@
 [package]
 name = "itemize"
-version = "0.1.2"
+version = "0.2.0"
 compiler = "0.13.1"
 repository = "https://github.com/tianyi-smile/itemize"
 entrypoint = "lib.typ"
@@ -9,4 +9,4 @@ license = "MIT"
 description = "An easy way to customize enum and list."
 keywords = ["item", "list"]
 categories = ["components", "utility"]
-exclude = ["assert/", "test/"]
+exclude = ["asserts/", "tests/", "doc/", "examples/"]

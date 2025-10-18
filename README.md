@@ -1,28 +1,25 @@
-# Usage
+# Overview
 
-The `itemize` package allows users to easily customize and format enumerations and lists, while also fixing some display format issues in `typst` (0.13.1) for `enum` and `list` (e.g., [issue#1204](https://github.com/typst/typst/issues/1204)).
+---
 
-> If the `typst` team fixes and enhances `enum` and `list`, this package will be deprecated.
-
-To use this package, include the following at the beginning of your document:
+The `itemize` package allows users to easily customize and format enums and lists. To use this package, include the following at the beginning of your document:
 
 ```typst
-#import "@preview/itemize:0.1.2" as el
+#import "@preview/itemize:0.2.0" as el
 ```
 
-## Basic Usage
-
-Enhancements for `enum` and `list` can be applied by adding the following at the beginning of your document:
+Use the method `default-enum-list` to override the native behaviour of `enum` and `list` by adding the following at the beginning of your document:
 
 ```typst
 #show: el.default-enum-list
 ```
 
-Now you can use `enum` and `list` as usual. Below is a comparison of the effects.
-![alt text](./assert/fix.png)
+Now you can use `enum` and `list` as usual. Below is a comparison.
+
+![alt text](asserts/fix.png)
 
 <details>
-<summary>The source code is as follows:</summary>
+<summary>Code:</summary>
 
 ```typst
 #let item-test = [
@@ -30,15 +27,16 @@ Now you can use `enum` and `list` as usual. Below is a comparison of the effects
     $
       x^2 + y^2 = z^2
     $
-  + two #box(baseline: .5em, rect(height: 2em, width: 2em))
-  + + test
-  + - test
-    - test 
-  - - test
+  + #rect(height: 2em, width: 2em) #lorem(2)
+  + #block(stroke: 1pt)[two $vec(1, 1, 1,)$]
+  + $ (a + b)^2 = a^2 + 2a b + b^2 $
+  + + #lorem(2)
+  + - #lorem(2)
+    - #lorem(2)
 ]
 #table(
   columns: (1fr, 1fr),
-  [origin], [itemize],
+  [native], [itemize],
   [
     #item-test
   ],
@@ -51,560 +49,597 @@ Now you can use `enum` and `list` as usual. Below is a comparison of the effects
 
 </details>
 
-## Referencing `enum` Numbers
+See [manual.pdf](doc/manual.pdf) and also the source code [manual.typ](doc/manual.typ) for more details.
 
-To correctly reference `enum` numbers, first use:
+## Examples
 
-```typst
-#show ref: el.ref-enum // add this
-#show: el.default-enum-list
-```
+<table>
+<!----->
+<tr>
+  <td>All labels aligned</td>
+  <td>Label with min-width</td>
+  <td>Resuming enum</td>
+</tr>
+</tr>
+  <td>    
+      <a href="examples/align-label.typ">
+      <img src="examples/align-label.png" width="250px">
+      </a>
+  </td>
+  <td>
+      <a href="examples/el-word.typ">
+      <img src="examples/el-word.png" width="250px">
+      </a>
+  </td>
+  <td>
+      <a href="examples/resuming-enum.typ">
+      <img src="examples/resuming-enum.png" width="250px">
+      </a>
+  </td>
+</tr>
+<!----->
+<tr>
+  <td>Circled label1</td>
+  <td>Circled label2</td>
+  <td>Square label1</td>
+</tr>
+</tr>
+  <td>
+      <a href="examples/circled-enum.typ">
+      <img src="examples/circled-enum.png" width="250px">
+      </a>
+  </td>
+  <td>
+        <a href="examples/circle-line-enum.typ">
+      <img src="examples/circle-line-enum.png" width="250px">
+      </a>
+  </td>
+  <td>
+      <a href="examples/square-enum.typ">
+      <img src="examples/square-enum.png" width="250px">
+  </td>
+</tr>
 
-Now you can reference as usual.
-For example:
+<!----->
+<tr>
+  <td>Square label2</td>
+  <td>With left border</td>
+  <td>With background1</td>
+</tr>
+</tr>
+  <td>    
+    <a href="examples/gradient-enum.typ">
+      <img src="examples/gradient-enum.png" width="250px">
+    </a>
+  </td>
+  <td>
+      <a href="examples/v-line-el.typ">
+      <img src="examples/v-line-el.png" width="250px">
+      </a>
+  </td>
+  <td>
+      <a href="examples/background-list.typ">
+      <img src="examples/background-list.png" width="250px">
+      </a>
+  </td>
+</tr>
+<!----->
+<tr>
+  <td>With background2</td>
+  <td>Grid-like list</td>
+  <td>Grid-like list2</td>
+</tr>
+</tr>
+  <td>    
+      <a href="examples/orange-enum.typ">
+      <img src="examples/orange-enum.png" width="250px">
+      </a>
+  </td>
+  <td>
+      <a href="examples/grid-list.typ">
+      <img src="examples/grid-list.png" width="250px">
+  </td>
+  <td>    
+      <a href="examples/todo-list.typ">
+      <img src="examples/todo-list.png" width="250px">
+    </a>
+  </td>
+</tr>
+<!----->
+<tr>
+  <td>Leader board</td>
+  <td>Tree list</td>
+  <td>Checklist</td>
+</tr>
+</tr>
+  <td>    
+      <a href="examples/leaderboard.typ">
+      <img src="examples/leaderboard.png" width="250px">
+    </a>
+  </td>
+  <td>
+      <a href="examples/tree-list.typ">
+      <img src="examples/tree-list.png" width="250px">
+  </td>
+  <td>    
+      <a href="examples/checklist.typ">
+      <img src="examples/checklist.png" width="250px">
+      </a>
+  </td>
+</tr>
+</table>
 
-```typst
-#show ref: el.ref-enum
-#show: el.default-enum-list
-#set enum(numbering: "(1).(a).(i)", full: true)
-+ #lorem(50) <item:1>
-+ #lorem(5) $mat(1, 0, 0; 0, 1, 0; 0, 0, 1)$
-  + #lorem(20)
-    + #lorem(10)
-    + #lorem(10) <item:2>
-  + #lorem(20)
-+ #lorem(20)
 
-#show ref: set text(fill: orange)
 
-The @item:1[item] is referenced; you can see the conclusion@item:2 also holds.
 
-#set enum(numbering: "(1).(a).(i)", full: false)
-+ #lorem(50)
-+ #lorem(5) $mat(1, 0, 0; 0, 1, 0; 0, 0, 1)$ <eq0> #el.elabel("eq")
-  + #lorem(20)
-    + #lorem(10)
-    + #lorem(10) <item:4>
-  + #lorem(20)
-+ #lorem(20)
 
-The @eq[item] is referenced, you can see some thing@item:4. Note that `@eq0` will not work (since `@eq0` is labelled to the equation).
-```
+*Click on the example image to jump to the code.*
 
-The effect is:
-![alt text](./assert/ref.png)
+## Features
 
-> Note: If referencing via `@some-label` does not work correctly, you need to use `#el.elabel(<some-label>)` or `#el.elabel("some-label")` to mark the `enum` item, such as `#el.elabel("eq")` here.
+The `itemize` package currently offers the following features:
 
-### Parameters for `ref-enum`
++ Compatibility with native `enum` and `list` behaviors in most cases, along with fixes for certain native bugs (or providing alternative choices), such as [`typst/issue#1204`](https://github.com/typst/typst/issues/1204) and [`typst/issue#529`](https://github.com/typst/typst/issues/529).
++ Provide two styles of enum-list: `default` and `Paragraph`
++ Customization of `enum` and `list` *labels* and *bodies* by **level** and **item**:
+  - Horizontal spacing settings: `indent`, `body-indent`, `label-indent`, `enum-margin` (`is-full-width`).
+  - Vertical spacing settings: `item-spacing`, `enum-spacing`.
+  - Label formatting settings: `..args(text-style)`, `label-align`, `label-baseline`, `label-width`.
+    - Customize labels in any way: `label-format`.
+  - Alignment styles for labels between items at each level: `auto-label-width`.
+  - Body formatting settings: `hanging-indent`, `line-indent`.
+    - Set text and border styles for the body: `body-format`.
++ Enhanced `enum` features:
+  - Reference functionality for `enum` numbering.
+  - Resume functionality for `enum` numbering.
++ Enhanced `list` features:
+  - Terms-like functionality: Temporarily change the marker of the current item using the `item` method.
+  - Checklist functionality (similar to the [`cheq`](https://typst.app/universe/package/cheq) package).
 
-- `full`: Default is `auto`, using the `full` value from `enum`. `true` displays the full number (including parent levels); `false` displays only the current item's number.
-- `numbering`: Numbering pattern or formatter. You can customize the style of the referenced item number.
-- `supplement`: Supplemental content for the reference.
+# Main Methods
 
-## Parameters for `default-enum-list`
+---
 
-```typst
-#let default-enum-list(
-  doc: any,
-  ..args: arguments,
-  body-indent: array | auto | function | length = auto,
-  enum-margin: array | auto | length = auto,
-  enum-spacing: array | auto | dictionary | length = auto,
-  hanging-indent: array | auto | function | length = auto,
-  indent: array | auto | function | length = auto,
-  is-full-width: bool = true,
-  item-spacing: array | auto | dictionary | length = auto,
-  label-indent: array | auto | function | length = auto,
-  line-indent: array | auto | function | length = auto,
-) = any;
-```
+The package `itemize` primarily provides the following methods:
 
-This method allows you to freely customize the `label` style (i.e., `enum`'s `numbering` and `list`'s `marker`), control paragraph indentation (`line-indent`, `hanging-indent`), horizontal spacing (`indent`, `body-indent`, `enum-margin`, `is-full-width`, `label-indent`), and vertical spacing (`enum-spacing`, `item-spacing`) for nested enumerations and lists.
+## Two Styles of enum-list
 
-These parameters can specify styles for specific levels of nested enumerations and lists.
+- `default`-style (Typst's native style):  `default-enum-list`, `default-enum`, `default-list`
+- `paragraph`-style: `paragraph-enum-list`, `paragraph-enum`, `paragraph-list`
 
-- `..args`: Allows passing any named arguments for `text` to format the `label`, which can be an `array` (each element controls the `label` for the corresponding level). Unless `auto` is used, the `label` format cannot be changed via `#set text`, which addresses [issue#619](https://github.com/typst/typst/issues/619).
-- `line-indent`, `hanging-indent`: Control the **first-line indentation** and **hanging indentation** for paragraphs in each level of the enumerations and lists. Unless `auto` is used, paragraph indentation cannot be changed via `#set par`.
-- `indent`, `body-indent`: Control the **enumerations and lists indentation** and spacing between the `label` and `body` for each level. Unless `auto` is used, these spacings cannot be changed via `#set enum` or `#set list`.
-- `label-indent`: Controls the spacing between the enumerations and lists and `label` for each level.
-- `is-full-width`: Default is `true`, setting the `item` width to `100%`. This may temporarily fix the bug where block-level equations in the item are not center-aligned in some cases (not an ideal solution).
-- `enum-margin`: Controls the left (right) margin for each level of the enumerations and lists. For this parameter to take effect, set `is-full-width` to `false`. If `auto`, the item width for the current level is `auto` (native `enum` and `list` behavior).
-- `enum-spacing`: Controls the **spacing above and below** the enumerations and lists. Can be a `length` (same spacing above and below) or a `dictionary` (e.g., `(above: length1, below: length2)`).
-- `item-spacing`: Controls the **spacing between items** for each level.
+By default, the `default-*` methods indent paragraphs after the `label`, while the `paragraph-*` methods align paragraphs with the `label`. See the example below:
 
-The model for `itemize` is as follows:
-
-![alt text](./assert/item.svg)
-
-### Passing `array` Parameters
-
-If a parameter accepts an `array`, each element controls the style for the corresponding level of the list. The last element's value applies to subsequent levels.
-
-For example:
-
-```typst
-#show: el.default-enum-list.with(
-  fill: (red, blue, green, yellow, auto),
-  weight: "bold",
-  size: (15pt, 12pt)
-)
-```
-
-The `label` will be formatted as:
-
-- Levels 1-4: `red`, `blue`, `green`, `yellow`, then the current text color (due to `auto`).
-- All levels: Bold weight.
-- Level 1: `15pt` font size; subsequent levels: `12pt`.
-
-```typst
-#show: el.default-enum-list.with(
-  fill: (red, blue, green, yellow, auto),
-  weight: "bold",
-  size: (15pt, 12pt)
-)
-+ one
-+ two
-  + A
-    - Good
-      - #lorem(10)
-        - #lorem(10)
-        - #lorem(10)
-    - Bad
-  + B
-    + #lorem(10)
-      + #lorem(10)
-      + #lorem(10)
-+ three
-```
-
-Effect:
-![alt text](./assert/label.png)
-
-### Passing `function` Parameters
-
-For horizontal spacing parameters (`indent`, `body-indent`, `hanging-indent`, `line-indent`, `label-indent`), you can pass a `function` with the following format:
-
-```typst
-(level, label-width, level-type) => length | auto
-```
-
-- `level`: The item's level.
-- `label-width`: Captures the label width for levels 1 to the current level (i.e., `[1, level]`).
-  - Use `(label-width.get)(some-level)` to get the label width at `some-level`.
-  - Or `label-width.current` for the current level (equivalent to `(label-width.get)(level)`).
-- `level-type`: Captures the construction (`enum` or `list`) for levels 1 to the current level. Use `(level-type.get)(some-level)` or `level-type.current`.
-
-> Tip: If you don't need `label-width` or `level-type`, declare the function as:
-
-```typst
-(level, ..args) => length | auto
-// or
-(level, _, _) => length | auto
-// or
-(level, label-width, _) => length | auto
-// etc.
-```
-
-Here's an example using a `function` to align all `label`s to the left:
-![alt text](./assert/spacing-test3.png)
-
-<details>
-<summary>Code</summary>
-
-```typst
-#let ex1 = [
-    + #lorem(16)
-    + #lorem(16)
-      + #lorem(16)
-      + #lorem(16)
-        + #lorem(16)
-          + #lorem(16)
-        + #lorem(16)
-    + #lorem(16)
-    - #lorem(16)
-      - #lorem(16)
-      - #lorem(16)
-        - #lorem(16)
-        - #lorem(16)
-  ]
-  #table(
-    columns: (1fr, 1fr),
-    [
-      original
-      ```typ
-      #set enum(numbering: "(A).(I).(i)", full: true, number-align: left)
-      ```
-    ],
-    [
-      using indent
-      ```typ
-      #set enum(numbering: "(A).(I).(i)", full: true, number-align: left)
-      #let indent-f = (level, label-width, level-type) => {
-        if level >= 2 {
-          -(label-width.get)(level - 1) - (level-type.get)(level - 1).body-indent
-        }
-      }
-      #show: el.default-enum-list.with(indent: indent-f)
-      ```
-    ],
-
-    [
-      #set enum(numbering: "(A).(I).(i)", full: true, number-align: left)
-      #ex1
-    ],
-    [
-      #set enum(numbering: "(A).(I).(i)", full: true, number-align: left)
-      #let indent-f = (level, label-width, level-type) => {
-        if level >= 2 {
-          -(label-width.get)(level - 1) - (level-type.get)(level - 1).body-indent
-        }
-      }
-      #show: el.default-enum-list.with(indent: indent-f)
-      #ex1
-    ],
-  )
-```
-
-</details>
-
-### `default-enum` and `default-list` Methods
-
-These methods work the same as `default-enum-list`, but note that levels are counted independently. For example:
-
-```typst
-#show enum: el.default-enum.with(
-  fill: (red, blue, green),
-  weight: "bold",
-)
-#show list: el.default-list.with(fill: (yellow, orange))
-+ #lorem(5)
-  + $vec(1, 1, 1, 1)$ #lorem(5) // for enum, this is the second level (colored blue)
-  + #lorem(5)
-  - #lorem(5) // for list, this is the first level (colored yellow)
-  - #lorem(5)
-```
+![alt text](asserts/styles-el.png)
 
 <details>
-<summary>Output</summary>
-
-![alt text](./assert/enum-list.png)
-
-</details>
-
-## Using Counters
-
-- `level`: Gets the current item's level in `enum`.
-- `level-count`: Gets the current item's counter in `enum`.
-- `list-level`: Gets the current item's level in `list`.
-
-Here are some practical examples.
-
-### Formatting enumeration and list `body`
+<summary>Code:</summary>
 
 ```typst
-#show: el.default-enum-list.with(fill: (blue, red, green))
-#show enum: it => context {
-  text(
-    size: 15pt * calc.pow(0.9, el.level()),
-    fill: color.mix((red, 90% * calc.pow(0.6, el.level())), (blue, 20% * calc.pow(2.5, el.level()))),
-    it,
-  )
-}
-#set enum(numbering: "(1).(a).(i)")
-+ #lorem(50)
-+ #lorem(5) $mat(1, 0, 0; 0, 1, 0; 0, 0, 1)$
-  + #lorem(20)
+#let test = [
+  + #lorem(10)
+
+    #lorem(10)
     + #lorem(10)
-    + #lorem(15)
-  + #lorem(20)
-+ #lorem(20)
-```
 
-Effect:
-
-![alt text](./assert/body-test0.png)
-
-### Formatting `enum.numbering`
-
-Since `enum`'s `numbering` allows a `function`, you can use `level` to control the formatting of `label`s at different levels. For example:
-
-```typst
-#show: el.default-enum-list
-#let ff = (..num) => {
-  if el.level() == 1 {
-    let first = box(stroke: 1pt + blue, inset: 5pt, text(size: 20pt, fill: blue, weight: "bold", numbering(
-      "A",
-      ..num,
-    )))
-    let (height,) = measure(first)
-    move(dy: height / 3, first)
-  } else if el.level() == 2 {
-    numbering("(A).(a)", ..num)
-  } else {
-    text(fill: red, numbering("(A).(a).(1)", ..num))
-  }
-}
-
-#set enum(numbering: ff, full: false)
-
-+ #lorem(50)
-+ #lorem(5) $mat(1, 0, 0; 0, 1, 0; 0, 0, 1)$
-  + #lorem(20)
+      #lorem(10)
     + #lorem(10)
-    + #lorem(10)
-  + #lorem(20)
-+ #lorem(20)
-```
-
-Effect:
-
-![alt text](./assert/label-test3-2.png)
-
-<details>
-<summary>For fun</summary>
-
-```typst
-#import emoji: *
-#show: el.default-enum-list
-
-#let emoji = (alien, book.orange, butterfly, cloud.storm)
-#let ff = (..num) => context {
-  set text(fill: red)
-  let count = el.level-count()
-  let n = count.last()
-  let level = count.len()
-  if level == 1 {
-    if n in range(3) {
-      numbering("1.", ..num)
-    } else {
-      numbering("A.", n - 2)
-    }
-  } else if level == 2 {
-    emoji.at(calc.rem(n, emoji.len()) - 1)
-  } else {
-    numbering("a)", ..num)
-  }
-}
-#set enum(numbering: ff)
-+ 123
-+ 234
-+ ddd
-+ fff
-+ gggg
-  + 111
-  + 123
-    + ddd
-    + 111
-  + aaa
-  + fff
-  + dddd
-+ dddd
-  + 123
-  + aaa
-```
-
-Effect:
-
-![alt text](./assert/label-test3-3.png)
-
-</details>
-
-### Formatting `list.marker`
-
-Native `list`'s `marker` does not accept a `function`. But why not? As suggested in this issue:
-
-- [It would be great if I could do this through the `#list()` function's `marker` field using a function instead.](https://github.com/typst/typst/issues/619#issuecomment-2291338210)
-
-Now you can pass a `function` with the following format:
-
-```typst
-level => n => content
-```
-
-or
-
-```typst
-level => array
-```
-
-Here:
-
-- `level`: The relative nesting level of the `list`, cyclically used.
-- `n => content` or `array`: The `label` for each `item` in the same level.
-
-For example:
-
-```typst
-#import emoji: *
-#show: el.default-enum-list
-
-#let marker = level => {
-  if level == 1 {
-    ([#sym.suit.club.filled], [#sym.suit.spade.filled], [#sym.suit.heart.filled])
-  } else if level == 2 {
-    n => rotate(24deg * n, box(rect(stroke: 1pt + blue, height: 1em, width: 1em)))
-  } else {
-    [#sym.ballot.check.heavy]
-  }
-}
-#set list(marker: marker)
-- 123
-- 234
-  - 111
-  - 123
-    - ddd
-    - 111
-  - aaa
-  - fff
-  - dddd
-- dddd
-  - 123
-- aaa
-```
-
-Effect:
-
-![alt text](./assert/label-test4.png)
-
-## Other Styles for `enum` and `list`
-
-The `paragraph-enum-list` method (and `paragraph-enum`, `paragraph-list`) allows aligning `label`s with paragraphs. These methods have the same parameters as `default-enum-list`.
-For example:
-![alt text](./assert/par-test0.png)
-
-<details>
-<summary>Code</summary>
-
-```typst
-#set page(width: 350mm, height: auto, margin: 25pt)
-#let ex1 = [
-  + #lorem(16)
-  + #lorem(16)
-
-    #lorem(16)
-    + #lorem(16)
-    + #lorem(16)
-
-      #lorem(16)
-      + #lorem(16)
-
-        #lorem(16)
-      #lorem(16)
-      + #lorem(16)
-    + #lorem(16)
-  + #lorem(16)
-  - #lorem(16)
-    - #lorem(16)
-    - #lorem(16)
-      - #lorem(16)
-      - #lorem(16)
-  + #lorem(16)
-    - #lorem(16)
-
-      #lorem(16)
-    - #lorem(16)
-  + #lorem(16)
-  + + - - + #lorem(16)
+  + #lorem(10)
+  - #lorem(10)
+    - #lorem(10)
+  + - + - #lorem(10)
 ]
 #table(
   columns: (1fr, 1fr),
   [
     default-style
     ```typ
-    #set enum(numbering: "(A).(I).(i)", full: true)
-    #set par(first-line-indent: 2em)
+    #set enum(numbering: "(A).(I).(i)")
     #show: el.default-enum-list
     ```
   ],
   [
     paragraph-style
     ```typ
-    #set enum(numbering: "(A).(I).(i)", full: true)
-    #set par(first-line-indent: 2em)
+    #set enum(numbering: "(A).(I).(i)")
     #show: el.paragraph-enum-list
     ```
   ],
 
   [
-    #set enum(numbering: "(A).(I).(i)", full: true)
-    #set par(first-line-indent: 2em)
-    #show: el.default-enum-list
-    #ex1
+    #set enum(numbering: "(A).(I).(i)")
+    #show: el.default-enum-list.with(auto-base-level: true)
+    #test
   ],
   [
-    #set enum(numbering: "(A).(I).(i)", full: true)
-    #set par(first-line-indent: 2em)
-    #show: el.paragraph-enum-list
-    #ex1
+    #set enum(numbering: "(A).(I).(i)")
+    #show: el.paragraph-enum-list.with(auto-base-level: true)
+    #test
   ],
 )
 ```
 
 </details>
 
-## Using `set rule`
+The differences between `*-enum-list`, `*-enum`, and `*-list` are:
 
-In the current version of `typst` (0.13.1), we cannot use custom functions with `set rule`, which prevents us from retaining previously set property values when using `default-item-list`, `paragraph-item-list`, etc. Now, with the `elembic` package, we can achieve this functionality. To this end, we have repackaged `default-item-list` and `paragraph-item-list` into `set-default` and `set-paragraph` methods, which work the same as the original functions but retain previously set property values.
+- `*-enum-list` can uniformly configure both `enum` and `list`, while allowing separate configuration through parameters:
+  - `enum-config` for `enum`
+  - `list-config` for `list`
+- `*-enum` only configures `enum`, leaving nested `list` styles unchanged
+- `*-list` only configures `list`, leaving nested `enum` styles unchanged
 
-Here's how to use them:
+## Enum Numbering References
 
-Include the following at the beginning of your document:
-
-```typst
-#show: el.set-default() // need ()!!!
-```
-
-> Note: The key difference is that `set-default` requires **parentheses**!
+To enable this feature, add the following at the beginning of your document:
 
 ```typst
-#let item = [
-  + #lorem(10)
-  + #lorem(10)
-    + #lorem(10)
-    + + #lorem(10)
-      + #lorem(10)
-    + - #lorem(10)
-      - #lorem(10)
-  + #lorem(10)
-]
-
-#show: el.set-default()
-#set enum(numbering: "(1).(a).(i)")
-#item
-
-// change the label color
-#show: el.set-default(fill: (red, blue, green, auto))
-#item
-
-// change the label size
-#show: el.set-default(size: (20pt, 16pt, 14pt, auto))
-#item
-
-// change the body-indent and indent
-#show: el.set-default(body-indent: (auto, 0.5em), indent: (auto, 0em, 1em, auto))
-#item
-
-// use the default style
-#show: el.set-default()
-#item
+#show: el.config.ref
 ```
+
+> The `ref-enum` method from ver0.1.x will be deprecated in the future. Please use `config.ref` for this configuration.
+
+In the `enum` items you want to reference, label them with `<some-label>`, and then use `@some-label` to reference the enum number of that item.
+
+Example (taken from: https://github.com/typst/typst/issues/779#issuecomment-2702268234)
+
+![alt text](asserts/ref.png)
 
 <details>
-<summary>Output</summary>
+<summary>Code:</summary>
 
-![alt text](./assert/set-rule-test0.png)
+```typst
+#show: el.config.ref.with(supplement: "Item")
+#show link: set text(fill: orange)
+#set enum(numbering: "(E1)", full: true)
+#show: el.default-enum-list
+
+Group axioms:
++ Associativity <ax:ass>
++ Existence of identity element <ax:id>
++ Existence of inverse element <ax:inv>
+
+#set enum(numbering: "1.a", full: true)
+#set math.equation(numbering: "(1.1)")
+Another important list:
++ Newton's laws of motion are three physical laws that relate the motion of an object to the forces acting on it.
+  + A body remains at rest, or in motion at a constant speed in a straight line, unless it is acted upon by a force.
+  + The net force on a body is equal to the body's acceleration multiplied by its mass.
+  + If two bodies exert forces on each other, these forces have the same magnitude but opposite directions. <newton-third>
++ Another important force is hooks law: <hook1>
+  $ arrow(F) = -k arrow(Delta x). $ <eq:hook> #el.elabel[hook2]
++ $F = m a$ <eq:c> #el.elabel("eq:ma")
+
+We covered the three group axioms @ax:ass, @ax:id and @ax:inv.
+
+It is important to remember Newton's third law @newton-third[], and Hook's law @hook1. In @hook2 we gave Hook's law in @eq:hook. Note that @eq:ma[Conclusion] is a simlified version.
+```
+
+> For the label `<hook2>`, you cannot directly write `<hook2>`, as this would label `<hook2>` to the equation. Use the method `elabel` to label it. The same applies to `eq:c`.
+
+> The method `elabel(<some-label>)` is equivalent to `elabel("some-label")`, and can sometimes be written as `elabel[some-label]` (provided the latter can be parsed as a string).
 
 </details>
 
-> Note: Property values set via `#set enum` and `#set list` cannot be restored using `#show: el.set-default()`.
+## Resuming Enum Numbering
+
+- To enable this feature, set the `auto-resuming` parameter to `auto` in `*-enum-list` (or `*-enum`).
+- Use the `resume()` method to continue numbering from the previous level.
+
+  ```typst
+  #show: el.default-enum-list.with(auto-resuming: auto)
+  + #lorem(5)
+    + #lorem(5)
+    + #lorem(5)
+    #lorem(5)
+  + #lorem(5)
+    #el.resume() // -> 3
+    + #lorem(5)
+    + #lorem(5)
+  + #lorem(5)
+    + + #lorem(5)
+  ```
+
+  ![alt text](asserts/resume-1.png)
+- Alternatively, use `resume-label(<some-label>)` to label the enum to resume, then use `resume-list(<some-label>)` in the desired enum to continue numbering.
+
+  - If the following is added to the document:
+    ```typst
+    #show: el.config.ref-resume
+    ```
+
+    You can use `@some-label` instead of `resume-list(<some-label>)`.
+
+  ```typst
+  #show: el.config.ref-resume
+  #let auto-resume = el.default-enum-list.with(auto-resuming: auto)
+  #auto-resume[
+    + #lorem(5)
+      + #lorem(5)
+      + #lorem(5)
+      - #lorem(5)
+      #el.resume() // continue
+      + #lorem(5) #el.resume-label(<resume:demo>)
+    #lorem(5)
+    @resume:demo // resume the enum labelled with `resume:demo`
+    + #lorem(5)
+  ]
+  ```
+
+  ![alt text](asserts/resume-2.png)
+- Alternatively, use `auto-resume-enum(auto-resuming: true)[...]` to ensure all `enum` items within `[...]` continue numbering from the previous items. For example:
+
+  ```typst
+  #let resume-enum(doc) = el.default-enum-list(auto-resuming: auto)[
+    #el.auto-resume-enum(auto-resuming: true, doc)
+  ]
+  #resume-enum[
+    + #lorem(5)
+        + #lorem(5)
+        + #lorem(5)
+          + #lorem(5)
+        - #lorem(5)
+        + #lorem(5)
+          + #lorem(5)
+    #lorem(5)
+    + #lorem(5)
+  ]
+  ```
+
+  ![alt text](asserts/resume-3.png)
+
+## Terms-like Functionality
+
+Now, you can use the `item` method within a `list` to temporarily change the marker of the current item. For example:
+
+```typst
+#show: el.default-enum-list
+- #el.item[#sym.backslash.circle] #lorem(2)
+- #el.item[①] #lorem(2)
+```
+
+![alt text](asserts/terms.png)
+
+## Checklist
+
+- To enable this feature, set the `checklist` parameter to `true` in `*-enum-list` (or `*-list`), for example:
+
+  ```typst
+  #show: el.default-enum-list.with(checklist: true)
+  ```
+
+  Now you can use:
+
+  ```typst
+  #show: el.default-enum-list.with(checklist: true)
+  - [x] checked #lorem(2)
+  - [ ] unchecked #lorem(2)
+  - [/] incomplete #lorem(2)
+  - [-] canceled #lorem(2)
+  ```
+
+  ![alt text](asserts/checklist-1.png)
+- Alternatively, you can enable and configure checklist-related features using the `config.checklist` method:
+
+  ```typst
+  #show: el.config.checklist
+  ```
+
+  Example:
+
+  ```typst
+   #show: el.config.checklist
+   #show: el.default-enum-list
+   - [x] checked #lorem(2)
+   - [ ] unchecked #lorem(2)
+   - [/] incomplete #lorem(2)
+   - [-] canceled #lorem(2)
+  ```
+
+# Model <model>
+
+---
+
+The diagram below illustrates the model for `enum` and `list` in `itemize`.
+
+- `enum` and `list` consist of multiple items.
+- Each item is composed of a `label` and a `body`:
+  - `label`: The enum number or list marker.
+  - `body`: The content following the label.
+- Level (`level`): Starts from 1, and increments if an item contains nested items.
+- Item index (`n`): Starts from 1. The position of items in the same level.
+
+![alt text](asserts/mode-1.png)
+
+<details>
+<summary>The `label-indent` of default-enum-list:</summary>
+
+![alt text](asserts/mode-2.png)
+
+</details>
+
+Code Example:
+
+```typst
+#set align(center)
+#set par(justify: true)
+#block(width: 80%, stroke: 1pt + red, inset: 5pt)[
+  #set align(left)
+  #show: el.default-enum-list.with(
+    indent: 1em,
+    label-align: right,
+    label-width: 3em,
+    body-indent: 1em,
+    hanging-indent: 2em,
+    line-indent: 4em,
+    is-full-width: false,
+    enum-margin: 4em,
+    enum-spacing: 3em,
+    item-spacing: 2.5em,
+  )
+  Preceding Text. #lorem(30)
+
+  1. Item 1: Paragraph 1. #lorem(30)
+
+    Paragraph 2. #lorem(30)
+
+  100. Item 2. #lorem(30)
+
+  Following Text. #lorem(30)
+]
+```
+
+Output:
+
+![alt text](asserts/mode-code.png)
+
+## `*-enum-list` Methods
+
+The parameters for `default-enum-list` and `paragraph-enum-list` are similar.
+
+```typst
+#let default-enum-list(
+  doc: any,
+  // vertical spacing
+  indent: array | auto | function | length = auto,
+  body-indent: array | auto | function | length = auto,
+  label-indent: array | auto | function | length = auto,
+  is-full-width: bool = true,
+  enum-margin: array | auto | function | length = auto,
+  // horizontal spacing
+  enum-spacing: array | auto | dictionary | length = auto,
+  item-spacing: array | auto | function | length = auto,
+  // body style
+  hanging-indent: array | auto | function | length = auto,
+  line-indent: array | auto | function | length = auto,
+  body-format: dictionary | none = none,
+  // label style
+  ..args: arguments,
+  label-align: array | alignment | auto | function = auto,
+  label-baseline: auto | dictionary | function | length | "center" | "top" | "bottom" = auto,
+  label-width: array | auto | dictionary | function | length = auto,
+  label-format: array | function | none = none,
+
+  auto-base-level: bool = false,
+  checklist: array | bool = false,
+  auto-resuming: auto | bool | none = none,
+  auto-label-width: array | bool | "all" | "each" | "list" | "enum" | auto | none | = none,
+  // seperate setting of enum and list
+  enum-config: dictionary = (:),
+  list-config: dictionary = (:),
+)
+```
+
+This method allows customizing the *labels* and *bodies* of enums and lists by **level** and **item**.
+
+See [manual.pdf](doc/manual.pdf) and also the source code [manual.typ](doc/manual.typ) for more details.
+
+# Changelog and All Features
+
+---
+
+Breaking Change: ⚠️
+
+New Feature: 🆕 for ver0.2.x
+
+If you were using ver0.1.x, please read this section carefully when upgrading to ver0.2.x, as we have made some changes to the configuration methods.
+
+- Two styles of enum-list: Default (native typst) and Paragraph
+- Customize labels and bodies for enums and lists by level and item
+
+  - 🆕 Allow per-item configuration
+  - 🆕 Enable loop usage of array parameters: `LOOP`
+  - 🆕 If a property can be set at both the level and item, it allows passing a function
+
+    - The function format is now standardized as `it => ...`, where you can control it by accessing its properties, typically `it.level` and `it.n`
+      - More properties may be added in the future
+      - ⚠️ *Breaking change*: Properties related to horizontal spacing now follow this format, and additional properties like `it.label-width` (stores the actual maximum width of the label) and `it.e` (represents the current level's construction object: enum or list) are provided
+      - ⚠️ *Breaking change*: Deprecated `level`, `level-count`, and `list-level`
+        - Using these methods to configure enum and list properties may sometimes cause "layout did not converge within 5 attempts"
+        - In ver0.1.x, per-lavel and per-item settings for `enum.numbering` can now be combined with the `numbly` package and the `label-format` method
+  - 🆕 When using the `*-enum-list` method, you can separately configure enums and lists: `enum-config`, `list-config`
+  - Horizontal spacing settings: `indent`, `body-indent`, `label-indent`, `enum-margin` (`is-full-width`)
+  - Vertical spacing settings: `item-spacing`, `enum-spacing`
+  - Label customization
+
+    - `text-style` (..args)
+    - 🆕 `label-align`
+    - 🆕 `label-baseline`
+    - 🆕 `label-format`
+    - 🆕 `label-width`
+  - 🆕 Label alignment between items at different levels: `auto-label-width`
+  - `auto-base-level`
+
+    - ⚠️  *Breaking change*: When configuring enums and lists using `*-enum-list`, `*-enum`, or `*-list`, the current level is treated as 1
+      - Version 0.1.x used absolute levels
+    - To maintain compatibility with native behavior, the display of numbering and markers still follows absolute levels. Even if you reconfigure `enum.numbering` and `list.marker` in sublists, their display adheres to absolute level rules
+      - In this case, `auto-base-level` is set to `true`, treating the current level as 1
+  - Body formatting: `hanging-indent`, `line-indent`
+
+    - 🆕 `body-format`:
+      - `text-style`: `style`
+      - Border settings: `outer`, `inner`, `whole`: (`stroke`, `radius`, `outset`, `fill`, `inset`)
+    - Experimental: `item-format`
+- Enum numbering references: `elabel` and `config.ref`
+
+  - ⚠️ The `ref-enum` method from ver0.1.x will be deprecated in the future. Please use `config.ref` for configuration
+- Resume enum [`issue#1`](https://github.com/tianyi-smile/itemize/issues/1)
+
+  - 🆕 `auto-resuming`
+    - `none`: Disable resume functionality
+    - `auto`: Using the following methods:
+      - `resume`
+      - `resume-label`, `resume-list`
+      - `auto-resume-enum`
+      - `isolated-resume-enum` (independent sublists)
+    - Globally use `true` or `(true, false)` etc. to enable functionality; `false` means the functionality does not apply to this level
+- List enhancements
+
+  - Enhanced `list.marker`: Allows passing a `function` parameter in the form of `level => n => content` or `level => array`
+  - 🆕 Terms-like functionality: `item`
+  - 🆕 Checklist (from the `cheq` package, with minor enhancements and fixes for compatibility with `itemize`)
+    - Configure using `config.checklist`
+- Add manual
+- Fixes
+
+  - Alignment of labels and bodies
+  - 🆕 Block-level elements displayed on the same line ([`issue#4`](https://github.com/tianyi-smile/itemize/issues/4))
+
+    - Now better handles blank content in typst, ensuring correct alignment
+    - Due to limitations in typst, content within `context` cannot be retrieved in pure typst, making it impossible to correctly process cases like:
+      ```typst
+      #show: el.default-enum-list
+      + #context {block[#text.fill]}
+      ```
+
+      - Temporary solution: Use `layout(_ => {...})` instead of `context {...}`, e.g.,
+        ```typst
+        #show: el.default-enum-list
+        + #layout(_ => {block[#text.fill]})
+        ```
+    - Similarly, output content in `ref(...)` cannot be processed
+    - For block-level elements, our handling is more refined compared to native behavior:
+      - If a block-level element behaves like a paragraph (`par`, `pad`, `block`, `repeat`, `layout`), it is treated as paragraph behavior, ensuring alignment of labels and bodies within the same paragraph
+      - If it is not a paragraph (`block-equation`, `block-raw` `rect`, `table`, `grid`, `stack`, `heading`, `figure`, etc.), it follows native behavior
+      - [?] `align` here is paragraph behavior but cannot be correctly implemented (currently follows native behavior)
+  - Resolved some cases where "layout did not converge within 5 attempts" occurred
+
+    - However, this may lead to "maximum show rule depth exceeded" when nesting levels increase
+    - Mainly occurs with complex configurations of `label-format` and `body-format`
+  - Other fixes:
+
+    - Support for `enum.start`
+    - ⚠️ *Breaking change*: For compatibility with the native `list.marker` behavior, unlike the methods provided by `itemize`, the level here starts from 0 (see [`issue#3`](https://github.com/tianyi-smile/itemize/issues/3)).
+
+    - [X]  Fixed: Incorrect label display when mixing enums and lists with `*-enum` and `*-list` configurations
+      - Now, we rewrite the behavior of enums and lists, but `*-enum` does not configure list formatting, and vice versa
+    - [X]  Compatibility with typst 0.14 behavior (`[#6609]` and `[#6242]`)
 
 # Acknowledge
 
 - [@pacaunt](https://github.com/typst/typst/issues/1204#issuecomment-2909417340)
 - [@Andrew](https://forum.typst.app/t/can-i-use-show-rule-only-in-content-of-enum-but-not-numbering/4590/2)
+- [cheq](https://typst.app/universe/package/cheq)
 
 # License
 
 This project is licensed under the MIT License.
-
