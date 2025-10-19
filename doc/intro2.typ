@@ -20,13 +20,13 @@ The parameters for `default-enum-list` and `paragraph-enum-list` are similar. Th
 ```typst
 #let default-enum-list(
   doc: any,
-  // vertical spacing
+  // horizontal spacing
   indent: array | auto | function | length = auto,
   body-indent: array | auto | function | length = auto,
   label-indent: array | auto | function | length = auto,
   is-full-width: bool = true,
   enum-margin: array | auto | function | length = auto,
-  // horizontal spacing
+  // vertical spacing
   enum-spacing: array | auto | dictionary | length = auto,
   item-spacing: array | auto | function | length = auto,
   // body style
@@ -466,7 +466,7 @@ This method allows customizing the _labels_ and _bodies_ of enums and lists by *
     - `outer`: Wraps the item (including the label)
     - `inner`: Wraps the item (excluding the label)
     - If `whole`, `outer`, or `inner` is omitted, the default is to set the border for `outer`.
-    - Supported border properties (consistent with `box` borders): 
+    - Supported border properties (consistent with `box` borders):
       - `stroke`
       - `radius`
       - `outset`
