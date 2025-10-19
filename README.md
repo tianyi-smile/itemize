@@ -168,6 +168,8 @@ See [manual.pdf](doc/manual.pdf) and also the source code [manual.typ](doc/manua
 </tr>
 </table>
 
+
+
 *Click on the example image to jump to the code.*
 
 ## Features
@@ -495,13 +497,13 @@ The parameters for `default-enum-list` and `paragraph-enum-list` are similar.
 ```typst
 #let default-enum-list(
   doc: any,
-  // vertical spacing
+  // horizontal spacing
   indent: array | auto | function | length = auto,
   body-indent: array | auto | function | length = auto,
   label-indent: array | auto | function | length = auto,
   is-full-width: bool = true,
   enum-margin: array | auto | function | length = auto,
-  // horizontal spacing
+  // vertical spacing
   enum-spacing: array | auto | dictionary | length = auto,
   item-spacing: array | auto | function | length = auto,
   // body style
