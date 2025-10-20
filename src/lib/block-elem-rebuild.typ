@@ -217,7 +217,7 @@
     number,
     left-inset: inset,
     right-inset: inset,
-    inset: get_abs-len(text-size, inset), 
+    inset: get_abs-len(text-size, inset),
     elem-func,
     // text-size: text-size,
   )
@@ -456,7 +456,7 @@
             body: [#func-seq(body.slice(0, index))#new-child.body#rebuild-label(
                 func-seq(body.slice(index + 1, body.len())),
                 _label,
-              )], 
+              )],
             inline: new-child.inline,
           )
         } else {
@@ -518,6 +518,9 @@
         line,
         polygon,
         outline,
+        // should need to be handled ???
+        terms, // ??
+        terms.item, // ??
       )
   ) {
     // 暂时不处理 (native)
