@@ -310,7 +310,7 @@
       let cur = if it.start == auto { 0 } else { it.start - 1 }
       for i in range(it.children.len()) {
         let child = it.children.at(i)
-        if child.has("number") and child.number != none {
+        if child.has("number") and child.number not in (none, auto) {
           numbers.push(child.number)
           cur = child.number
         } else {
@@ -1556,3 +1556,4 @@
     state("_parent-hanging-indent_and_line-indent").update(pop)
   }
 }
+
