@@ -17,7 +17,7 @@
     + (el.LOOP,)
 )
 
-#let tree-marker = (none, [$times.circle$], [$ast.circle$], [$star.filled$], [$times.div$])
+#let tree-marker = ([$times.div$], [$times.circle$], [$ast.circle$], [$star.filled$])
 #let tree-list = el.default-list.with(
   indent: ((0pt,),),
   fill: colors,
@@ -43,7 +43,7 @@
         if it.level == 1 {
           auto
         } else {
-          if it.n == it.n-last and it.n-last >= 2 {
+          if (it.n == it.n-last and it.n-last >= 2) {
             auto
           } else {
             (left: 1pt)
@@ -54,10 +54,15 @@
         if it.level == 1 {
           auto
         } else {
-          if it.n == it.n-last - 1 {
-            (left: -.5em + 1pt, top: .8em, bottom: .7em)
+          if it.n-last == 1 {
+            // only one item
+            (left: -.5em + 1pt, top: .8em - 1pt, bottom: -100%)
           } else {
-            (left: -.5em + 1pt, top: .8em)
+            if it.n == it.n-last - 1 {
+              (left: -.5em + 1pt, top: .8em - 1pt, bottom: .7em)
+            } else {
+              (left: -.5em + 1pt, top: .8em - 1pt)
+            }
           }
         }
       },
@@ -84,6 +89,7 @@
     - Hilbert space
       - Riesz representation theorem
       - Hilbert--Schmidt theorem
-  - Banach Algbra
+  - Banach Algebra
+    - ...
     - ...
 ]
