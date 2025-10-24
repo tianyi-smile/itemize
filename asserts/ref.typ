@@ -23,6 +23,6 @@ Another important list:
   $ arrow(F) = -k arrow(Delta x). $ <eq:hook> #el.elabel[hook2]
 + $F = m a$ <eq:c> #el.elabel("eq:ma")
 
-We covered the three group axioms @ax:ass, @ax:id and @ax:inv.
+We covered the three group axioms @ax:ass[], @ax:id[] and @ax:inv[].
 
-It is important to remember Newton's third law @newton-third[], and Hook's law @hook1. In @hook2 we gave Hook's law in @eq:hook. Note that @eq:ma[Conclusion] is a simlified version.
+It is important to remember Newton's third law @newton-third[], and Hook's law @hook1. In @hook2 we gave Hook's law in @eq:hook. Note that @eq:ma[Conclusion] is a simplified version.
