@@ -308,7 +308,7 @@ Another important list:
 
 We covered the three group axioms @ax:ass, @ax:id and @ax:inv.
 
-It is important to remember Newton's third law @newton-third[], and Hook's law @hook1. In @hook2 we gave Hook's law in @eq:hook. Note that @eq:ma[Conclusion] is a simlified version.
+It is important to remember Newton's third law @newton-third[], and Hook's law @hook1. In @hook2 we gave Hook's law in @eq:hook. Note that @eq:ma[Conclusion] is a simplified version.
 ```
 
 > For the label `<hook2>`, you cannot directly write `<hook2>`, as this would label `<hook2>` to the equation. Use the method `elabel` to label it. The same applies to `eq:c`.
@@ -521,7 +521,7 @@ The parameters for `default-enum-list` and `paragraph-enum-list` are similar.
   checklist: array | bool = false,
   auto-resuming: auto | bool | none = none,
   auto-label-width: array | bool | "all" | "each" | "list" | "enum" | auto | none | = none,
-  // seperate setting of enum and list
+  // separate setting of enum and list
   enum-config: dictionary = (:),
   list-config: dictionary = (:),
 )
@@ -553,7 +553,7 @@ If you were using ver0.1.x, please read this section carefully when upgrading to
       - ⚠️ *Breaking change*: Properties related to horizontal spacing now follow this format, and additional properties like `it.label-width` (stores the actual maximum width of the label) and `it.e` (represents the current level's construction object: enum or list) are provided
       - ⚠️ *Breaking change*: Deprecated `level`, `level-count`, and `list-level`
         - Using these methods to configure enum and list properties may sometimes cause "layout did not converge within 5 attempts"
-        - In ver0.1.x, per-lavel and per-item settings for `enum.numbering` can now be combined with the `numbly` package and the `label-format` method
+        - In ver0.1.x, per-level and per-item settings for `enum.numbering` can now be combined with the `numbly` package and the `label-format` method
   - 🆕 When using the `*-enum-list` method, you can separately configure enums and lists: `enum-config`, `list-config`
   - Horizontal spacing settings: `indent`, `body-indent`, `label-indent`, `enum-margin` (`is-full-width`)
   - Vertical spacing settings: `item-spacing`, `enum-spacing`
