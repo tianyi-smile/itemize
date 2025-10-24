@@ -24,7 +24,7 @@ If you were using ver0.1.x, please read this section carefully when upgrading to
       - [!] *Breaking change*: Properties related to horizontal spacing now follow this format, and additional properties like `it.label-width` (stores the actual maximum width of the label) and `it.e` (represents the current level's construction object: enum or list) are provided
       - [!] *Breaking change*: Deprecated `level`, `level-count`, and `list-level`
         - Using these methods to configure enum and list properties may sometimes cause "layout did not converge within 5 attempts"
-        - In ver0.1.x, per-lavel and per-item settings for `enum.numbering` can now be combined with the `numbly` package and the `label-format` method
+        - In ver0.1.x, per-level and per-item settings for `enum.numbering` can now be combined with the `numbly` package and the `label-format` method
   - [N] When using the `*-enum-list` method, you can separately configure enums and lists: `enum-config`, `list-config`
   - Horizontal spacing settings: `indent`, `body-indent`, `label-indent`, `enum-margin` (`is-full-width`)
   - Vertical spacing settings: `item-spacing`, `enum-spacing`

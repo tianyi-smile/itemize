@@ -10,7 +10,7 @@
   #show: el.config.ref
   ```
 
-- [>] Note. The method `ref-enum` in `itemize 0.1.x` will be deprecated in the furture; please use `config.ref` instead.
+- [>] Note. The method `ref-enum` in `itemize 0.1.x` will be deprecated in the future; please use `config.ref` instead.
 
 In the enum item you want to reference, label it with `<some-label>`, and then use `@<some-label>` to reference the enum number of that item.
 
@@ -216,7 +216,7 @@ In a `list`, you can use the method `item` to change the current list marker. Fo
 #example(
   ```
   #show: el.default-list
-  - #el.item[#sym.backslash.circle] #lorem(2)
+  - #el.item[#sym.ast.square] #lorem(2)
   ```,
 )
 #example(
@@ -291,7 +291,7 @@ This feature is essentially the same as the package `cheq` . However, in native 
         )
         - [x] #lorem(5)
         - [/] #lorem(5)
-        - #el.item[#sym.times.circle.big] #lorem(5)
+        - #el.item[$dot.square$] #lorem(5)
         ```,
       )
     - `enable: array | bool = true`: Whether to enable the checklist feature.

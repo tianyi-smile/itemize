@@ -61,7 +61,7 @@ The `itemize` package allows users to easily customize and format enumerations a
 #import "@preview/itemize:0.2.0" as el
 ```
 
-Use the method `default-enum-list` to override the native behaviour of `enum` and `list` by adding the following at the beginning of your document:
+Use the method `default-enum-list` to override the native behavior of `enum` and `list` by adding the following at the beginning of your document:
 
 ```typst
 #show: el.default-enum-list

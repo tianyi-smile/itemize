@@ -44,7 +44,7 @@ The parameters for `default-enum-list` and `paragraph-enum-list` are similar. Th
   checklist: array | bool = false,
   auto-resuming: auto | bool | none = none,
   auto-label-width: array | bool | "all" | "each" | "list" | "enum" | auto | none | = none,
-  // seperate setting of enum and list
+  // separate setting of enum and list
   enum-config: dictionary = (:),
   list-config: dictionary = (:),
 )
@@ -77,7 +77,7 @@ This method allows customizing the _labels_ and _bodies_ of enums and lists by *
     + #lorem(5)
     ```,
   )
-- `label-align`: The `alignment` that enum numbers and list markers should have. Unless `auto` is used, it cannot be be changed via `#set enum(number-align: ...)`. For native `list`, it has no such property (default is `right`).
+- `label-align`: The `alignment` that enum numbers and list markers should have. Unless `auto` is used, it cannot be changed via `#set enum(number-align: ...)`. For native `list`, it has no such property (default is `right`).
 
   #example(
     ```
@@ -865,28 +865,28 @@ When using the `*-enum-list` method, you can configure `enum` and `list` separat
     [
       #import "@preview/itemize:0.1.2"
       #show: itemize.default-enum-list
-      + $vec(1, 1, 1)$
-        + #lorem(4)
+      - $vec(1, 1, 1)$
+        - #lorem(4)
           #show: itemize.default-enum-list.with(fill: (red, blue, yellow))
           // colored by yellow
-          + #lorem(4)
-            + #lorem(4)
-          + #lorem(4)
-        + #lorem(4)
-      + #lorem(4)
+          - #lorem(4)
+            - #lorem(4)
+          - #lorem(4)
+        - #lorem(4)
+      - #lorem(4)
     ],
     [
       #show: el.default-enum-list
-      + $vec(1, 1, 1)$
-        + #lorem(4)
+      - $vec(1, 1, 1)$
+        - #lorem(4)
           #show: el.default-enum-list.with(fill: (red, blue, yellow))
           // colored by red
-          + #lorem(4)
+          - #lorem(4)
             // colored by blue
-            + #lorem(4)
-          + #lorem(4)
-        + #lorem(4)
-      + #lorem(4)
+            - #lorem(4)
+          - #lorem(4)
+        - #lorem(4)
+      - #lorem(4)
     ],
   )
   ```,
