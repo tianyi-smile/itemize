@@ -1,4 +1,4 @@
-#import "../lib.typ" as el
+#import "@preview/itemize:0.2.0" as el
 
 #import "@preview/catppuccin:1.0.1": get-flavor
 #set page(height: auto, margin: 25pt, width: 12cm)
@@ -16,8 +16,9 @@
   ).map(c => flavor.colors.at(c).rgb)
     + (el.LOOP,)
 )
-
-#let tree-marker = ([$times.div$], [$times.circle$], [$ast.circle$], [$star.filled$])
+#let timeso = if sys.version >= version(0, 14, 0) { [$times.o$] } else [$times.circle$]
+#let asto = if sys.version >= version(0, 14, 0) { [$ast.o$] } else [$ast.circle$]
+#let tree-marker = ([$times.div$], timeso, asto, [$star.filled$])
 #let tree-list = el.default-list.with(
   indent: ((0pt,),),
   fill: colors,
@@ -79,7 +80,7 @@
       - Arzela--Ascoli theorem
     - Banach space
       - Hanh--Banach theorem
-        - Banach--Mazur thorem
+        - Banach--Mazur theorem
         - Banach--Alaoglu theorem
       - Baire Category theorem
         - Banach--Steinhaus theorem

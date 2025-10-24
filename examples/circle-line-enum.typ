@@ -1,4 +1,4 @@
-#import "../lib.typ" as el
+#import "@preview/itemize:0.2.0" as el
 #set page(height: auto, margin: 25pt, width: 12cm)
 #set par(justify: true)
 #let circle-line-enum = el.default-enum-list.with(

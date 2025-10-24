@@ -1,4 +1,4 @@
-#import "../lib.typ" as el
+#import "@preview/itemize:0.2.0" as el
 
 #import "@preview/shadowed:0.2.0": shadowed
 
