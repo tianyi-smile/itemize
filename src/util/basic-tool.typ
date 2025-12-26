@@ -463,7 +463,7 @@
 /// Define border arguments for styling.
 ///
 /// -> any
-#let border-args = ("stroke", "radius", "outset", "fill", "inset", "clip")
+#let border-args = ("stroke", "radius", "outset", "fill", "inset", "clip", "breakable")
 
 
 /// Parse the body format with additional parameters.
