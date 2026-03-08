@@ -21,13 +21,15 @@
 ///
 /// Returns:
 ///   A box element representing an unchecked checkbox
-#let unchecked(fill: auto, radius: .1em, solid: none) = context box(
-  stroke: .05em + get-color(fill),
-  height: 0.8em,
-  width: 0.8em,
-  radius: radius,
-  fill: solid,
-)
+#let unchecked(fill: auto, radius: .1em, solid: none) = context [
+  #set text(dir: ltr, baseline: 0pt)
+  #box(
+    stroke: .05em + get-color(fill),
+    height: 0.8em,
+    width: 0.8em,
+    radius: radius,
+    fill: solid,
+  )]
 
 /// Creates a checked checkbox symbol with checkmark
 ///
@@ -38,20 +40,25 @@
 ///
 /// Returns:
 ///   A box element representing a checked checkbox
-#let checked(fill: auto, radius: .1em, solid: none) = context box(
-  stroke: .05em + get-color(fill),
-  height: 0.8em,
-  width: 0.8em,
-  radius: radius,
-  fill: solid,
-  align(right + top, {
-    box(move(dy: .43em, dx: 0.04em, rotate(45deg, reflow: false, line(length: 0.26em, stroke: get-color(fill) + .1em))))
-    box(move(dy: .41em, dx: -0.08em, rotate(-45deg, reflow: false, line(
-      length: 0.48em,
-      stroke: get-color(fill) + .1em,
-    ))))
-  }),
-)
+#let checked(fill: auto, radius: .1em, solid: none) = context [
+  #set text(dir: ltr, baseline: 0pt)
+  #box(
+    stroke: .05em + get-color(fill),
+    height: 0.8em,
+    width: 0.8em,
+    radius: radius,
+    fill: solid,
+    align(right + top, {
+      box(move(dy: .43em, dx: 0.04em, rotate(45deg, reflow: false, line(
+        length: 0.26em,
+        stroke: get-color(fill) + .1em,
+      ))))
+      box(move(dy: .41em, dx: -0.08em, rotate(-45deg, reflow: false, line(
+        length: 0.48em,
+        stroke: get-color(fill) + .1em,
+      ))))
+    }),
+  )]
 
 /// Creates an incomplete/partially-checked checkbox symbol
 ///
@@ -59,15 +66,17 @@
 ///   - fill (auto, color): Stroke and fill color (default: auto)
 ///   - radius (length): Corner radius (default: 0.1em)
 ///   - solid (none, color): Background fill (default: none)
-#let incomplete(fill: auto, radius: .1em, solid: none) = context box(
-  stroke: .05em + get-color(fill),
-  height: 0.8em,
-  width: 0.8em,
-  radius: radius,
-  clip: true,
-  fill: solid,
-  align(left, box(fill: get-color(fill), height: 1em, width: .42em)),
-)
+#let incomplete(fill: auto, radius: .1em, solid: none) = context [
+  #set text(dir: ltr, baseline: 0pt)
+  #box(
+    stroke: .05em + get-color(fill),
+    height: 0.8em,
+    width: 0.8em,
+    radius: radius,
+    clip: true,
+    fill: solid,
+    align(left, box(fill: get-color(fill), height: 1em, width: .42em)),
+  )]
 
 
 /// Creates a canceled/disabled checkbox symbol
@@ -76,20 +85,26 @@
 ///   - fill (auto, color): Stroke color (default: auto)
 ///   - radius (length): Corner radius (default: 0.1em)
 ///   - solid (none, color): Background fill (default: none)
-#let canceled(fill: auto, radius: .1em, solid: none) = context box(
-  stroke: .05em + get-color(fill),
-  height: 0.8em,
-  width: 0.8em,
-  radius: radius,
-  align(center + horizon, box(height: .125em, width: 0.55em, fill: get-color(fill))),
-  fill: solid,
-)
+#let canceled(fill: auto, radius: .1em, solid: none) = context [
+  #set text(dir: ltr, baseline: 0pt)
+  #box(
+    stroke: .05em + get-color(fill),
+    height: 0.8em,
+    width: 0.8em,
+    radius: radius,
+    align(center + horizon, box(height: .125em, width: 0.55em, fill: get-color(fill))),
+    fill: solid,
+  )]
 
 /// Creates small centered text for symbol rendering
 ///
 /// Parameters:
 ///   - body (content): Text content to display
-#let small-text(body) = box(width: 0.8em, height: 0.8em)[#align(center + horizon)[#text.with(size: 0.8em, top-edge: "bounds", bottom-edge: "bounds")(body)]]
+#let small-text(body) = box(width: 0.8em, height: 0.8em)[#align(center + horizon)[#text.with(
+  size: 0.8em,
+  top-edge: "bounds",
+  bottom-edge: "bounds",
+)(body)]]
 
 
 /// Creates a character-based symbol (e.g., emoji or letter)

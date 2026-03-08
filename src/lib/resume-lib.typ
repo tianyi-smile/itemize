@@ -1,25 +1,25 @@
 #import "../util/identifier.typ" as id
 
 #import "../util/level-state.typ" as lst
-
+#import "../util/version.typ": package-version
 
 /// Default dictionary value for tracking counters and levels.
 #let default-counter-dic-value = (level: 0, counter: (), resume: (:))
 
 /// State variable to track counters and levels (Uses absolute-level).
-#let item-counter-dic = state("_item-counter-dic", default-counter-dic-value) // use absolute-level
+#let item-counter-dic = state("_item-counter-dic" + package-version, default-counter-dic-value) // use absolute-level
 
 /// State variable to track if resuming is active (auto-case).
-#let resume-list = state("_is-resuming", false) 
+#let resume-list = state("_is-resuming" + package-version, false) 
 
 /// State variable to track if sublist resuming is active (auto-case: for sublist (auto-resume-enum)).
-#let resume-sublist = state("_is-resuming-sublist", false) 
+#let resume-sublist = state("_is-resuming-sublist" + package-version, false) 
 
 /// State variable to track the current resume label (label-case).
-#let resume-label = state("_resume-label", none) 
+#let resume-label = state("_resume-label" + package-version, none) 
 
 /// State variable to track the enum label to resume.
-#let resume-label-list = state("_is-resuming-label", none) // label the enum to resume
+#let resume-label-list = state("_is-resuming-label" + package-version, none) // label the enum to resume
 
 /// Internal function to update the counter in a dictionary.
 ///
