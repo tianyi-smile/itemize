@@ -102,7 +102,7 @@
 /// -> dictionary
 #let get_current-par-args(it) = (
   // first-line-indent: dictionary | length = (amount: 0pt, all: false),
-  // hanging-indent: length = 0pt,
+  // hanging-indent: it.hanging-indent,
   justify: it.justify,
   leading: it.leading,
   linebreaks: it.linebreaks,
