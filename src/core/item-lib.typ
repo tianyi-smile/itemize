@@ -135,13 +135,13 @@
 
 /// Reference formatter for enumeration items (supports `@` syntax).
 ///
-///   - it (): The reference target
-///   - full (auto,bool): Whether to show full hierarchical numbering.
+///   - it: The reference target
+///   - full: Whether to show full hierarchical numbering.
 ///     Default: `auto` (inherits from enum context)
-///   - numbering (str,function,auto): Numbering pattern or formatter.
+///   - numbering: Numbering pattern or formatter.
 ///     Default: `auto` (inherits from enum context)
-///   - supplement (auto,content): Supplemental content for reference.
-///   - no-label-warning (bool): Show warning for missing labels.
+///   - supplement: Supplemental content for reference.
+///   - no-label-warning : Show warning for missing labels.
 ///
 /// -> content
 #let ref-enum(it, full: auto, numbering: auto, supplement: auto, no-label-warning: false) = {

@@ -17,7 +17,7 @@
 }
 #let elem-enum-list = e.element.declare(
   "elem_enum-list",
-  prefix: "@preview/itemize,v2",
+  prefix: "@preview/itemize,v3",
   doc: "Element of enum-list",
   display: it => {
     ex-el.get-list-enum-method(
@@ -45,6 +45,13 @@
       it.checklist,
       it.enum-config, //
       it.list-config, //
+      it.ref-numbering, //0.3.0
+      it.step, //0.3.0
+      it.supplement, //0.3.0
+      it.tight-item-mode, //0.3.0
+      it.tight-mode, //0.3.0
+      it.label-inset, //0.3.0
+      it.first-line-indent, //0.3.0
       ..it.args,
     )
   },
@@ -71,6 +78,13 @@
     field("auto-resuming", types.any, default: none, folds: false),
     field("auto-label-width", types.any, default: none, folds: false),
     field("checklist", bool, default: false, folds: false),
+    field("ref-numbering", types.any, default: none, folds: false),
+    field("supplement", types.any, default: none, folds: false),
+    field("tight-mode", types.any, default: none, folds: false),
+    field("tight-item-mode", types.any, default: none, folds: false),
+    field("step", types.any, default: none, folds: false),
+    field("label-inset", types.any, default: none, folds: false),
+    field("first-line-inset", types.any, default: none, folds: false),
     field(
       "enum-config",
       types.wrap(types.union(dictionary, auto), fold: fold),
@@ -110,9 +124,13 @@
   label-baseline: auto, //
   enum-config: (:),
   list-config: (:),
-  // auto-resuming: none,
-  // auto-label-width: none,
-  // checklist: false,
+  ref-numbering: none, /** new ver0.3.0 */
+  supplement: auto, /** new ver0.3.0 */
+  tight-mode: auto, /** new ver0.3.0 */
+  tight-item-mode: auto, /** new ver0.3.0 */
+  step: auto, /** new ver0.3.0 */
+  label-inset: auto, /** new ver0.3.0 */
+  first-line-inset: auto, /** new ver0.3.0 */
 )
 #let set_elem-enum-list(
   elem: "both", // "both", "list", "enum"
@@ -138,6 +156,13 @@
   enum-config: none, //
   list-config: none, //
   checklist: false,
+  ref-numbering: none, /** new ver0.3.0 */
+  supplement: none, /** new ver0.3.0 */
+  tight-mode: none, /** new ver0.3.0 */
+  tight-item-mode: none, /** new ver0.3.0 */
+  step: none, /** new ver0.3.0 */
+  label-inset: none, /** new ver0.3.0 */
+  first-line-inset: none, /** new ver0.3.0 */
   ..args,
 ) = doc => {
   let args-none = (
@@ -159,6 +184,11 @@
       and label-baseline == none
       and enum-config == none
       and list-config == none
+      and tight-mode == none
+      and tight-item-mode == none
+      and step == none
+      and label-inset == none
+      and first-line-inset == none
       and args.named().len() == 0
   )
   let dic = {
@@ -210,6 +240,21 @@
     if auto-base-level != none {
       (auto-base-level: auto-base-level)
     }
+    if tight-mode != none {
+      (tight-mode: tight-mode)
+    }
+    if tight-item-mode != none {
+      (tight-item-mode: tight-item-mode)
+    }
+    if step != none {
+      (step: step)
+    }
+    if label-inset != none {
+      (label-inset: label-inset)
+    }
+    if first-line-inset != none {
+      (first-line-inset: first-line-inset)
+    }
     if enum-config not in (none, (), (:)) {
       (enum-config: enum-config)
     }
@@ -222,6 +267,8 @@
     auto-resuming: auto-resuming,
     auto-label-width: auto-label-width,
     checklist: checklist,
+    ref-numbering: ref-numbering,
+    supplement: supplement,
     ..if args-none { default-setting } else { dic },
     args: if args-none { auto } else { args.named() },
   )
@@ -233,60 +280,10 @@
 /// Configures default styling for `enum` and `list`.
 ///
 /// See `default-enum-list`.
-///
-/// - doc (content): The document to process.
-/// - indent (length, array, function, auto): The indentation level.
-/// - body-indent (length, array, function, auto): The body indentation level.
-/// - label-indent (length, array, function, auto): The label indentation level.
-/// - is-full-width (bool): Whether the element spans full width.
-/// - item-spacing (length, array, function, auto): Spacing between items.
-/// - enum-spacing (length, array, dictionary, auto): Spacing specific to enumerations.
-/// - enum-margin (length, array, auto, function): Margin around enumerations.
-/// - hanging-indent (length, array, function, auto): The hanging indentation level.
-/// - line-indent (length, array, function, auto): The line indentation level.
-/// - label-width (auto, length, dictionary, array, function): The width of the label.
-/// - body-format (none, dictionary): Formatting for the body.
-/// - label-format (none, function, array): Formatting for the label.
-/// - item-format (function, array, none): Formatting for individual items.
-/// - auto-base-level (bool): Whether to auto-detect the base level.
-/// - label-align (alignment, array, auto, function): Alignment for the label.
-/// - label-baseline (auto, length, array, function, dictionary, "center", "top", "bottom"): Baseline alignment for the label.
-/// - auto-resuming (none, auto, array, bool): Whether to auto-resume the element.
-/// - auto-label-width (none, auto, array, "all", "each", "list", "enum"): Whether to auto-adjust the label width.
-/// - checklist (boolean, array): Whether the list is a checklist.
-/// - enum-config (dictionary): Configuration for enumerations.
-/// - list-config (dictionary): Configuration for lists.
-/// - args (any): Used to format the text of the numbering. Accepts all named parameters of the `text` function
-/// -> content
 #let set-default = set_elem-enum-list.with(hanging-type: "classic", elem: "both")
 
 /// Configures paragraph styling for `enum` and `list`.
 ///
 /// See `default-enum-list`.
-///
-/// - doc (content): The document to process.
-/// - indent (length, array, function, auto): The indentation level.
-/// - body-indent (length, array, function, auto): The body indentation level.
-/// - label-indent (length, array, function, auto): The label indentation level.
-/// - is-full-width (bool): Whether the element spans full width.
-/// - item-spacing (length, array, function, auto): Spacing between items.
-/// - enum-spacing (length, array, dictionary, auto): Spacing specific to enumerations.
-/// - enum-margin (length, array, auto, function): Margin around enumerations.
-/// - hanging-indent (length, array, function, auto): The hanging indentation level.
-/// - line-indent (length, array, function, auto): The line indentation level.
-/// - label-width (auto, length, dictionary, array, function): The width of the label.
-/// - body-format (none, dictionary): Formatting for the body.
-/// - label-format (none, function, array): Formatting for the label.
-/// - item-format (function, array, none): Formatting for individual items.
-/// - auto-base-level (bool): Whether to auto-detect the base level.
-/// - label-align (alignment, array, auto, function): Alignment for the label.
-/// - label-baseline (auto, length, array, function, dictionary, "center", "top", "bottom"): Baseline alignment for the label.
-/// - auto-resuming (none, auto, array, bool): Whether to auto-resume the element.
-/// - auto-label-width (none, auto, array, "all", "each", "list", "enum"): Whether to auto-adjust the label width.
-/// - checklist (boolean, array): Whether the list is a checklist.
-/// - enum-config (dictionary): Configuration for enumerations.
-/// - list-config (dictionary): Configuration for lists.
-/// - args (any): Used to format the text of the numbering. Accepts all named parameters of the `text` function
-/// -> content
 #let set-paragraph = set_elem-enum-list.with(hanging-type: "paragraph", elem: "both")
 

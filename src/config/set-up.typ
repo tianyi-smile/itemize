@@ -80,12 +80,23 @@
 
 /// Configure enum reference settings for a document.
 /// - doc (any): The document to apply the reference settings to.
-/// - full (auto, bool, "ref"): Default is `auto`, using `enum.full`. 
-///   - `true` displays the full number (including parent levels); 
+/// - full (auto, bool, "ref"): Default is `auto`, using `enum.full`.
+///   - `true` displays the full number (including parent levels);
 ///   - `false` displays only the current item's number;
 ///   - `"ref"` displays the reference number items in a relative manner (i.e., If the current item and the reference item have the same parent level, the same parent level is not displayed.)
 /// - numbering (auto, function, str): Numbering pattern or formatter. Default is `auto`, using the `numbering` of the referenced `enum`. You can customize the style of the referenced item number.
-/// - supplement (auto, content): Supplemental content for the reference. (default: `auto`, do not display).
+/// - supplement (content, dictionary, function, array, auto): Supplemental content for the reference. (default: `auto`, do not display).
+///   - `auto`: No supplementary content will be added.
+///   - `content`: Uses `content` as supplementary content. The effect is that when referencing enum or list labels, `content` is added before the label.
+///   - `dictionary`: The keys are: `prefix`, `suffix`, with values of `content`. The effect is that when referencing enum (list) labels, `prefix` content is added before the label, and `suffix` content is added after the label.
+///   - `function`: The form is `it => any`, where `it` is a dictionary containing the following keys:
+///       - `body`: The referenced enum or list label
+///       - `level`: The level of the item. (Only work for referencing enum labels.)
+///       - `n`: The index of the item. (Only work for referencing enum labels.)
+///       - `tag`: The tag of the item. (Only work for referencing enum labels.)
+///       - `enum-tag`: The tag of the enum or list. (Only work for referencing enum labels.)
+///       - `n-last`: The index of the last item. (Only work for referencing enum labels.)
+///   - `array`: Sets `supplement` by level. (Only work for referencing enum labels.)
 /// - no-label-warning (bool): Whether to disable the warning when the reference label is not found (default: false); note that this applies to all references in the document, so we recommend _not_ setting it to `true`.
 /// -> any
 #let config-ref(doc, full: auto, numbering: auto, supplement: auto, no-label-warning: false) = {

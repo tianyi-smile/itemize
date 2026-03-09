@@ -929,13 +929,13 @@
           #let (par-line-indent, par-hanging-indent) = {
             if hanging-type == "classic" {
               (
-                _line-indent + par.first-line-indent.amount,
-                _hanging-indent + par.hanging-indent,
+                _line-indent,
+                _hanging-indent,
               )
             } else if hanging-type == "paragraph" {
               (
-                _line-indent + par.first-line-indent.amount - max-width - _body-indent,
-                -max-width - _body-indent + _hanging-indent + par.hanging-indent,
+                _line-indent - max-width - _body-indent,
+                -max-width - _body-indent + _hanging-indent,
               )
             }
           }
@@ -2014,13 +2014,13 @@
           #let (par-line-indent, par-hanging-indent) = {
             if hanging-type == "classic" {
               (
-                _line-indent + par.first-line-indent.amount,
-                _hanging-indent + par.hanging-indent,
+                _line-indent,
+                _hanging-indent,
               )
             } else if hanging-type == "paragraph" {
               (
-                _line-indent + par.first-line-indent.amount - max-width - _body-indent,
-                -max-width - _body-indent + _hanging-indent + par.hanging-indent,
+                _line-indent - max-width - _body-indent,
+                -max-width - _body-indent + _hanging-indent,
               )
             }
           }
