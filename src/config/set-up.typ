@@ -1,6 +1,7 @@
 #import "../core/item-lib.typ": ref-enum
 #import "../core/feat-item-lib.typ": ref-resume-list
-#import "../util/level-state.typ": default-setting-checklist, setting-checklist
+#import "../util/level-state.typ": auto-detect-tight, default-setting-checklist, setting-checklist
+#import "../util/identifier.typ": paragraph-ID
 
 
 /// Configure checklist settings for a document.
