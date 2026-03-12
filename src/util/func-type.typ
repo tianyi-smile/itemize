@@ -78,13 +78,13 @@
   return measure(e) == (0pt, 0pt)
 }
 
-/// Checks if the content is blank. (also including `v` and `place`).
+/// Checks if the content is blank. (also including `v`).
 #let is_blank-elem(e) = {
   // `pagebreak()` is illegel
   return (
     e in ([ ], parbreak(), colbreak(), auto, none, [])
-      or e.func() in (func-counter-update, func-state-update, metadata)
-      or e.func() in (v, place) // ???
+      or e.func() in (func-counter-update, func-state-update, metadata, v)
+      // or e.func() in (v, ) // ???
   )
 }
 

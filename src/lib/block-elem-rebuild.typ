@@ -3,6 +3,8 @@
 #import "../util/level-state.typ": *
 #import "../util/basic-tool.typ": *
 
+#import "../lib/par-lib.typ": fix-first-par-state, par-state
+
 /// Defines different inline element types for layout processing
 /// - inline (bool): Inline-level element
 /// - block (bool): Block-level element
@@ -33,17 +35,18 @@
 /// - inset (length): Inset spacing
 /// - label-height (length): Label height for baseline alignment
 /// - curr-baseline (length): Current baseline position
-#let resolved-body(body, number: none, inset: 0pt, label-height: 0pt, curr-baseline: 0pt) = {
-  let number-box = if number != none { [#no-line-break#number] }
-  {
-    fix-first-line-h(inset: inset)
-    number-box
-    baseline-tag-meta(
-      height: label-height,
-      baseline: curr-baseline,
-    )
-    body
+#let resolved-body(body, number: none, label-height: 0pt, curr-baseline: 0pt) = {
+  let number-box = if number != none {
+    no-line-break
+    number
   }
+  h(0pt, weak: true)
+  number-box
+  baseline-tag-meta(
+    height: label-height,
+    baseline: curr-baseline,
+  )
+  body
 }
 
 /// Layout block elements with height adjustment for proper alignment
@@ -443,6 +446,7 @@
       }
       show math.equation.where(block: true): hide-body-layout
       original
+      fix-first-par-state()
     },
     inline: InlineType.block,
   )
@@ -475,7 +479,11 @@
   let (inline, body, ..body-no) = elem-func(_body)
   if inline == InlineType.blank {
     return (
-      body: [#baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)#e],
+      body: {
+        baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)
+        e
+        fix-first-par-state()
+      },
       inline: InlineType.block,
     )
   }
@@ -494,6 +502,7 @@
           pos-args: pos-field,
         )
         hide-body-layout
+        fix-first-par-state()
       },
       inline: InlineType.block,
     )
@@ -543,6 +552,7 @@
       body: {
         baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)
         e
+        fix-first-par-state()
       },
       inline: InlineType.block,
     )
@@ -554,6 +564,7 @@
         let revised-body = body
         let hide-body-layout = block-layout(e.func(), original-body, revised-body, field, _label)
         hide-body-layout
+        fix-first-par-state()
       },
       inline: InlineType.block,
     )
@@ -612,17 +623,18 @@
             )#label(prevent-recursion-ID)]
         }
         e
+        fix-first-par-state()
       } else {
         // terms.item
         terms.item(
           {
             number
-            fix-first-line-h(inset: inset)
             baseline-tag-meta(height: label-height, baseline: curr-baseline)
             e.term
           },
           e.description,
         )
+        fix-first-par-state()
       }
     },
     inline: InlineType.block,
@@ -653,6 +665,7 @@
       body: {
         baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)
         e
+        fix-first-par-state()
       },
       inline: InlineType.block,
     )
@@ -732,10 +745,13 @@
   if inline == InlineType.inline {
     return (
       body: {
-        let original-body = body-no.body-no
+        let original-body = {
+          body-no.body-no
+        }
         let revised-body = body
         let hide-body-layout = pad-layout(original-body, revised-body)
         hide-body-layout
+        fix-first-par-state()
       },
       inline: InlineType.block,
     )
@@ -776,8 +792,10 @@
     if inline == InlineType.blank {
       baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)
       _body
+      fix-first-par-state()
     } else if inline == InlineType.inline {
       body
+      fix-first-par-state()
     } else if inline == InlineType.block {
       body
     } else {
@@ -810,7 +828,6 @@
 #let detect-block-level-elem(
   e,
   number: none,
-  inset: 0pt,
   label-height: 0pt,
   curr-baseline: 0pt,
   ..curr-number-args,
@@ -825,7 +842,6 @@
 
   let elem-func = detect-block-level-elem.with(
     number: number,
-    inset: inset,
     label-height: label-height,
     curr-baseline: curr-baseline,
     ..curr-number-args,
@@ -838,6 +854,9 @@
       index += 1
       let (inline, body, ..body-no) = elem-func(child)
       if inline == InlineType.blank {
+        if child.func() == place {
+          children.at(index) = body
+        }
         continue
       }
 
@@ -857,7 +876,7 @@
     }
     // blank
     return (
-      body: e,
+      body: rebuild-label(func-seq(children), _label),
       inline: InlineType.blank,
     )
   } else if is_item(e) {
@@ -870,7 +889,6 @@
     return rebuild-block-elem(
       e,
       number: number,
-      inset: inset,
       label-height: label-height,
       curr-baseline: curr-baseline,
       elem-func,
@@ -882,7 +900,6 @@
     return rebuild-general-block-level-elem(
       e,
       number: number,
-      inset: inset,
       label-height: label-height,
       curr-baseline: curr-baseline,
       elem-func,
@@ -891,7 +908,6 @@
     return rebuild-general-block-level-elem(
       e,
       number: number,
-      inset: inset,
       label-height: label-height,
       curr-baseline: curr-baseline,
       elem-func,
@@ -901,7 +917,6 @@
     return rebuild-general-block-level-elem(
       e,
       number: number,
-      inset: inset,
       label-height: label-height,
       curr-baseline: curr-baseline,
       elem-func,
@@ -911,7 +926,6 @@
     return rebuild-general-block-level-elem(
       e,
       number: number,
-      inset: inset,
       label-height: label-height,
       curr-baseline: curr-baseline,
       elem-func,
@@ -921,7 +935,6 @@
     return rebuild-terms-elem(
       e,
       number: number,
-      inset: inset,
       label-height: label-height,
       curr-baseline: curr-baseline,
     )
@@ -934,19 +947,19 @@
       inline: InlineType.block,
     )
   } else if func == place {
-    // TODO: Implement proper layout for place function
+    // Consider as blank
     return (
       body: {
         e
-        baseline-tag-meta(height: label-height, baseline: curr-baseline)
+        // need
+        par-state.update(0)
       },
-      inline: InlineType.block,
+      inline: InlineType.blank,
     )
   } else if func == pad {
     return rebuild-pad-elem(
       e,
       number: number,
-      inset: inset,
       label-height: label-height,
       curr-baseline: curr-baseline,
       elem-func,
@@ -957,13 +970,13 @@
     // not common case; most common usage: set par(..) ...
     let field = e.fields()
     let _body = field.remove("body")
+    // _ = field.remove("first-line-indent", default: none)
     let _label = field.remove("label", default: none)
     return (
       body: {
         set par(..field)
         [#resolved-body(
-            _body,
-            inset: inset,
+            _body + parbreak(),
             label-height: label-height,
             curr-baseline: curr-baseline,
             number: number,
@@ -976,7 +989,6 @@
       e,
       elem-func,
       number: number,
-      inset: inset,
       label-height: label-height,
       curr-baseline: curr-baseline,
       ..curr-number-args,
@@ -1035,6 +1047,7 @@
         body: {
           baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)
           e
+          fix-first-par-state()
         },
         inline: InlineType.block,
       )
@@ -1044,12 +1057,13 @@
     let is-inline = is-inline-elem(e)
     if is-inline {
       if is-content-blank(e) {
+        // should we need???
         return (body: e, inline: InlineType.blank)
       }
       // inline-level elem (but not blank)
       return (
-        body: resolved-body(e, inset: inset, label-height: label-height, curr-baseline: curr-baseline, number: number),
-        body-no: resolved-body(e, inset: inset, label-height: label-height, curr-baseline: curr-baseline),
+        body: resolved-body(e, label-height: label-height, curr-baseline: curr-baseline, number: number),
+        body-no: resolved-body(e, label-height: label-height, curr-baseline: curr-baseline),
         inline: InlineType.inline,
       )
     }

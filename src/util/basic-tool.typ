@@ -287,13 +287,6 @@
   }
 }
 
-/// Fixes the indentation issue for the first line of a paragraph.
-///
-/// -> any
-#let fix-first-line-h(inset: 0pt) = {
-  [#h(-par.first-line-indent.amount - inset)]
-}
-
 /// Get the label of an element if it exists.
 ///
 /// -> any

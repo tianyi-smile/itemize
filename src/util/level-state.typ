@@ -48,9 +48,6 @@
 /// State variable to record the `auto-resume` parameter in the `auto-resume-enum` method.
 #let auto-resuming-form = state("__auto-resuming-form__" + package-version, none)
 
-/// State variable to record the `left-inset` of the parent container for lists. (not need any more in ver0.3.0)
-#let parent-item-inset = state("__cdl_parent-item-inset__" + package-version, ())
-
 /// State variable to record whether enable the tight-mode of `auto-detect` (ver0.3.0).
 #let auto-detect-tight = state("__auto-detect-tight__" + package-version, false)
 

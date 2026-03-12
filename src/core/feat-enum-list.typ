@@ -833,31 +833,10 @@
         same-line-style,
       )
 
-
-      /* hanging-indent, first-line-indent */
-      let _temp-line-indent = curr-line-indent(i)
-      let _line-indent = if _temp-line-indent == auto { auto } else { _temp-line-indent.to-absolute() }
-      let _temp-hanging-indent = curr-hanging-indent(i)
-      let _hanging-indent = if _temp-hanging-indent == auto { auto } else { _temp-hanging-indent.to-absolute() }
-
-
-      let fix-first-line-indent = if hanging-type == "classic" {
-        (
-          if _line-indent == auto { 0pt } else { _line-indent - par.first-line-indent.amount }
-            + (max-width - real-box-width - _first-line-inset)
-        )
-      } else if hanging-type == "paragraph" {
-        (
-          if _line-indent == auto { 0pt } else { _line-indent - par.first-line-indent.amount }
-            + (-_body-indent - real-box-width - _first-line-inset)
-        )
-      }
-
       // pre-parse body (in order to determine how to display label)
       let new-body = detect-block-level-elem(
         child.body,
         number: hide-number,
-        inset: fix-first-line-indent,
         label-height: label-height,
         curr-baseline: curr-baseline,
         body: styled-child-number,
@@ -889,7 +868,7 @@
         if inline == InlineType.blank {
           [#body#hide-number#baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)]
         } else {
-          [#body]
+          [#parbreak()#body]
         }
       }
 
@@ -931,28 +910,37 @@
 
       let inner-box(body) = (curr-body-format.inner)(i)(show-text((curr-body-style)(i), body))
 
+      /* hanging-indent, first-line-indent */
+      let _temp-line-indent = curr-line-indent(i)
+      let _line-indent = if _temp-line-indent == auto { auto } else { _temp-line-indent.to-absolute() }
+      let _temp-hanging-indent = curr-hanging-indent(i)
+      let _hanging-indent = if _temp-hanging-indent == auto { auto } else { _temp-hanging-indent.to-absolute() }
+
       let body-cell = grid.cell(x: 1)[
         // override (next)
         // #show grid: set block(..default-block-args) // need
-        #inner-box[
-          #let (par-line-indent, par-hanging-indent) = {
+        #inner-box({
+          let (par-line-indent, par-hanging-indent) = {
             if hanging-type == "classic" {
               (0pt, 0pt)
             } else if hanging-type == "paragraph" {
               (-max-width - _body-indent, -max-width - _body-indent)
             }
           }
+          par-state.update(0)
+          let _first-line-indent = -max-width + real-box-width + _first-line-inset
           /// Note that: `hanging-indent` and `first-line-indent` of the `par` in the lists are no longer in effect if `_line-indent` and `_hanging-indent` are not `auto`.
-          #show par: par-box.with(
+          show par: par-box.with(
             line-indent: _line-indent,
             hanging-indent: _hanging-indent,
             line-inset: par-line-indent,
             hanging-inset: par-hanging-indent,
+            first-line-indent: _first-line-indent,
           )
           // #set block(..default-block-args)
-          #set block(..curr-block-args) // need
-          #item-content
-        ]
+          set block(..curr-block-args) // need
+          item-content
+        })
       ]
       // feat: item-spacing with above and below
       let is-full-item-spacing = false
@@ -1921,30 +1909,11 @@
         same-line-style,
       )
 
-      /* hanging-indent, first-line-indent */
-      let _temp-line-indent = curr-line-indent(i)
-      let _line-indent = if _temp-line-indent == auto { auto } else { _temp-line-indent.to-absolute() }
-      let _temp-hanging-indent = curr-hanging-indent(i)
-      let _hanging-indent = if _temp-hanging-indent == auto { auto } else { _temp-hanging-indent.to-absolute() }
-
-
-      let fix-first-line-indent = if hanging-type == "classic" {
-        (
-          if _line-indent == auto { 0pt } else { _line-indent - par.first-line-indent.amount }
-            + (max-width - real-box-width - _first-line-inset)
-        )
-      } else if hanging-type == "paragraph" {
-        (
-          if _line-indent == auto { 0pt } else { _line-indent - par.first-line-indent.amount }
-            + (-_body-indent - real-box-width - _first-line-inset)
-        )
-      }
 
       // pre-parse body (in order to determine how to display label)
       let new-body = detect-block-level-elem(
         child-body,
         number: hide-marker,
-        inset: fix-first-line-indent,
         label-height: label-height,
         curr-baseline: curr-baseline,
         body: curr-marker,
@@ -1973,7 +1942,11 @@
       } else {
         // block-level or inline-level
         parent-number-box.update(())
-        [#body]
+        if inline == InlineType.blank {
+          [#body#hide-number#baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)]
+        } else {
+          [#parbreak()#body]
+        }
       }
 
       let curr-block-args = get-current-block-args(block)
@@ -2019,28 +1992,37 @@
 
       let inner-box(body) = (curr-body-format.inner)(i)(show-text((curr-body-style)(i), body))
 
-      let body-cell = grid.cell(x: 1, align: start)[
+      /* hanging-indent, first-line-indent */
+      let _temp-line-indent = curr-line-indent(i)
+      let _line-indent = if _temp-line-indent == auto { auto } else { _temp-line-indent.to-absolute() }
+      let _temp-hanging-indent = curr-hanging-indent(i)
+      let _hanging-indent = if _temp-hanging-indent == auto { auto } else { _temp-hanging-indent.to-absolute() }
+
+      let body-cell = grid.cell(x: 1)[
         // override (next)
         // #show grid: set block(..default-block-args) // need
-        #inner-box[
-          #let (par-line-indent, par-hanging-indent) = {
+        #inner-box({
+          let (par-line-indent, par-hanging-indent) = {
             if hanging-type == "classic" {
               (0pt, 0pt)
             } else if hanging-type == "paragraph" {
               (-max-width - _body-indent, -max-width - _body-indent)
             }
           }
+          par-state.update(0)
+          let _first-line-indent = -max-width + real-box-width + _first-line-inset
           /// Note that: `hanging-indent` and `first-line-indent` of the `par` in the lists are no longer in effect if `_line-indent` and `_hanging-indent` are not `auto`.
-          #show par: par-box.with(
+          show par: par-box.with(
             line-indent: _line-indent,
             hanging-indent: _hanging-indent,
             line-inset: par-line-indent,
             hanging-inset: par-hanging-indent,
+            first-line-indent: _first-line-indent,
           )
           // #set block(..default-block-args)
-          #set block(..curr-block-args) // need
-          #item-content
-        ]
+          set block(..curr-block-args) // need
+          item-content
+        })
       ]
 
       // feat: item-spacing with above and below
