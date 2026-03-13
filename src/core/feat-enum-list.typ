@@ -488,6 +488,20 @@
     label-width-enum.update(push(number-max-width))
     label-width-el.update(push(number-max-width))
 
+    /*tight mode*/
+    let (curr-tight-mode, curr-tight-item-mode) = get-tight-mode(
+      item-config-args(0).tight-mode,
+      item-config-args(0).tight-item-mode,
+      level-item(0),
+      enum-config-args.tight-mode,
+      enum-config-args.tight-item-mode,
+      curr-enum-level,
+      tight-mode,
+      tight-item-mode,
+      curr-level,
+      ..args-with-tags-item,
+    )
+
     /* spacings */
     let (
       indent-f,
@@ -516,8 +530,8 @@
       enum-margin: enum-margin,
       hanging-indent: hanging-indent,
       line-indent: line-indent,
-      tight-mode: tight-mode,
-      tight-item-mode: tight-item-mode,
+      curr-tight-mode: curr-tight-mode,
+      curr-tight-item-mode: curr-tight-item-mode,
       label-inset: label-inset,
       first-line-inset: first-line-inset,
       ..args-with-tags,
@@ -550,8 +564,8 @@
       enum-margin: enum-config-args.enum-margin,
       hanging-indent: enum-config-args.hanging-indent,
       line-indent: enum-config-args.line-indent,
-      tight-mode: enum-config-args.tight-mode,
-      tight-item-mode: enum-config-args.tight-item-mode,
+      curr-tight-mode: curr-tight-mode,
+      curr-tight-item-mode: curr-tight-item-mode,
       label-inset: enum-config-args.label-inset,
       first-line-inset: enum-config-args.first-line-inset,
       ..args-with-tags,
@@ -587,8 +601,8 @@
           enum-margin: args.enum-margin,
           hanging-indent: args.hanging-indent,
           line-indent: args.line-indent,
-          tight-mode: item-config-args(0).tight-mode, //
-          tight-item-mode: item-config-args(0).tight-item-mode, //
+          curr-tight-mode: curr-tight-mode,
+          curr-tight-item-mode: curr-tight-item-mode,
           label-inset: args.label-inset,
           first-line-inset: args.first-line-inset,
           ..args-with-tags-item,
@@ -1553,6 +1567,19 @@
     label-width-list.update(push(marker-max-width))
     label-width-el.update(push(marker-max-width))
 
+    /*tight mode*/
+    let (curr-tight-mode, curr-tight-item-mode) = get-tight-mode(
+      item-config-args(0).tight-mode,
+      item-config-args(0).tight-item-mode,
+      level-item(0),
+      list-config-args.tight-mode,
+      list-config-args.tight-item-mode,
+      curr-enum-level,
+      tight-mode,
+      tight-item-mode,
+      curr-level,
+      ..args-with-tags-item,
+    )
 
     /* spacings */
     let (
@@ -1582,8 +1609,8 @@
       enum-margin: enum-margin,
       hanging-indent: hanging-indent,
       line-indent: line-indent,
-      tight-mode: tight-mode,
-      tight-item-mode: tight-item-mode,
+      curr-tight-mode: curr-tight-mode,
+      curr-tight-item-mode: curr-tight-item-mode,
       label-inset: label-inset,
       first-line-inset: first-line-inset,
       ..args-with-tags,
@@ -1616,8 +1643,8 @@
       enum-margin: list-config-args.enum-margin,
       hanging-indent: list-config-args.hanging-indent,
       line-indent: list-config-args.line-indent,
-      tight-mode: list-config-args.tight-mode,
-      tight-item-mode: list-config-args.tight-item-mode,
+      curr-tight-mode: curr-tight-mode,
+      curr-tight-item-mode: curr-tight-item-mode,
       label-inset: list-config-args.label-inset,
       first-line-inset: list-config-args.first-line-inset,
       ..args-with-tags,
@@ -1654,8 +1681,8 @@
           enum-margin: args.enum-margin,
           hanging-indent: args.hanging-indent,
           line-indent: args.line-indent,
-          tight-mode: item-config-args(0).tight-mode, //
-          tight-item-mode: item-config-args(0).tight-item-mode, //
+          curr-tight-mode: curr-tight-mode,
+          curr-tight-item-mode: curr-tight-item-mode,
           label-inset: args.label-inset,
           first-line-inset: args.first-line-inset,
           ..args-with-tags-item,

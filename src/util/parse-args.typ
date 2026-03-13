@@ -548,7 +548,7 @@
       // nothing to do
     } else {
       panic(
-        "The value of `width-style` should be the following string: real-width, label-width, or a length, or a dictionary with keys: amount and stretched." 
+        "The value of `width-style` should be the following string: real-width, label-width, or a length, or a dictionary with keys: amount and stretched.",
       )
     }
     assert(type(stretched) == bool, message: "The value of `stretched` should be a bool.")
@@ -1021,6 +1021,48 @@
 }
 
 
+#let get-tight-mode(
+  item-tight-mode,
+  item-tight-item-mode,
+  item-level,
+  config-tight-mode,
+  config-tight-item-mode,
+  config-level,
+  tight-mode,
+  tight-item-mode,
+  level,
+  ..args-with-tags-item,
+) = {
+  let curr-tight-mode = parse-args-with-level(item-tight-mode, item-level, ..args-with-tags-item) //
+  let curr-tight-item-mode = parse-args-with-level(
+    item-tight-item-mode,
+    item-level,
+    ..args-with-tags-item,
+  )
+  curr-tight-mode = get-none-value(
+    parse-args-with-level(config-tight-mode, config-level, ..args-with-tags-item),
+    curr-tight-mode,
+  )
+  curr-tight-item-mode = get-none-value(
+    parse-args-with-level(
+      config-tight-item-mode,
+      config-level,
+      ..args-with-tags-item,
+    ),
+    curr-tight-item-mode,
+  )
+  curr-tight-mode = get-none-value(
+    parse-args-with-level(tight-mode, level, ..args-with-tags-item),
+    curr-tight-mode,
+  )
+  curr-tight-item-mode = get-none-value(
+    parse-args-with-level(tight-item-mode, level, ..args-with-tags-item),
+    curr-tight-item-mode,
+  )
+  return (curr-tight-mode, curr-tight-item-mode)
+}
+
+
 
 /// Parses and calculates all length values for enum/list elements
 ///
@@ -1064,8 +1106,8 @@
   enum-margin: auto,
   hanging-indent: auto,
   line-indent: auto,
-  tight-mode: auto,
-  tight-item-mode: auto,
+  curr-tight-mode: auto,
+  curr-tight-item-mode: auto,
   label-inset: auto,
   first-line-inset: auto,
   ..args,
@@ -1146,7 +1188,7 @@
   let item-args = args.named()
   let _ = item-args.remove("tag", default: none)
 
-  let curr-tight-mode = parse-args-with-level(tight-mode, curr-level, ..item-args)
+  // let curr-tight-mode = parse-args-with-level(tight-mode, curr-level, ..item-args)
   let is-auto-tight-mode = false
   let (default-above, default-below) = (spacing, par.spacing)
 
@@ -1275,7 +1317,7 @@
   }
 
   /*feat: tight-item-mode (ver0.3.0)*/
-  let curr-tight-item-mode = parse-args-with-level(tight-item-mode, curr-level, ..item-args)
+  // let curr-tight-item-mode = parse-args-with-level(tight-item-mode, curr-level, ..item-args)
   let auto-item-spacing = if curr-tight-item-mode == "always-tight" {
     par.leading
   } else if curr-tight-item-mode == "never-tight" {
