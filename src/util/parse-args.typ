@@ -1020,7 +1020,7 @@
   } else { spacing }
 }
 
-
+/// Get the tight mode.
 #let get-tight-mode(
   item-tight-mode,
   item-tight-item-mode,
@@ -1033,12 +1033,8 @@
   level,
   ..args-with-tags-item,
 ) = {
-  let curr-tight-mode = parse-args-with-level(item-tight-mode, item-level, ..args-with-tags-item) //
-  let curr-tight-item-mode = parse-args-with-level(
-    item-tight-item-mode,
-    item-level,
-    ..args-with-tags-item,
-  )
+  let curr-tight-mode = parse-args-with-level(item-tight-mode, item-level, ..args-with-tags-item)
+  let curr-tight-item-mode = parse-args-with-level(item-tight-item-mode, item-level, ..args-with-tags-item)
   curr-tight-mode = get-none-value(
     parse-args-with-level(config-tight-mode, config-level, ..args-with-tags-item),
     curr-tight-mode,
@@ -1188,7 +1184,6 @@
   let item-args = args.named()
   let _ = item-args.remove("tag", default: none)
 
-  // let curr-tight-mode = parse-args-with-level(tight-mode, curr-level, ..item-args)
   let is-auto-tight-mode = false
   let (default-above, default-below) = (spacing, par.spacing)
 
@@ -1317,7 +1312,6 @@
   }
 
   /*feat: tight-item-mode (ver0.3.0)*/
-  // let curr-tight-item-mode = parse-args-with-level(tight-item-mode, curr-level, ..item-args)
   let auto-item-spacing = if curr-tight-item-mode == "always-tight" {
     par.leading
   } else if curr-tight-item-mode == "never-tight" {

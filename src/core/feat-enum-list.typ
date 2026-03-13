@@ -498,7 +498,7 @@
       curr-enum-level,
       tight-mode,
       tight-item-mode,
-      curr-level,
+      rel-level,
       ..args-with-tags-item,
     )
 
@@ -1574,10 +1574,10 @@
       level-item(0),
       list-config-args.tight-mode,
       list-config-args.tight-item-mode,
-      curr-enum-level,
+      curr-list-level,
       tight-mode,
       tight-item-mode,
-      curr-level,
+      rel-level,
       ..args-with-tags-item,
     )
 
