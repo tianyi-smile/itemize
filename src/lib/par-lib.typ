@@ -1,5 +1,5 @@
 #import "../util/version.typ": package-version
-#import "../util/basic-tool.typ": default-block-args, get_current-par-args
+#import "../util/basic-tool.typ": default-block-args, get_current-par-args, get-elem-label, prevent-recursion-ID
 
 /// To mark the first paragraph
 #let par-state = state("__cdl_par-state__" + package-version, 0)
@@ -16,22 +16,25 @@
   let _line-indent = (
     if line-indent == auto { it.first-line-indent.amount } else { line-indent } + line-inset
   )
-  context {
-    if par-state.get() == 1 {
-      // first line
-      pad(left: _hanging-indent, rest: 0pt, {
-        h(first-line-indent - _hanging-indent)
-        h(0pt, weak: true)
-        it.body
-      }) 
-    } else {
-      pad(left: _hanging-indent, rest: 0pt, {
-        h(_line-indent - _hanging-indent)
-        h(0pt, weak: true)
-        it.body
-      })
-    }
+
+  if par-state.get() == 0 {
+    // first line
+    pad(left: _hanging-indent, rest: 0pt, {
+      h(first-line-indent - _hanging-indent)
+      h(0pt, weak: true)
+      it.body
+      // [|#par-state.get()||#state("aaa").get()]
+    })
+  } else {
+    pad(left: _hanging-indent, rest: 0pt, {
+      h(_line-indent - _hanging-indent)
+      h(0pt, weak: true)
+      it.body
+      // [||#par-state.get()||#state("aaa").get()]
+    })
   }
+
+  state("aaa").update(false)
 }
 
 
@@ -42,3 +45,23 @@
   })
 }
 
+/// Fix the line-indent of terms
+#let fix-terms(doc) = {
+  show terms.item: it => {
+    if get-elem-label(it) == label(prevent-recursion-ID) {
+      return it
+    }
+    par-state.update(0)
+    [#terms.item(
+        {
+          it.term
+        },
+        [
+          #it.description#parbreak()
+          #par-state.update(0)
+        ],
+      )#label(prevent-recursion-ID)]
+    par-state.update(1)
+  }
+  doc
+}

@@ -201,11 +201,12 @@
   inset: 0pt,
   rowspan: 1,
   stroke: none,
+  // align: start,
 )
 
 /// Default arguments for grid layout
 #let default-grid-args = (
-  align: auto,
+  align: top + start,
   column-gutter: (),
   fill: none,
   gutter: (),

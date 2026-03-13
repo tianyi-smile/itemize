@@ -46,12 +46,12 @@
       it.enum-config, //
       it.list-config, //
       it.ref-numbering, //0.3.0
-      it.step, //0.3.0
       it.supplement, //0.3.0
       it.tight-item-mode, //0.3.0
       it.tight-mode, //0.3.0
+      it.step, //0.3.0
       it.label-inset, //0.3.0
-      it.first-line-indent, //0.3.0
+      it.first-line-inset, //0.3.0
       ..it.args,
     )
   },
@@ -79,12 +79,12 @@
     field("auto-label-width", types.any, default: none, folds: false),
     field("checklist", bool, default: false, folds: false),
     field("ref-numbering", types.any, default: none, folds: false),
-    field("supplement", types.any, default: none, folds: false),
-    field("tight-mode", types.any, default: none, folds: false),
-    field("tight-item-mode", types.any, default: none, folds: false),
-    field("step", types.any, default: none, folds: false),
-    field("label-inset", types.any, default: none, folds: false),
-    field("first-line-inset", types.any, default: none, folds: false),
+    field("supplement", types.any, default: auto, folds: false),
+    field("tight-mode", types.any, default: auto, folds: false),
+    field("tight-item-mode", types.any, default: auto, folds: false),
+    field("step", types.any, default: auto, folds: false),
+    field("label-inset", types.any, default: auto, folds: false),
+    field("first-line-inset", types.any, default: auto, folds: false),
     field(
       "enum-config",
       types.wrap(types.union(dictionary, auto), fold: fold),

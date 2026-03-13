@@ -21,7 +21,7 @@
   show: _new-enum.with(new: new)
   if body.pos().len() > 0 {
     let content = for e in body.pos() { e }
-    if fel.item_is_blank_in_seq(content) != none {
+    if content != none {
       show enum: it => it
       content
     }
@@ -33,7 +33,7 @@
 ///
 /// - key (label, str): Unique identifier for the enum
 #let resume-label(key) = {
-  let key-label = fel.get_label(key)
+  let key-label = fel.get-label(key)
   context {
     let sel = selector(key-label).and(metadata.where(value: fel.enum-resume-ID))
     let keys = query(sel)
@@ -59,7 +59,7 @@
 /// - body (content): The enum in the body to resume
 ///
 #let resume-list(key, new: true, ..body) = {
-  let key-label = fel.get_label(key)
+  let key-label = fel.get-label(key)
   rl.resume-label-list.update(key-label)
   show: _new-enum.with(new: new)
   if body.pos().len() > 0 {
@@ -134,11 +134,11 @@
 }
 
 /// Automatic alignment of labels in enums and lists
-/// 
+///
 /// The method `auto-label-item` cannot be nested.
 ///
 /// - doc (content): The document to process
-/// - form (none, auto, "each", "list", "all", array): 
+/// - form (none, auto, "each", "list", "all", array):
 ///     - `none`: No processing.
 ///     - `"each" == auto`: `Enum` and `list` are considered separately, i.e., align the label in enums and the label in lists independently.
 ///     - `"enum"`: Only align the label in `enum`.

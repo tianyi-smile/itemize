@@ -27,13 +27,13 @@
   checklist,
   enum-config,
   list-config,
-  ref-numbering: none, /** new ver0.3.0 */
-  supplement: auto, /** new ver0.3.0 */
-  tight-mode: auto, /** new ver0.3.0 */
-  tight-item-mode: auto, /** new ver0.3.0 */
-  step: auto, /** new ver0.3.0 */
-  label-inset: auto, /** new ver0.3.0 */
-  first-line-inset: auto, /** new ver0.3.0 */
+  ref-numbering, /** new ver0.3.0 */
+  supplement, /** new ver0.3.0 */
+  tight-mode, /** new ver0.3.0 */
+  tight-item-mode, /** new ver0.3.0 */
+  step, /** new ver0.3.0 */
+  label-inset, /** new ver0.3.0 */
+  first-line-inset, /** new ver0.3.0 */
   ..args,
 ) = {
   let nested-auto-resume = fel.nested-auto-resume
@@ -449,14 +449,14 @@
 ///   - `"never-tight"`: the spacing between enums or lists is `par.spacing`
 ///   - `"compact-tight"`: the spacing between enums or lists is `par.leading`
 ///   - `"default"`: the spacing is `"never-tight"` if `enum.tight` or `list.tight` is `true`, else `"compact-tight"` (ver0.2.x default behavior)
-///   - `auto`: If set 
+///   - `auto`: If set
 ///      ```typst
 ///      #show: el.config.auto-detect-tight
 ///      ```
 ///      then the behavior is the same as native, else the behavior is the same as `"default"`.
 ///   - `dictionary`: The keys are `tight`, `not-tight`, `par-tight`, and values are array with two elements (`length` or `auto`), representing the above and below spacing.
 ///     - If there is parbreak above the first item, then the above and below spacing between enums or lists are the value of `not-tight`
-///     - If there is no parbreak above the first item and if `enum.tight` or `list.tight` 
+///     - If there is no parbreak above the first item and if `enum.tight` or `list.tight`
 ///       - is `false`, then the above and below spacing between enums or lists are the value of `par-tight`
 ///       - is `true`, then the above and below spacing between enums or lists are the value of `tight`
 ///   - Use `function` or `array` to set different values for different levels or other conditions.
@@ -478,7 +478,7 @@
 ///         let n = numbers.len()
 ///         if n >= 3 {
 ///           return numbers.at(n - 2) + numbers.at(n - 1)
-///         }        
+///         }
 ///       }
 ///       #show: el.default-enum-list.with(step: (factorial-step,))
 ///       1. #lorem(2)
@@ -548,13 +548,13 @@
     checklist,
     enum-config,
     list-config,
-    ref-numbering: ref-numbering, /** new ver0.3.0 */
-    supplement: supplement, /** new ver0.3.0*/
-    tight-mode: tight-mode, /** new ver0.3.0 */
-    tight-item-mode: tight-item-mode, /** new ver0.3.0 */
-    step: step, /** new ver0.3.0*/
-    label-inset: label-inset, /** new ver0.3.0 */
-    first-line-inset: first-line-inset, /** new ver0.3.0 */
+    ref-numbering, /** new ver0.3.0 */
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    step, /** new ver0.3.0*/
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
     ..args,
   )
 }
@@ -620,13 +620,13 @@
     checklist,
     enum-config,
     list-config,
-    ref-numbering: ref-numbering, /** new ver0.3.0 */
-    supplement: supplement, /** new ver0.3.0*/
-    tight-mode: tight-mode, /** new ver0.3.0 */
-    tight-item-mode: tight-item-mode, /** new ver0.3.0 */
-    step: step, /** new ver0.3.0*/
-    label-inset: label-inset, /** new ver0.3.0 */
-    first-line-inset: first-line-inset, /** new ver0.3.0 */
+    ref-numbering, /** new ver0.3.0 */
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    step, /** new ver0.3.0*/
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
     ..args,
   )
 }
@@ -689,13 +689,13 @@
     false,
     (:),
     (:),
-    ref-numbering: ref-numbering, /** new ver0.3.0 */
-    supplement: supplement, /** new ver0.3.0*/
-    tight-mode: tight-mode, /** new ver0.3.0 */
-    tight-item-mode: tight-item-mode, /** new ver0.3.0 */
-    step: step, /** new ver0.3.0*/
-    label-inset: label-inset, /** new ver0.3.0 */
-    first-line-inset: first-line-inset, /** new ver0.3.0 */
+    ref-numbering, /** new ver0.3.0 */
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    step, /** new ver0.3.0*/
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
     ..args,
   )
 }
@@ -757,13 +757,13 @@
     false,
     (:),
     (:),
-    ref-numbering: ref-numbering, /** new ver0.3.0 */
-    supplement: supplement, /** new ver0.3.0*/
-    tight-mode: tight-mode, /** new ver0.3.0 */
-    tight-item-mode: tight-item-mode, /** new ver0.3.0 */
-    step: step, /** new ver0.3.0*/
-    label-inset: label-inset, /** new ver0.3.0 */
-    first-line-inset: first-line-inset, /** new ver0.3.0 */
+    ref-numbering, /** new ver0.3.0 */
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    step, /** new ver0.3.0*/
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
     ..args,
   )
 }
@@ -823,11 +823,13 @@
     checklist,
     (:),
     (:),
-    supplement: supplement, /** new ver0.3.0*/
-    tight-mode: tight-mode, /** new ver0.3.0 */
-    tight-item-mode: tight-item-mode, /** new ver0.3.0 */
-    label-inset: label-inset, /** new ver0.3.0 */
-    first-line-inset: first-line-inset, /** new ver0.3.0 */
+    none,
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    auto,
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
     ..args,
   )
 }
@@ -887,11 +889,14 @@
     checklist,
     (:),
     (:),
-    supplement: supplement, /** new ver0.3.0*/
-    tight-mode: tight-mode, /** new ver0.3.0 */
-    tight-item-mode: tight-item-mode, /** new ver0.3.0 */
-    label-inset: label-inset, /** new ver0.3.0 */
-    first-line-inset: first-line-inset, /** new ver0.3.0 */
+    none,
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    auto,
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
     ..args,
   )
 }
+

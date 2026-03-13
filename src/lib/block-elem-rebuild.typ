@@ -625,7 +625,6 @@
         e
         fix-first-par-state()
       } else {
-        // terms.item
         terms.item(
           {
             number

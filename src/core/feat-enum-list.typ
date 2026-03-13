@@ -664,6 +664,8 @@
 
     let min-indent = float.inf * 1pt
 
+    let dir = if text.dir == rtl { "right" } else { "left" }
+
     // each item
     let item-body = for i in range(len) {
       let child = it.children.at(i)
@@ -937,6 +939,8 @@
             hanging-inset: par-hanging-indent,
             first-line-indent: _first-line-indent,
           )
+          // Sepecial case: terms
+          show: fix-terms
           // #set block(..default-block-args)
           set block(..curr-block-args) // need
           item-content
@@ -988,19 +992,6 @@
       }
 
 
-      let inset = if text.dir == rtl {
-        (right: _indent, left: -_label-indent, rest: 0pt)
-      } else {
-        (left: _indent, right: -_label-indent, rest: 0pt)
-      }
-
-      let sec-inset = if text.dir == rtl {
-        (right: max-width - real-box-width, rest: 0pt)
-      } else {
-        (left: max-width - real-box-width, rest: 0pt)
-      }
-
-
       // label-cell-width too large, and body-cell-width is negative? Now we can't handle it
       let label-cell-width = box-width + _label-inset + _body-indent + _indent
       let body-cell-width = if _enum-width == 100% { 1fr } else {
@@ -1011,18 +1002,32 @@
 
       let inner-border = (curr-body-border.inner)(i)
       let inner-outset = inner-border.remove("outset", default: (:))
-      let dir = if text.dir == rtl { "right" } else { "left" }
-      let dir-inset = get-dir-inset(inner-outset, dir: dir)
+      let inner-dir-outset = get-dir-inset(inner-outset, dir: dir)
       inner-outset = parse-inset-without-dir(inner-outset, dir: dir)
-      inner-outset.insert(dir, -label-cell-width + dir-inset)
+      inner-outset.insert(dir, -label-cell-width + inner-dir-outset)
+
+      let inner-inset = inner-border.remove("inset", default: (:))
+      let inner-dir-inset = get-dir-inset(inner-inset, dir: dir)
+      inner-inset = parse-inset-without-dir(inner-inset, dir: dir)
+
+      let inset = if text.dir == rtl {
+        (right: _indent, left: -_label-indent, rest: 0pt)
+      } else {
+        (left: _indent, right: -_label-indent, rest: 0pt)
+      }
+
+      let sec-inset = if text.dir == rtl {
+        (right: max-width - real-box-width + inner-dir-inset, rest: 0pt) + inner-inset
+      } else {
+        (left: max-width - real-box-width + inner-dir-inset, rest: 0pt) + inner-inset
+      }
 
 
       let outer-border = (curr-body-border.outer)(i)
       let outer-outset = outer-border.remove("outset", default: (:))
-      let dir = if text.dir == rtl { "right" } else { "left" }
-      let dir-outset = get-dir-inset(outer-outset, dir: dir)
+      let outer-dir-outset = get-dir-inset(outer-outset, dir: dir)
       outer-outset = parse-inset-without-dir(outer-outset, dir: dir)
-      outer-outset.insert(dir, -_indent + dir-outset)
+      outer-outset.insert(dir, -_indent + outer-dir-outset)
 
       let (out-spacing, inner-spacing) = {
         if outer-border == (:) {
@@ -1071,8 +1076,6 @@
 
     let whole-border = (curr-body-border.whole)(0)
     let whole-outset = whole-border.remove("outset", default: (:))
-    // let min-inset = calc
-    let dir = if text.dir == rtl { "right" } else { "left" }
     let dir-outset = get-dir-inset(whole-outset, dir: dir)
     whole-outset = parse-inset-without-dir(whole-outset, dir: dir)
     whole-outset.insert(dir, -min-indent + dir-outset)
@@ -1723,6 +1726,8 @@
 
     let min-indent = float.inf * 1pt
 
+    let dir = if text.dir == rtl { "right" } else { "left" }
+
     let item-body = for i in range(len) {
       let child = it.children.at(i)
       let curr-marker = styled-markers.at(i)
@@ -1943,7 +1948,7 @@
         // block-level or inline-level
         parent-number-box.update(())
         if inline == InlineType.blank {
-          [#body#hide-number#baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)]
+          [#body#hide-marker#baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)]
         } else {
           [#parbreak()#body]
         }
@@ -2019,6 +2024,8 @@
             hanging-inset: par-hanging-indent,
             first-line-indent: _first-line-indent,
           )
+          // Sepecial case: terms
+          show: fix-terms
           // #set block(..default-block-args)
           set block(..curr-block-args) // need
           item-content
@@ -2070,17 +2077,6 @@
         (above-item-spacing, below-item-spacing)
       }
 
-      let inset = if text.dir == rtl {
-        (right: _indent, left: -_label-indent, rest: 0pt)
-      } else {
-        (left: _indent, right: -_label-indent, rest: 0pt)
-      }
-      let sec-inset = if text.dir == rtl {
-        (right: max-width - real-box-width, rest: 0pt)
-      } else {
-        (left: max-width - real-box-width, rest: 0pt)
-      }
-
       // label-cell-width too large, and body-cell-width is negative? Now we can't handle it
       let label-cell-width = box-width + _label-inset + _body-indent + _indent
       let body-cell-width = if _enum-width == 100% { 1fr } else {
@@ -2092,17 +2088,32 @@
 
       let inner-border = (curr-body-border.inner)(i)
       let inner-outset = inner-border.remove("outset", default: (:))
-      let dir = if text.dir == rtl { "right" } else { "left" }
-      let dir-inset = get-dir-inset(inner-outset, dir: dir)
+      let inner-dir-outset = get-dir-inset(inner-outset, dir: dir)
       inner-outset = parse-inset-without-dir(inner-outset, dir: dir)
-      inner-outset.insert(dir, -label-cell-width + dir-inset)
+      inner-outset.insert(dir, -label-cell-width + inner-dir-outset)
+
+      let inner-inset = inner-border.remove("inset", default: (:))
+      let inner-dir-inset = get-dir-inset(inner-inset, dir: dir)
+      inner-inset = parse-inset-without-dir(inner-inset, dir: dir)
+
+      let inset = if text.dir == rtl {
+        (right: _indent, left: -_label-indent, rest: 0pt)
+      } else {
+        (left: _indent, right: -_label-indent, rest: 0pt)
+      }
+
+      let sec-inset = if text.dir == rtl {
+        (right: max-width - real-box-width + inner-dir-inset, rest: 0pt) + inner-inset
+      } else {
+        (left: max-width - real-box-width + inner-dir-inset, rest: 0pt) + inner-inset
+      }
+
 
       let outer-border = (curr-body-border.outer)(i)
       let outer-outset = outer-border.remove("outset", default: (:))
-      let dir = if text.dir == rtl { "right" } else { "left" }
-      let dir-outset = get-dir-inset(outer-outset, dir: dir)
+      let outer-dir-outset = get-dir-inset(outer-outset, dir: dir)
       outer-outset = parse-inset-without-dir(outer-outset, dir: dir)
-      outer-outset.insert(dir, -_indent + dir-outset)
+      outer-outset.insert(dir, -_indent + outer-dir-outset)
 
       let (out-spacing, inner-spacing) = {
         if outer-border == (:) {
@@ -2147,7 +2158,6 @@
 
     let whole-border = (curr-body-border.whole)(0)
     let whole-outset = whole-border.remove("outset", default: (:))
-    let dir = if text.dir == rtl { "right" } else { "left" }
     let dir-outset = get-dir-inset(whole-outset, dir: dir)
     whole-outset = parse-inset-without-dir(whole-outset, dir: dir)
     whole-outset.insert(dir, -min-indent + dir-outset)
