@@ -23,18 +23,14 @@
       h(first-line-indent - _hanging-indent)
       h(0pt, weak: true)
       it.body
-      // [|#par-state.get()||#state("aaa").get()]
     })
   } else {
     pad(left: _hanging-indent, rest: 0pt, {
       h(_line-indent - _hanging-indent)
       h(0pt, weak: true)
       it.body
-      // [||#par-state.get()||#state("aaa").get()]
     })
   }
-
-  state("aaa").update(false)
 }
 
 
@@ -56,10 +52,11 @@
         {
           it.term
         },
-        [
-          #it.description#parbreak()
-          #par-state.update(0)
-        ],
+        {
+          it.description
+          parbreak()
+          par-state.update(0)
+        },
       )#label(prevent-recursion-ID)]
     par-state.update(1)
   }
