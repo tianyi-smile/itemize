@@ -20,9 +20,16 @@
 /// Prevent recursion flag
 #let prevent-recursion-ID = "__cdl_prevent-recursion-ID__" + package-version
 #let prevent-recursion-meta = metadata(prevent-recursion-ID)
+/// Prevent recursion label (for other' package)
+#let prevent-recursion-label = label("__cdl_prevent-label__")
 
-/// for grid
-#let grid-ID = label("__cdl-grid-ID__" + package-version)
+// /// for grid
+// #let grid-ID = label("__cdl-grid-ID__" + package-version)
+
+/// for enum grid
+#let enum-grid-ID = label("__cdl-enum-grid-ID__")
+/// for list grid
+#let list-grid-ID = label("__cdl-list-grid-ID__")
 
 /// for tight mode
 #let paragraph-ID = label("__cdl-is-paragraph-ID__" + package-version)

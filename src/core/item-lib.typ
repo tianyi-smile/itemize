@@ -116,18 +116,24 @@
     let level = if auto-base-level { curr-enum-level } else { base-num-count.len() }
     // for enum's supplement
     let item-supp-format = if item-supp != none {
-      fel.pre-parse-supplement(item-supp, level-item(index-n), n-last: n-last, tag: tag, enum-tag: enum-tag)
+      fel.pre-parse-supplement(
+        item-supp,
+        level-item(index-n),
+        n-last: n-last,
+        tag: tag,
+        enum-tag: enum-tag,
+      )
     } else { supplement-format }
-    let enum-supp = item-supp-format(index-n)(number-body)
+    let enum-supp = item-supp-format(index-n)(number-body, target: it.target)
     link(it.element.location(), [#fel.parse-supplement(
       real-supplement,
-      level - 1, 
+      level - 1,
       none,
       0,
       n-last: n-last,
       tag: tag,
       enum-tag: enum-tag,
-    )(index-n)(enum-supp)])
+    )(index-n)(enum-supp, target: it.target)])
   } else {
     it
   }
@@ -150,7 +156,7 @@
     let (_full, _numbering) = (full, numbering)
     let _supplement = supplement
     let real-supplement = if it.supplement == auto {
-      if _supplement not in (auto, [], none) { _supplement }
+      if _supplement not in (auto, none) { _supplement }
     } else { it.supplement }
     let el-func = el.func()
     if (
@@ -169,14 +175,14 @@
           // do not support for level and index properties
           let enum-supp = if item-supp != none {
             let item-supp-format = fel.pre-parse-supplement(item-supp, 0)
-            item-supp-format(0)(body)
+            item-supp-format(0)(body, target: it.target)
           }
           link(it.element.location(), [#fel.parse-supplement(
             it.supplement,
             0, // ????
             none,
             0,
-          )(0)(enum-supp)])
+          )(0)(enum-supp, target: it.target)])
         }
       } else {
         // reference for enum

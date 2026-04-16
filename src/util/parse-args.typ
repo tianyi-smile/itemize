@@ -149,6 +149,8 @@
 }
 
 
+// TODO: 增加对target 的获取
+
 /// Parse supplement content
 ///
 /// Adds supplemental content before or after the main body content.
@@ -186,19 +188,19 @@
 /// - n (int): Current index
 /// - body (content): Content to supplement
 /// -> content
-#let pre-parse-supplement(supplement, level, ..args) = n => body => {
+#let pre-parse-supplement(supplement, level, ..args) = n => (body, ..other-args) => {
   if supplement in (none, auto) {
     return supplement
   }
   if type(supplement) == function {
-    supp(body, supplement, level: level + 1, n: n + 1, ..pre-parse-tag(n, ..args))
+    supp(body, supplement, level: level + 1, n: n + 1, ..pre-parse-tag(n, ..args, ..other-args))
   } else {
     let _supplement = get-depth-value(supplement, level)
     if _supplement in (none, auto) {
       return _supplement
     }
     if type(_supplement) == function {
-      supp(body, _supplement, n: n + 1, ..pre-parse-tag(n, ..args))
+      supp(body, _supplement, n: n + 1, ..pre-parse-tag(n, ..args, ..other-args))
     } else {
       _supplement = get-value-by-n(_supplement, none, none)(n)
       if _supplement in (none, auto) {
@@ -222,10 +224,10 @@
 /// - n (int): Current index
 /// - body (content): Content to supplement
 /// -> content
-#let parse-supplement(curr-supplement, rel-level, enum-supplement, abs-level, ..args) = n => body => {
-  let supplement = pre-parse-supplement(enum-supplement, abs-level, ..args)(n)(body)
+#let parse-supplement(curr-supplement, rel-level, enum-supplement, abs-level, ..args) = n => (body, ..other-args) => {
+  let supplement = pre-parse-supplement(enum-supplement, abs-level, ..args)(n)(body, ..other-args)
   if supplement in (auto, none) {
-    supplement = pre-parse-supplement(curr-supplement, rel-level, ..args)(n)(body)
+    supplement = pre-parse-supplement(curr-supplement, rel-level, ..args)(n)(body, ..other-args)
     if supplement not in (auto, none) {
       return supplement
     }
@@ -1176,8 +1178,10 @@
     }
   }
 
+  let tight-spacing = if it.tight { par.leading } else { par.spacing }
+
   let spacing = if it.spacing == auto {
-    if it.tight { par.leading } else { par.spacing }
+    tight-spacing
   } else {
     it.spacing
   }
@@ -1185,35 +1189,33 @@
   let _ = item-args.remove("tag", default: none)
 
   let is-auto-tight-mode = false
+  // native behavior in typst >= 0.14
   let (default-above, default-below) = (spacing, par.spacing)
 
-  if it.spacing == auto {
-    if curr-tight-mode not in (auto, none) and type(curr-tight-mode) != dictionary {
-      if curr-tight-mode == "always-tight" {
-        (default-above, default-below) = (par.leading, par.spacing)
-      } else if curr-tight-mode == "never-tight" {
-        (default-above, default-below) = (par.spacing, par.spacing)
-      } else if curr-tight-mode == "compact-tight" {
-        (default-above, default-below) = (par.leading, par.leading)
-      } else if curr-tight-mode == "default" {
-        //
-      } else {
-        panic(
-          "Invalid tight-mode. The legal values are the following strings: always-tight, never-tight, compact-tight, default; or `auto`; or `dictionary` with keys: tight, not-tight, par-tight.",
-        )
-      }
+  if curr-tight-mode not in (auto, none) and type(curr-tight-mode) != dictionary {
+    if curr-tight-mode == "always-tight" {
+      (default-above, default-below) = (par.leading, par.spacing)
+    } else if curr-tight-mode == "never-tight" {
+      (default-above, default-below) = (par.spacing, par.spacing)
+    } else if curr-tight-mode == "compact-tight" {
+      (default-above, default-below) = (par.leading, par.leading)
+    } else if curr-tight-mode == "default" {
+      //
     } else {
-      is-auto-tight-mode = true
+      panic(
+        "Invalid tight-mode. The legal values are the following strings: always-tight, never-tight, compact-tight, default; or `auto`; or `dictionary` with keys: tight, not-tight, par-tight.",
+      )
     }
   } else {
-    // native behavior in typst >= 0.14
-    (default-above, default-below) = (spacing, spacing)
+    is-auto-tight-mode = true
   }
 
   let is-enabel-par-tight-spacing = false
   let (tight-h-spacing, not-tight-h-spacing, par-tight-h-spacing) = if is-auto-tight-mode == true {
     if curr-tight-mode == auto {
-      ((spacing, par.spacing), (par.spacing, par.spacing), (par.spacing, par.spacing))
+      // ((auto, auto), (par.spacing, par.spacing), (par.spacing, par.spacing))
+      ((spacing, auto), (par.spacing, auto), (par.spacing, auto))
+      // ((spacing, par.spacing), (par.spacing, par.spacing), (par.spacing, par.spacing))
     } else {
       if type(curr-tight-mode) == dictionary {
         let default-tight-spacing = (par.leading, par.spacing)
@@ -1265,10 +1267,11 @@
   let parbreak-tight-spacing = {
     if is-auto-tight-mode == true {
       let is-par = false
-      if it.spacing == auto and (is-enabel-par-tight-spacing or it.tight) {
+      if (is-enabel-par-tight-spacing or it.tight) {
+        // it.spacing == auto and
         let enable-auto-detect-tight = auto-detect-tight.get()
         if enable-auto-detect-tight {
-          let _pars = query(selector(paragraph-ID).before(here()))
+          let _pars = query(selector(metadata.where(value: paragraph-ID)).before(here()))
           is-par = _pars.len() > 0 and _pars.last().location().position() == here().position() // is this enough? at least in default it looks fine.
         }
       }

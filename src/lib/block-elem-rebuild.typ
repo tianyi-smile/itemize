@@ -892,7 +892,12 @@
       curr-baseline: curr-baseline,
       elem-func,
     )
-  } else if func == math.equation and e.has("block") and e.block {
+  } else if (
+    func == math.equation
+      and if e.has("block") { e.block } else {
+        math.equation.block
+      }
+  ) {
     return rebuild_block-eq(e, number: number, label-height: label-height, curr-baseline: curr-baseline)
   } else if func in (repeat, move, skew, scale) {
     // move???
@@ -992,6 +997,14 @@
       curr-baseline: curr-baseline,
       ..curr-number-args,
     )
+  } else if func == quote and (if e.has("block") { e.block } else { quote.block }) {
+    return rebuild-general-block-level-elem(
+      e,
+      number: number,
+      label-height: label-height,
+      curr-baseline: curr-baseline,
+      elem-func,
+    )
   } else {
     if is_styled(e) {
       // styled: set text, set align, set par, etc.
@@ -1018,6 +1031,26 @@
         inline: inline,
         .._body-no,
       )
+    } else if func == figure {
+      // in lists, in fact we need `context`
+      let _is-none-placement = if e.has("placement") { e.placement == none } else { figure.placement == none }
+      if _is-none-placement {
+        return (
+          body: {
+            baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)
+            e
+            fix-first-par-state()
+          },
+          inline: InlineType.block,
+        )
+      } else {
+        return (
+          body: {
+            e
+          },
+          inline: InlineType.blank,
+        )
+      }
     } else if (
       func
         in (
@@ -1034,12 +1067,11 @@
           line,
           polygon,
           //
-          figure,
           heading,
           image,
           outline,
         )
-        or (func == raw and e.has("block") and e.block)
+        or (func == raw and (if e.has("block") { e.block } else { raw.block }))
     ) {
       // other block-level elems (do not handle)
       return (

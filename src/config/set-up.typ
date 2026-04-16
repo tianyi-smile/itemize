@@ -131,9 +131,8 @@
     auto-detect-tight.update(true)
     // for implementing the `auto-detect` feature
     show parbreak: p => {
-      if p.has("label") and p.label == paragraph-ID {
-        return p
-      } else { [#p#metadata(none)#paragraph-ID] }
+      p
+      metadata(paragraph-ID)
     }
     doc
     auto-detect-tight.update(false)

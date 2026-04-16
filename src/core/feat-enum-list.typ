@@ -877,14 +877,17 @@
             )),
           )
         }
-        [#body]
+        body
       } else {
         // block-level or inline-level
         parent-number-box.update(())
         if inline == InlineType.blank {
-          [#body#hide-number#baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)]
+          body
+          hide-number
+          baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)
         } else {
-          [#parbreak()#body]
+          parbreak()
+          body
         }
       }
 
@@ -932,10 +935,10 @@
       let _temp-hanging-indent = curr-hanging-indent(i)
       let _hanging-indent = if _temp-hanging-indent == auto { auto } else { _temp-hanging-indent.to-absolute() }
 
-      let body-cell = grid.cell(x: 1)[
+      let body-cell = grid.cell(x: 1, {
         // override (next)
         // #show grid: set block(..default-block-args) // need
-        #inner-box({
+        inner-box({
           let (par-line-indent, par-hanging-indent) = {
             if hanging-type == "classic" {
               (0pt, 0pt)
@@ -959,7 +962,7 @@
           set block(..curr-block-args) // need
           item-content
         })
-      ]
+      })
       // feat: item-spacing with above and below
       let is-full-item-spacing = false
       let above-item-spacing
@@ -1057,8 +1060,8 @@
         ..out-spacing,
       )(body)
       // display: label + body
-      let outer-body = (curr-body-format.outer)(i)()[
-        #show grid.where(label: grid-ID): set block(
+      let outer-body = (curr-body-format.outer)(i)({
+        show grid.where(label: enum-grid-ID): set block(
           // inner
           ..default-block-args,
           ..inner-spacing,
@@ -1067,16 +1070,16 @@
         )
         // override
         // need
-        #show grid.cell: set block(..default-block-args)
-        #grid(
-          ..default-grid-args,
-          // for debug
-          // stroke: 1pt + red,
-          columns: (label-cell-width, body-cell-width),
-          inset: (inset, sec-inset),
-          label-cell, body-cell,
-        )#grid-ID
-      ]
+        show grid.cell: set block(..default-block-args)
+        [#grid(
+            ..default-grid-args,
+            // for debug
+            // stroke: 1pt + red,
+            columns: (label-cell-width, body-cell-width),
+            inset: (inset, sec-inset),
+            label-cell, body-cell,
+          )#enum-grid-ID]
+      })
       if is-full-item-spacing { [#hide-line()] }
       outer-block(outer-body)
       if is-full-item-spacing { [#hide-line()] }
@@ -1970,14 +1973,17 @@
             )),
           )
         }
-        [#body]
+        body
       } else {
         // block-level or inline-level
         parent-number-box.update(())
         if inline == InlineType.blank {
-          [#body#hide-marker#baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)]
+          body
+          hide-marker
+          baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)
         } else {
-          [#parbreak()#body]
+          parbreak()
+          body
         }
       }
 
@@ -1985,8 +1991,8 @@
       let item-baseline-align = if base-align == none { start } else { base-align }
       let alone = if is-holding { is-alone } else { true }
 
-      let label-cell = grid.cell(x: 0, align: item-baseline-align)[
-        #if base-align == none {
+      let label-cell = grid.cell(x: 0, align: item-baseline-align, {
+        if base-align == none {
           context {
             let (dy, final-label-height, final-baseline) = get-body-baseline()
             if dy == none {
@@ -2019,7 +2025,7 @@
         } else {
           label-box-fix-baseline(alone: true, fix-height: box-height)
         }
-      ]
+      })
 
 
       let inner-box(body) = (curr-body-format.inner)(i)(show-text((curr-body-style)(i), body))
@@ -2030,10 +2036,10 @@
       let _temp-hanging-indent = curr-hanging-indent(i)
       let _hanging-indent = if _temp-hanging-indent == auto { auto } else { _temp-hanging-indent.to-absolute() }
 
-      let body-cell = grid.cell(x: 1)[
+      let body-cell = grid.cell(x: 1, {
         // override (next)
         // #show grid: set block(..default-block-args) // need
-        #inner-box({
+        inner-box({
           let (par-line-indent, par-hanging-indent) = {
             if hanging-type == "classic" {
               (0pt, 0pt)
@@ -2057,7 +2063,7 @@
           set block(..curr-block-args) // need
           item-content
         })
-      ]
+      })
 
       // feat: item-spacing with above and below
       let is-full-item-spacing = false
@@ -2156,8 +2162,8 @@
       )(body)
 
       // display: label + body
-      let outer-body = (curr-body-format.outer)(i)()[
-        #show grid.where(label: grid-ID): set block(
+      let outer-body = (curr-body-format.outer)(i)({
+        show grid.where(label: list-grid-ID): set block(
           // inner
           ..default-block-args,
           ..inner-spacing,
@@ -2166,14 +2172,14 @@
         )
         // override
         // need
-        #show grid.cell: set block(..default-block-args)
-        #grid(
-          ..default-grid-args,
-          columns: (label-cell-width, body-cell-width),
-          inset: (inset, sec-inset),
-          label-cell, body-cell,
-        )#grid-ID
-      ]
+        show grid.cell: set block(..default-block-args)
+        [#grid(
+            ..default-grid-args,
+            columns: (label-cell-width, body-cell-width),
+            inset: (inset, sec-inset),
+            label-cell, body-cell,
+          )#list-grid-ID]
+      })
       if is-full-item-spacing { [#hide-line()] }
       outer-block(outer-body)
       if is-full-item-spacing { [#hide-line()] }
