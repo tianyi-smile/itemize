@@ -1,14 +1,12 @@
 #import "../lib/resume-lib.typ" as rl
 #import "../lib/label-width-lib.typ" as lw
-
 #import "../core/fix-enum-list.typ" as fel
 
 
 /// Wraps the current enum or list as a new one
 ///
-/// Parameters
-/// - `doc`: The document to wrap
-/// - `new`: If `true`, treats the enum or list as a new one (default: `true`)
+/// - doc (content): The document to wrap
+/// - new (bool): If `true`, treats the enum or list as a new one (default: `true`)
 #let _new-enum(doc, new: true) = if new {
   show enum: it => it
   doc
@@ -16,15 +14,14 @@
 
 /// Continue using the enum numbers from the previous ones.
 ///
-/// Parameters
 /// - new (bool): If `true`, starts a new enum (default: `false`)
-/// - body`: Content to resume enum
+/// - body (content): Content to resume enum
 #let resume(new: false, ..body) = {
   rl.resume-list.update(true)
   show: _new-enum.with(new: new)
   if body.pos().len() > 0 {
     let content = for e in body.pos() { e }
-    if fel.item_is_blank_in_seq(content) != none {
+    if content != none {
       show enum: it => it
       content
     }
@@ -34,10 +31,9 @@
 
 /// Label current enum for reference by `key`
 ///
-/// Parameters
 /// - key (label, str): Unique identifier for the enum
 #let resume-label(key) = {
-  let key-label = fel.get_label(key)
+  let key-label = fel.get-label(key)
   context {
     let sel = selector(key-label).and(metadata.where(value: fel.enum-resume-ID))
     let keys = query(sel)
@@ -58,13 +54,12 @@
 
 /// Resumes an enum labelled with `key` (by using method `resume-label`)
 ///
-/// Parameters
 /// - key (label, str): Key of the list to resume
 /// - new (bool): If `true`, starts new enum (default: `true`)
-/// - body (): The enum in the body to resume
+/// - body (content): The enum in the body to resume
 ///
 #let resume-list(key, new: true, ..body) = {
-  let key-label = fel.get_label(key)
+  let key-label = fel.get-label(key)
   rl.resume-label-list.update(key-label)
   show: _new-enum.with(new: new)
   if body.pos().len() > 0 {
@@ -79,8 +74,7 @@
 
 /// Convenience method for `resume-list` using @label syntax
 ///
-/// Parameters
-/// - `it`: Reference element containing target and supplement
+/// - it: Reference element containing target and supplement
 #let ref-resume-list(it) = {
   let el = it.element
   if el != none {
@@ -100,11 +94,11 @@
 
 /// Resets all resume counter.
 /// If these records are no longer needed in the document, you can call the `adv.reset-resume()` method to clear this information. One common use case is:
-///   ```
+///   ```typst
 ///   // New enum-before
-///   // el.adv.reset-resume()
+///   #el.adv.reset-resume()
 ///   // New enum-here:
-///   // el.adv.reset-resume()
+///   #el.adv.reset-resume()
 ///   // New enum-after
 //    ```
 // - Improper use of `adv.reset-resume()` may break the `resuming enum` functionality.
@@ -125,8 +119,7 @@
 
 /// Controls auto-resume behavior
 ///
-/// Parameters
-/// - doc: Content to process
+/// - doc (content): Content to process
 /// - auto-resuming (array, bool, none): Resume mode
 ///   - `true`: all enum numbers within `doc` will continue from the previous ones
 ///   - `false` == `none`: Do not enable the resuming feature
@@ -141,12 +134,11 @@
 }
 
 /// Automatic alignment of labels in enums and lists
-/// 
+///
 /// The method `auto-label-item` cannot be nested.
 ///
-/// Parameters
 /// - doc (content): The document to process
-/// - form (none, auto, "each", "list", "all", array): 
+/// - form (none, auto, "each", "list", "all", array):
 ///     - `none`: No processing.
 ///     - `"each" == auto`: `Enum` and `list` are considered separately, i.e., align the label in enums and the label in lists independently.
 ///     - `"enum"`: Only align the label in `enum`.
@@ -160,12 +152,10 @@
     panic("The function `auto-label-item` cannot be nested.")
   }
   lw.hold_width-label-dic()
-  // box(stroke: 1pt + blue, inset: 1pt)[init|#context lw.max-width-label.get()|]
   show enum: it => it
   show list: it => it
   doc
   [#metadata(fel.enum-label-ID)#label(fel.auto-label-ID)]
-  // box(stroke: 1pt + yellow, inset: 1pt)[after|#context lw.max-width-label.get()|]
   lw.recover_width-label-dic()
   fel.width-label-form.update(auto)
 }
