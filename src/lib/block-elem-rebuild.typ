@@ -1071,6 +1071,7 @@
           image,
           outline,
         )
+          + if sys.version >= version(0, 14, 0) { (title,) }
         or (func == raw and (if e.has("block") { e.block } else { raw.block }))
     ) {
       // other block-level elems (do not handle)
@@ -1103,6 +1104,7 @@
       body: {
         baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)
         e
+        fix-first-par-state()
       },
       inline: InlineType.block,
     )

@@ -5,9 +5,9 @@
 ///
 /// Reference: Andrew's solution (https://github.com/typst/typst/issues/5095#issuecomment-2973642456)
 
-// TODO:?? https://github.com/typst/typst/pull/7529/changes: ա Ա
-#let numbering-kind-from-char(c) = {
-  let numberings = (
+// https://github.com/typst/typst/pull/7529/changes: ա Ա
+#let numberings = (
+  (
     "1",
     "a",
     "A",
@@ -33,6 +33,9 @@
     "①",
     "⓵",
   )
+    + if sys.version > version(0, 14, 2) { (ա, Ա) }
+)
+#let numbering-kind-from-char(c) = {
   if c in numberings { c }
 }
 

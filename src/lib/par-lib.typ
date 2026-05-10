@@ -11,32 +11,35 @@
   it,
   line-indent: 0pt,
   hanging-indent: 0pt,
-  line-inset: 0pt,
+  // line-inset: 0pt,
   hanging-inset: 0pt,
   first-line-indent: 0pt,
 ) = {
-  par-state.update(it => it + 1)
-  set par(..get_current-par-args(it))
-  show pad: set block(..default-block-args, above: block.above, below: block.below)
-  let _hanging-indent = (
-    if hanging-indent == auto { it.hanging-indent } else { hanging-indent } + hanging-inset
-  )
-  let _line-indent = (
-    if line-indent == auto { it.first-line-indent.amount } else { line-indent } + line-inset
-  )
+  par-state.update(it => if it < 0 { it } else { it + 1 })
+
+  // let _line-indent = (
+  //   if line-indent == auto { it.first-line-indent.amount } else { line-indent } + line-inset
+  // )
   if par-state.get() == 0 {
     // first line
+    set par(..get_current-par-args(it))
+    show pad: set block(..default-block-args, above: block.above, below: block.below)
+    let _hanging-indent = (
+      if hanging-indent == auto { it.hanging-indent } else { hanging-indent } + hanging-inset
+    )
     pad(left: _hanging-indent, rest: 0pt, {
       h(first-line-indent - _hanging-indent)
       h(0pt, weak: true)
       it.body
     })
   } else {
-    pad(left: _hanging-indent, rest: 0pt, {
-      h(_line-indent - _hanging-indent)
-      h(0pt, weak: true)
-      it.body
-    })
+    // other lines or temrs (do not change)
+    it
+    // pad(left: _hanging-indent, rest: 0pt, {
+    //   h(_line-indent - _hanging-indent)
+    //   h(0pt, weak: true)
+    //   it.body
+    // })
   }
 }
 
@@ -54,7 +57,7 @@
     if get-elem-label(it) == label(prevent-recursion-ID) {
       return it
     }
-    par-state.update(0)
+    par-state.update(-1)
     [#terms.item(
         {
           it.term
@@ -62,7 +65,7 @@
         {
           it.description
           parbreak()
-          par-state.update(0)
+          par-state.update(-1)
         },
       )#label(prevent-recursion-ID)]
     par-state.update(1)

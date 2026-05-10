@@ -948,11 +948,15 @@
           }
           par-state.update(0)
           let _first-line-indent = -max-width + real-box-width + _first-line-inset
-          /// Note that: `hanging-indent` and `first-line-indent` of the `par` in the lists are no longer in effect if `_line-indent` and `_hanging-indent` are not `auto`.
+          // make par.first-line-indent.all be true when line-indent != auto
+          // compatible with parize
+          set par(first-line-indent: (amount: line-indent + par-line-indent, all: true)) if (
+            line-indent != auto
+          )
           show par: par-box.with(
             line-indent: _line-indent,
             hanging-indent: _hanging-indent,
-            line-inset: par-line-indent,
+            // line-inset: par-line-indent,
             hanging-inset: par-hanging-indent,
             first-line-indent: _first-line-indent,
           )
@@ -2049,11 +2053,15 @@
           }
           par-state.update(0)
           let _first-line-indent = -max-width + real-box-width + _first-line-inset
-          /// Note that: `hanging-indent` and `first-line-indent` of the `par` in the lists are no longer in effect if `_line-indent` and `_hanging-indent` are not `auto`.
+          // make par.first-line-indent.all be true when line-indent != auto
+          // compatible with parize
+          set par(first-line-indent: (amount: line-indent + par-line-indent, all: true)) if (
+            line-indent != auto
+          )
           show par: par-box.with(
             line-indent: _line-indent,
             hanging-indent: _hanging-indent,
-            line-inset: par-line-indent,
+            // line-inset: par-line-indent,
             hanging-inset: par-hanging-indent,
             first-line-indent: _first-line-indent,
           )
