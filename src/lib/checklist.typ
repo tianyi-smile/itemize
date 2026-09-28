@@ -24,6 +24,10 @@
 #let unchecked(fill: auto, radius: .1em, solid: none) = context [
   #set text(dir: ltr, baseline: 0pt)
   #box(
+    // refer to typst-cheq: Typst 0.15 keeps a box's internal baseline by default. Checklist markers
+    // are enum numbers, so pin their baseline to the bottom to keep item text
+    // aligned with the marker instead of with any internal drawing content.
+    baseline: bottom,
     stroke: .05em + get-color(fill),
     height: 0.8em,
     width: 0.8em,
@@ -43,6 +47,10 @@
 #let checked(fill: auto, radius: .1em, solid: none) = context [
   #set text(dir: ltr, baseline: 0pt)
   #box(
+    // refer to typst-cheq: Typst 0.15 keeps a box's internal baseline by default. Checklist markers
+    // are enum numbers, so pin their baseline to the bottom to keep item text
+    // aligned with the marker instead of with any internal drawing content.
+    baseline: bottom,
     stroke: .05em + get-color(fill),
     height: 0.8em,
     width: 0.8em,
@@ -69,6 +77,10 @@
 #let incomplete(fill: auto, radius: .1em, solid: none) = context [
   #set text(dir: ltr, baseline: 0pt)
   #box(
+    // refer to typst-cheq: Typst 0.15 keeps a box's internal baseline by default. Checklist markers
+    // are enum numbers, so pin their baseline to the bottom to keep item text
+    // aligned with the marker instead of with any internal drawing content.
+    baseline: bottom,
     stroke: .05em + get-color(fill),
     height: 0.8em,
     width: 0.8em,
@@ -88,6 +100,10 @@
 #let canceled(fill: auto, radius: .1em, solid: none) = context [
   #set text(dir: ltr, baseline: 0pt)
   #box(
+    // refer to typst-cheq: Typst 0.15 keeps a box's internal baseline by default. Checklist markers
+    // are enum numbers, so pin their baseline to the bottom to keep item text
+    // aligned with the marker instead of with any internal drawing content.
+    baseline: bottom,
     stroke: .05em + get-color(fill),
     height: 0.8em,
     width: 0.8em,
