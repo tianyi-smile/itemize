@@ -2,62 +2,8 @@
 #import "../lib/resume-lib.typ" as rl
 #import "../lib/label-width-lib.typ" as lw
 
-/// Parses the auto-label-width argument to validate its value.
-///
-/// Parameters
-/// - `auto-label-width`: The value to parse (can be `none`, `auto`, or specific strings).
-/// - `level`: The nesting level for which the label width is being set.
-///
-/// Returns
-/// The validated label width value.
-///
-#let parse-auto-label(auto-label-width, level) = {
-  let curr-auto-label = get_depth-value(auto-label-width, level)
-  assert(
-    curr-auto-label in (none, auto, "none", "each", "all", "enum", "list"),
-    message: "The argument should be `none`, `auto`, or one of the following strings: \"each\", \"all\", \"enum\", \"list\".",
-  )
-  return curr-auto-label
-}
-
-
-/// Enhances the `enum` function with advanced formatting and layout options.
-///
-/// Parameters
-/// - `it`: The enum object to format.
-/// - `elem`: Type of element (`"enum"`, `"list"`, or `"both"`).
-/// - `indent`: Indentation for each item.
-/// - `body-indent`: Spacing between marker and body.
-/// - `label-indent`: Indentation for labels.
-/// - `is-full-width`: If `true`, items span full width.
-/// - `item-spacing`: Spacing between items.
-/// - `enum-spacing`: Spacing around the enum.
-/// - `enum-margin`: Margin around the enum.
-/// - `hanging-type`: Hanging indent type (`"classic"` or `"paragraph"`).
-/// - `hanging-indent`: Hanging indent value.
-/// - `line-indent`: First line indent.
-/// - `absolute-level`: If `true`, uses absolute nesting levels.
-/// - `auto-base-level`: Auto-detects base level (v0.2.0).
-/// - `label-width`: Width of labels (v0.2.0).
-/// - `body-format`: Formatting for body content (v0.2.0).
-/// - `label-format`: Formatting for labels (v0.2.0).
-/// - `item-format`: Formatting for items (v0.2.0).
-/// - `label-align`: Label alignment (v0.2.0).
-/// - `label-baseline`: Label baseline (v0.2.0).
-/// - `checklist`: Enables checklist mode (v0.2.0).
-/// - `func-list`: Function for list formatting.
-/// - `func-enum`: Function for enum formatting.
-/// - `curr-level`: Current nesting level.
-/// - `curr-enum-level`: Current enum level.
-/// - `curr-list-level`: Current list level.
-/// - `auto-resuming`: Controls resume functionality (v0.2.0).
-/// - `auto-label-width`: Controls label width functionality (v0.2.0).
-/// - `enum-config`: Configuration for enums.
-/// - `list-config`: Configuration for lists.
-/// - `args`:  Additional named arguments for text formatting.
-///
-/// Returns
-/// A formatted enum with the specified styling and layout.
+/// Ver0.3.0: Reimplement lists using a new layout method
+/// Support additional features: auto-label-width, auto-resuming
 #let feat-enum(
   it,
   elem: "enum",
@@ -89,16 +35,20 @@
   auto-label-width: none, /*new ver0.2.0*/
   enum-config: (:), /** config enum only */
   list-config: (:), /** config list only */
+  ref-numbering: none, /** new ver0.3.0  */
+  supplement: auto, /** new ver0.3.0 for supplement, (prefix, suffix) and function, */
+  tight-mode: auto, /** new ver0.3.0 */
+  tight-item-mode: auto, /** new ver0.3.0 */
+  step: auto, /** new ver0.3.0 */
+  label-inset: auto, /** new ver0.3.0 */
+  first-line-inset: auto, /** new ver0.3.0 */
   ..args,
 ) = {
   item-level.update(push("enum"))
-  enum-numbering.update((
-    numbering: it.numbering,
-    full: it.full,
-    auto-base-level: auto-base-level,
-    curr-enum-level: curr-enum-level,
-  ))
+
   enum-level.update(it => it + 1)
+
+  auto-id-state.update(auto-record-id)
 
   /*
   feat: resume a list
@@ -117,42 +67,6 @@
     let level = if absolute-level { abs-level } else { it-enum-level }
     let rel-level = if absolute-level { curr-level } else { curr-enum-level }
 
-    // format enum function
-    let enum-config-args = parse-elem-args(elem-args: enum-config)
-
-    // format function
-    let curr-item-format = {
-      let item-format-f = parse-item-format(item-format, rel-level, n-last: it.children.len())
-      let item-format-f-e = parse-item-format(enum-config-args.item-format, curr-enum-level, n-last: it.children.len())
-      for (k, f) in item-format-f {
-        (str(k): n => body => f(n)((item-format-f-e.at(str(k)))(n)(body)))
-      }
-    }
-
-    let (curr-body-border, curr-body-style) = {
-      let (border-f, style-f) = parse-body-format(body-format, rel-level, n-last: it.children.len())
-      let (border-f-e, style-f-e) = parse-body-format(
-        enum-config-args.body-format,
-        curr-enum-level,
-        n-last: it.children.len(),
-      )
-      (
-        for (k, value) in border-f {
-          (str(k): n => value(n) + (border-f-e.at(str(k)))(n))
-        },
-        n => style-f(n) + style-f-e(n),
-      )
-    }
-
-    let curr-label-format = {
-      let label-format-f = parse-format-func(label-format, n-last: it.children.len())(rel-level)
-      let label-format-f-e = parse-format-func(enum-config-args.label-format, n-last: it.children.len())(
-        curr-enum-level,
-      )
-      n => body => label-format-f(n)(label-format-f-e(n)(body))
-    }
-
-
     // for the next show-raw
     let all-args = (
       elem: elem,
@@ -167,23 +81,28 @@
       hanging-indent: hanging-indent,
       line-indent: line-indent,
       absolute-level: absolute-level,
-      auto-base-level: auto-base-level, /*new ver0.2.0 */
+      auto-base-level: auto-base-level, /*new ver0.2.0*/
       label-width: label-width, /*new ver0.2.0*/
       body-format: body-format, /*new ver0.2.0*/
       label-format: label-format, /*new ver0.2.0*/
-      item-format: item-format, /*new ver0.2.0*/
+      item-format: item-format, /*new ver0.2.0, not be used for ver0.3.0*/
       label-align: label-align, /*new ver0.2.0*/
       label-baseline: label-baseline, /*new ver0.2.0*/
-      checklist: checklist,
+      checklist: checklist, /*new ver0.2.0*/
       func-enum: func-enum,
       func-list: func-list,
+      ref-numbering: ref-numbering, /*new ver0.3.0*/
+      supplement: supplement, /*new ver0.3.0*/
+      tight-mode: tight-mode, /** new ver0.3.0 */
+      tight-item-mode: tight-item-mode, /** new ver0.3.0 */
+      step: step, /** new ver0.3.0 */
+      label-inset: label-inset, /** new ver0.3.0 */
+      first-line-inset: first-line-inset, /** new ver0.3.0 */
+      // for levels (to void "layout did not converge within 5 attempts")
       curr-level: curr-level + 1,
       curr-enum-level: curr-enum-level + 1,
       curr-list-level: curr-list-level,
-      auto-resuming: auto-resuming,
-      auto-label-width: auto-label-width,
     )
-
     let next-show = body => {
       if elem == "both" {
         show enum: func-enum.with(
@@ -208,23 +127,122 @@
       }
     }
 
-    let is-formatted-item = (
-      item-format not in (none, (), auto, (:)) or enum-config-args.item-format not in (none, (), auto, (:))
-    )
+    // config enum function
+    let enum-config-args = parse-elem-args(elem-args: enum-config)
 
-    let parse-formatted-body = if item-format not in (none, (), auto, (:)) {
-      pre_parse-formatted-body
-    } else {
-      native-content
+    // config item function
+    let item-config-args = get-item-config-args(it.children)
+
+    let level-item = n => if item-config-args(n).absolute { curr-level } else { curr-enum-level }
+
+    // feat (ver0.3.0): The tag of the current item
+    let item-tag = n => item-config-args(n).tag
+    let item-enum-tag = item-config-args(0).enum-tag
+
+    // The total number of items
+    let len = it.children.len()
+
+    let args-with-tags = (tag: item-tag, enum-tag: item-enum-tag, n-last: len)
+    let args-with-tags-item = (enum-tag: item-enum-tag, n-last: len)
+
+    // ref-numbering
+    let _ref-numbering = get-none-value(ref-numbering, enum-config-args.ref-numbering)
+    assert(
+      _ref-numbering == none or type(_ref-numbering) in (str, function),
+      message: "ref-numbering must be a string or a function",
+    )
+    // supplement
+    let _supplement = parse-supplement(
+      supplement,
+      rel-level,
+      enum-config-args.supplement,
+      curr-enum-level,
+      ..args-with-tags,
+    )
+    // let item-ref-numbering = item-config-args(0).ref-numbering
+    // for reference (config)
+    enum-numbering.update(push((
+      numbering: it.numbering,
+      ref-numbering: _ref-numbering,
+      full: it.full,
+      auto-base-level: auto-base-level,
+      curr-enum-level: curr-enum-level,
+      supplement-format: _supplement,
+      level-item: level-item,
+      ..args-with-tags,
+    )))
+
+    // format function
+    let (curr-body-border, curr-body-style, curr-body-format) = {
+      let (border-f, style-f, format-f) = parse-body-format(body-format, rel-level, ..args-with-tags)
+      let (border-f-e, style-f-e, format-f-e) = parse-body-format(
+        enum-config-args.body-format,
+        curr-enum-level,
+        ..args-with-tags,
+      )
+      let body-format-item = n => parse-body-format(
+        item-config-args(n).body-format,
+        level-item(n),
+        ..args-with-tags-item,
+      )
+      (
+        for (k, value) in border-f {
+          (str(k): n => value(n) + (border-f-e.at(str(k)))(n) + body-format-item(n).at(0).at(str(k))(n))
+        },
+        n => style-f(n) + style-f-e(n) + body-format-item(n).at(1)(n),
+        for (k, f) in format-f {
+          (
+            str(k): n => body => {
+              let f-e = format-f-e.at(str(k))
+              let f-item = body-format-item(n).at(2).at(str(k))
+              f(n)(f-e(n)(f-item(n)(body)))
+            },
+          )
+        },
+      )
+    }
+
+    // label-format
+    let (curr-label-border, curr-label-format) = {
+      let (border-f, format-f) = parse-label-format(label-format, rel-level, ..args-with-tags)
+      let (border-f-e, format-f-e) = parse-label-format(
+        enum-config-args.label-format,
+        curr-enum-level,
+        ..args-with-tags,
+      )
+      let body-format-item = n => parse-label-format(
+        item-config-args(n).label-format,
+        level-item(n),
+        ..args-with-tags-item,
+      )
+      (
+        n => border-f(n) + (border-f-e)(n) + body-format-item(n).at(0)(n),
+        n => body => {
+          let f-item = body-format-item(n).at(1)
+          format-f(n)(format-f-e(n)(f-item(n)(body)))
+        },
+      )
     }
 
     /*
     feat: resume a list
     */
     let numbers = ()
+    let item-skipped = n => item-config-args(n).skipped
+    // feat: custom step
+    // Parse step
+    let _step = parse-general-args-with-level(
+      step,
+      rel-level,
+      enum-config-args.step,
+      curr-enum-level,
+      ..args-with-tags-item,
+    )
+    let cur-resume = 0
+
     if auto-resuming != none {
       let curr-auto-resuming = if auto-resuming != auto {
-        let _auto-resuming = get_depth-value(auto-resuming, rel-level)
+        let _auto-resuming = get-depth-value(auto-resuming, rel-level)
         assert(type(_auto-resuming) == bool, message: "`auto-resuming` should be a bool if it is not `auto` or `none`.")
         _auto-resuming
       } else { none }
@@ -246,7 +264,7 @@
           sel
         }
       } else { none }
-      let cur-resume = if target-enum != none {
+      cur-resume = if target-enum != none {
         // label-case
         let dic = rl.item-counter-dic.at(target-enum)
         let target-level = item-level.at(target-enum).len() - 1 // 采用absolute level
@@ -266,11 +284,11 @@
         let resume-sublist = auto-resuming-form.get()
         if resume-sublist != none {
           let (form, current-level) = resume-sublist
-          let curr-form = get_depth-value(form, abs-level - current-level)
+          let curr-form = get-depth-value(form, abs-level - current-level)
           if curr-form != none {
             assert(
               type(curr-form) == bool,
-              message: "The value should a bool.",
+              message: "The value should be a bool.",
             )
             if curr-form {
               curr-auto-resuming = true
@@ -284,105 +302,125 @@
           }
         } else { 0 }
       }
-
       rl.init_resuming-number(it.start, curr-auto-resuming)
+    }
+    // numbers
+    let cur = if it.start == auto { cur-resume } else { it.start - 1 }
 
-      // enum's number (label)
-      // [\ ]
-      // box(stroke: 1pt + red, inset: 1pt)[init-counter: #context rl.item-counter-dic.get(); #curr-level]
-      let cur = if it.start == auto { cur-resume } else { it.start - 1 }
-      for i in range(it.children.len()) {
+    if _step == auto or type(_step) == int {
+      // common case
+      let increment = get-auto-value(_step, 1)
+      for i in range(len) {
         let child = it.children.at(i)
         if child.has("number") and child.number not in (none, auto) {
           // typst 0.14
           numbers.push(child.number)
           cur = child.number
-          rl.update_resuming-number(child.number)
-          // box(stroke: 1pt + green, inset: 1pt)[|#context rl.item-counter-dic.get().counter]
+          if auto-resuming != none {
+            rl.update_resuming-number(child.number)
+          }
         } else {
-          cur += 1
+          if item-skipped(i) == false {
+            cur += increment
+            if auto-resuming != none {
+              rl.update_resuming-number(it => it + increment)
+            }
+          } else {
+            if auto-resuming != none {
+              rl.update_resuming-number(it => it)
+            }
+          }
           numbers.push(cur)
-          rl.update_resuming-number(it => it + 1)
-          // box(stroke: 1pt + green, inset: 1pt)[|#context rl.item-counter-dic.get().counter]
         }
       }
-    } else {
-      let cur = if it.start == auto { 0 } else { it.start - 1 }
-      for i in range(it.children.len()) {
+    } else if type(_step) == function {
+      for i in range(len) {
         let child = it.children.at(i)
         if child.has("number") and child.number not in (none, auto) {
+          // typst 0.14
           numbers.push(child.number)
           cur = child.number
+          if auto-resuming != none {
+            rl.update_resuming-number(child.number)
+          }
         } else {
-          cur += 1
+          if item-skipped(i) == false {
+            let cur-n = _step(..numbers)
+            if cur-n in (none, auto) {
+              cur += 1
+              if auto-resuming != none {
+                rl.update_resuming-number(it => it + 1)
+              }
+            } else if type(cur-n) == int {
+              cur = cur-n
+              if auto-resuming != none {
+                rl.update_resuming-number(cur-n)
+              }
+            } else {
+              panic("The return value of step function must be `int`, `none` or `auto`.")
+            }
+          }
           numbers.push(cur)
         }
       }
-    }
-
-    // using curr-level
-    if curr-level == 0 and elem != "list" {
-      state("_default-text-style", (default-text-args,)).update(push(get_current-text-args(text)))
-      state("_parent-hanging-indent_and_line-indent", ((0em, 0em),)).update(push(
-        (par.hanging-indent, par.first-line-indent.amount),
-      ))
-    }
-
-    let default-text-level0 = if curr-level == 0 {
-      get_current-text-args(text)
     } else {
-      state("_default-text-style", (default-text-args,)).get().last()
+      panic("The step value must be `int`, `function` or `auto`.")
     }
-
 
     /*
     feat: custom label (enum's number)
     */
     let text-args = {
-      let curr-text-args = parse-args(..args, rel-level, n-last: it.children.len())
-      let elem-text-args = parse-args(..enum-config-args.text-args, curr-enum-level, n-last: it.children.len())
-      n => curr-text-args(n) + elem-text-args(n)
+      let curr-text-args = parse-text-args(..args, rel-level, ..args-with-tags)
+      let elem-text-args = parse-text-args(..enum-config-args.text-args, curr-enum-level, ..args-with-tags)
+      let item-text-args = n => parse-text-args(
+        ..item-config-args(n).text-args,
+        level-item(n),
+        ..args-with-tags-item,
+      )
+      n => curr-text-args(n) + elem-text-args(n) + item-text-args(n)(n)
     }
     let custom-text = n => body => {
-      set text(..default-text-level0, ..text-args(n), overhang: false)
-      if is-formatted-item {
-        show: show-label-text-style
-        curr-label-format(n)([#body#label-number-ID-label])
-      } else {
-        curr-label-format(n)(body)
-      }
+      // need all text-args
+      set text(..get_current-text-args(text), ..text-args(n), overhang: false)
+      curr-label-format(n)(body)
     }
 
-    let resolved(number) = if number != none {
+    let resolved(number) = {
+      // should will we change (???): ver0.3.0 for function, given full information
+      // or type(it.numbering) == function
       if it.full {
         if auto-base-level {
           // use `curr-base-parent-level` to void "layout did not converge within 5 attempts"
-          numbering(it.numbering, ..curr-base-parent-level.get(), number)
+          std.numbering(it.numbering, ..curr-base-parent-level.get().map(e => e.number), number)
         } else {
-          numbering(it.numbering, ..curr-parent-level.get(), number)
+          std.numbering(it.numbering, ..curr-parent-level.get().map(e => e.number), number)
         }
       } else {
-        if type(it.numbering) == str {
-          apply-numbering-kth(
-            it.numbering,
-            it-enum-level,
-            number,
-          )
+        apply-numbering-kth(
+          it.numbering,
+          it-enum-level,
+          number,
+        )
+      }
+    }
+
+    let item-label-body = n => item-config-args(n).body
+    let styled-numbers = {
+      for (i, number) in numbers.enumerate() {
+        let curr-item-label-body = item-label-body(i)
+        if curr-item-label-body == none {
+          (custom-text(i)(resolved(number)),)
         } else {
-          numbering(it.numbering, number)
+          (custom-text(i)(curr-item-label-body),)
         }
       }
     }
-    let styled-numbers = {
-      for i in range(numbers.len()) {
-        (custom-text(i)((resolved(numbers.at(i)))),)
-      }
-    }
 
-    let numbers-width = styled-numbers.map(number => measure(number).width)
-
+    let numbers-size = styled-numbers.map(number => measure(number))
+    let numbers-width = numbers-size.map(number => number.width)
+    let numbers-height = numbers-size.map(number => number.height)
     let number-max-width = calc.max(..numbers-width)
-
 
     /*feat: auto-label-width*/
     if auto-label-width != none {
@@ -431,14 +469,17 @@
           number-max-width,
           curr-enum-level,
           labels-width: numbers-width,
-          n-last: it.children.len(),
+          ..args-with-tags,
         )
-      } else { parse-label-width(label-width, number-max-width, rel-level, n-last: it.children.len()) }
+      } else {
+        parse-label-width(
+          label-width,
+          number-max-width,
+          rel-level,
+          ..args-with-tags,
+        )
+      }
     }
-
-
-    // box(stroke: 1pt + yellow, inset: 1pt)[|#context lw.max-width-label.get()]
-
 
     /*
     need to update !!!!!!!!!!!!!!!!!!!
@@ -447,6 +488,21 @@
     label-width-enum.update(push(number-max-width))
     label-width-el.update(push(number-max-width))
 
+    /*tight mode*/
+    let (curr-tight-mode, curr-tight-item-mode) = get-tight-mode(
+      item-config-args(0).tight-mode,
+      item-config-args(0).tight-item-mode,
+      level-item(0),
+      enum-config-args.tight-mode,
+      enum-config-args.tight-item-mode,
+      curr-enum-level,
+      tight-mode,
+      tight-item-mode,
+      rel-level,
+      ..args-with-tags-item,
+    )
+
+    /* spacings */
     let (
       indent-f,
       body-indent-f,
@@ -457,11 +513,13 @@
       enum-above-spacing-f,
       enum-below-spacing-f,
       item-spacing-f,
-    ) = parse(
+      label-inset-f,
+      first-line-inset-f,
+    ) = parse-all-length(
       it,
       rel-level,
       level,
-      number-max-width, /*ver0.1.x*/
+      number-max-width, /*ver0.1.x might change in the future*/
       absolute-level,
       indent: indent,
       body-indent: body-indent,
@@ -472,6 +530,11 @@
       enum-margin: enum-margin,
       hanging-indent: hanging-indent,
       line-indent: line-indent,
+      curr-tight-mode: curr-tight-mode,
+      curr-tight-item-mode: curr-tight-item-mode,
+      label-inset: label-inset,
+      first-line-inset: first-line-inset,
+      ..args-with-tags,
     )
 
     let (
@@ -484,11 +547,13 @@
       enum-above-spacing-f-e,
       enum-below-spacing-f-e,
       item-spacing-f-e,
-    ) = parse(
+      label-inset-f-e,
+      first-line-inset-f-e,
+    ) = parse-all-length(
       it,
       curr-enum-level,
       it-enum-level,
-      number-max-width, /*ver0.1.x*/
+      number-max-width, /*ver0.1.x might change in the future*/
       false,
       indent: enum-config-args.indent,
       body-indent: enum-config-args.body-indent,
@@ -499,7 +564,55 @@
       enum-margin: enum-config-args.enum-margin,
       hanging-indent: enum-config-args.hanging-indent,
       line-indent: enum-config-args.line-indent,
+      curr-tight-mode: curr-tight-mode,
+      curr-tight-item-mode: curr-tight-item-mode,
+      label-inset: enum-config-args.label-inset,
+      first-line-inset: enum-config-args.first-line-inset,
+      ..args-with-tags,
     )
+
+    let (
+      indent-f-item,
+      body-indent-f-item,
+      label-indent-f-item,
+      hanging-indent-f-item,
+      line-indent-f-item,
+      enum-width-f-item,
+      enum-above-spacing-f-item,
+      enum-below-spacing-f-item,
+      item-spacing-f-item,
+      label-inset-f-item,
+      first-line-inset-f-item,
+    ) = {
+      let item-args = n => {
+        let args = item-config-args(n)
+        parse-all-length(
+          it,
+          level-item(n),
+          abs-enum-level,
+          number-max-width, /*ver0.1.x might change in the future*/
+          false,
+          indent: args.indent,
+          body-indent: args.body-indent,
+          label-indent: args.label-indent,
+          is-full-width: args.is-full-width,
+          item-spacing: args.item-spacing,
+          enum-spacing: args.enum-spacing,
+          enum-margin: args.enum-margin,
+          hanging-indent: args.hanging-indent,
+          line-indent: args.line-indent,
+          curr-tight-mode: curr-tight-mode,
+          curr-tight-item-mode: curr-tight-item-mode,
+          label-inset: args.label-inset,
+          first-line-inset: args.first-line-inset,
+          ..args-with-tags-item,
+        )
+      }
+      let args-size = 11
+      for i in range(args-size) {
+        (n => item-args(n).at(i),)
+      }
+    }
 
     let (
       curr-indent,
@@ -511,22 +624,30 @@
       enum-above-spacing,
       enum-below-spacing,
       curr-item-spacing,
+      curr-label-inset,
+      curr-first-line-inset,
     ) = (
-      n => get_none-value(indent-f(n), indent-f-e(n)),
-      n => get_none-value(body-indent-f(n), body-indent-f-e(n)),
-      n => get_none-value(label-indent-f(n), label-indent-f-e(n)),
-      n => get_none-value(hanging-indent-f(n), hanging-indent-f-e(n)),
-      n => get_none-value(line-indent-f(n), line-indent-f-e(n)),
-      n => get_none-value(enum-width-f(n), enum-width-f-e(n)),
-      get_none-value(enum-above-spacing-f, enum-above-spacing-f-e),
-      get_none-value(enum-below-spacing-f, enum-below-spacing-f-e),
-      n => get_none-value(item-spacing-f(n), item-spacing-f-e(n)),
+      n => get-none-value(indent-f(n), get-none-value(indent-f-e(n), indent-f-item(n)(n))),
+      n => get-none-value(body-indent-f(n), get-none-value(body-indent-f-e(n), body-indent-f-item(n)(n))),
+      n => get-none-value(label-indent-f(n), get-none-value(label-indent-f-e(n), label-indent-f-item(n)(n))),
+      n => get-none-value(hanging-indent-f(n), get-none-value(hanging-indent-f-e(n), hanging-indent-f-item(n)(n))),
+      n => get-none-value(line-indent-f(n), get-none-value(line-indent-f-e(n), line-indent-f-item(n)(n))),
+      n => get-none-value(enum-width-f(n), get-none-value(enum-width-f-e(n), enum-width-f-item(n)(n))),
+      get-none-value(enum-above-spacing-f, get-none-value(enum-above-spacing-f-e, enum-above-spacing-f-item(0))),
+      get-none-value(enum-below-spacing-f, get-none-value(enum-below-spacing-f-e, enum-below-spacing-f-item(0))),
+      n => get-none-value(item-spacing-f(n), get-none-value(item-spacing-f-e(n), item-spacing-f-item(n)(n))),
+      n => get-none-value(label-inset-f(n), get-none-value(label-inset-f-e(n), label-inset-f-item(n)(n))),
+      n => get-none-value(first-line-inset-f(n), get-none-value(
+        first-line-inset-f-e(n),
+        first-line-inset-f-item(n)(n),
+      )),
     )
 
 
     if not auto-base-level {
       curr-base-parent-level.update(())
     }
+
     // label-align
     let curr-label-align = parse-general-args-with-level-n(
       label-align,
@@ -534,8 +655,11 @@
       enum-config-args.label-align,
       curr-enum-level,
       it.number-align,
-      n-last: it.children.len(),
+      n => item-config-args(n).label-align,
+      level-item,
+      ..args-with-tags,
     )
+
     // label-baseline
     let curr-label-baseline = parse-general-args-with-level-n(
       label-baseline,
@@ -543,13 +667,21 @@
       enum-config-args.label-baseline,
       curr-enum-level,
       0pt,
-      n-last: it.children.len(),
+      n => item-config-args(n).label-baseline,
+      level-item,
+      ..args-with-tags,
     )
 
-    let len = numbers.len()
+    // Used to determine whether the `above` and `below` attributes of `item-spacing` are used in the first and last items
+    let using-first-full-item = []
+    let using-last-full-item = []
+
+    let min-indent = float.inf * 1pt
+
+    let dir = if text.dir == rtl { "right" } else { "left" }
 
     // each item
-    let body = for i in range(len) {
+    let item-body = for i in range(len) {
       let child = it.children.at(i)
       let index = if it.reversed { len - i - 1 } else { i }
 
@@ -559,19 +691,24 @@
       let styled-child-number = styled-numbers.at(index)
 
       // update: parent-level
-      curr-parent-level.update(push(child-number))
+      curr-parent-level.update(push((n: i, number: child-number)))
 
       if auto-base-level {
-        curr-base-parent-level.update(push(child-number))
+        curr-base-parent-level.update(push((n: i, number: child-number)))
       }
 
-      let (amount, style) = curr-label-width(i)
+      let item-item-label-width = item-config-args(i).label-width
+      let (amount, style) = if item-item-label-width != none {
+        parse-label-width(
+          item-item-label-width,
+          number-max-width,
+          level-item(i),
+          labels-width: numbers-width,
+          ..args-with-tags-item,
+        )(i)
+      } else { curr-label-width(i) }
 
       let max-width = if amount == auto { curr-width } else { amount }
-
-
-      let width = (max-width + curr-indent(i) + curr-body-indent(i)).to-absolute()
-
 
       /* enum'number (label) */
       let number-width = if style == "native" {
@@ -600,141 +737,356 @@
       }
 
 
-      let outer-left-inset = get-block-left-inset(curr-text-size, (curr-body-border.outer)(i))
+      let _enum-width = enum-width(i)
+      let _item-spacing = curr-item-spacing(i)
 
-      let outer = (curr-body-border.outer)(i)
+      let _label-indent = curr-label-indent(i).to-absolute()
+      let _label-inset = curr-label-inset(i).to-absolute()
+      let _first-line-inset = curr-first-line-inset(i).to-absolute()
+      let _body-indent = curr-body-indent(i).to-absolute()
+      let _indent = curr-indent(i).to-absolute()
+      if _indent < min-indent { min-indent = _indent }
 
-      let outer-inset = if outer != none {
-        outer.remove("inset", default: (:))
-      } else {
-        0pt
+      let real-box-width = number-width.to-absolute()
+      let real-box-height = numbers-height.at(index).to-absolute()
+
+      // feat (ver0.3.0): label-border
+      let label-border = curr-label-border(i)
+      let (label-border-inset, label-border-align, label-width-style) = {
+        if label-border != none {
+          (
+            label-border.at("inset", default: none),
+            label-border.remove("align", default: none),
+            label-border.remove("width-style", default: none),
+          )
+        } else {
+          (none, none, none)
+        }
       }
-      let outer-inset-without-left = parse-inset-without-left(outer-inset)
 
-      // in fact, rtl is not supported yet.
-      let inset = if text.dir == rtl { (right: width) } else {
-        (left: width + outer-left-inset) + outer-inset-without-left
-      }
+      let (_label-inset-top, _label-inset-bottom, _label-inset-left, _label-inset-right) = if (
+        label-border-inset != none
+      ) {
+        for dir in ("top", "bottom") {
+          let _inset = get-dir-inset(label-border-inset, dir: dir)
+          let _inset-abs = get-absolute-length(_inset)
+          let _inset-ratio = get-relative-ratio(_inset)
+          let _inset = _inset-abs + _inset-ratio * real-box-height
+          (_inset,)
+        }
+        for dir in ("left", "right") {
+          let _inset = get-dir-inset(label-border-inset, dir: dir)
+          let _inset-abs = get-absolute-length(_inset)
+          let _inset-ratio = get-relative-ratio(_inset)
+          let _inset = _inset-abs + _inset-ratio * real-box-width
+          (_inset,)
+        }
+      } else { (0pt, 0pt, 0pt, 0pt) }
 
-
-      // display content
-      let layout-block = get_layout-block(
-        i,
-        len,
-        inset,
-        enum-below-spacing,
-        enum-above-spacing,
-        curr-item-spacing(i),
-        enum-width(i),
-        ..outer,
+      // width-style
+      let x-inset = _label-inset-left + _label-inset-right
+      let (label-amount, label-stretched) = parse-label-width-style(
+        label-width-style,
+        curr-width,
+        real-box-width,
+        x-inset,
       )
+      let box-width = real-box-width + if label-stretched { x-inset }
+      let box-height = real-box-height + _label-inset-top
 
-      let inner-box = make-format-box.with(width: enum-width(i), format-args: (curr-body-border.inner)(i))
+      let baseline-inset = get-baseline-inset-in-box(styled-child-number).to-absolute()
 
-      // the item's content to display
-      let item-content(body, number-body: none) = (curr-item-format.outer)(i)(layout-block(
-        (curr-item-format.inner)(i)(inner-box(
-          if number-body == none {
-            [#show-text((curr-body-style)(i), next-show(body))]
-          } else {
-            [
-
-              #fix-first-line#number-body#h(0em, weak: true)#show-text((curr-body-style)(i), next-show(body))
-            ]
-          },
-        )),
-      ))
+      let label-height = box-height - baseline-inset
 
       /*label baseline*/
-      let (curr-baseline, same-line-style, base-align, is-alone, label-height) = parse-baseline(
+      let (
+        curr-baseline,
+        same-line-style,
+        base-align, /*ver0.3.0: different meaning*/
+        is-alone,
+        relative-to, /*ver0.3.0*/
+        impact-first-line, /*ver0.3.0*/
+      ) = parse-baseline(
         curr-label-baseline(i),
         styled-child-number,
         curr-text-style,
+        label-height: label-height,
       )
 
-
-      let pre-inset = h(
-        -max-width.to-absolute() - curr-body-indent(i).to-absolute() + curr-label-indent(i).to-absolute(),
-      )
-      let body-inset = h(curr-body-indent(i).to-absolute())
-      let box-width = number-width.to-absolute()
 
       /* current label */
-      let number-box(baseline: 0pt, alone: true) = label-box(
+      let label-box-fix-baseline(
+        fix-baseline: 0pt,
+        alone-shift-baseline: 0pt,
+        not-alone-shift-baseline: 0pt,
+        alone: true,
+        fix-height: 0pt,
+      ) = label-box-with-baseline(
         styled-child-number,
-        box-width,
-        curr-baseline,
-        pre-inset: pre-inset,
-        body-inset: body-inset,
+        width: box-width,
+        fix-baseline: fix-baseline,
+        label-inset: _label-indent + _label-inset, // TODO
+        body-inset: _body-indent,
         label-align: curr-label-align(i),
         alone: alone,
-        baseline: baseline,
+        fix-height: fix-height + _label-inset-bottom, // TODO
+        alone-shift-baseline: alone-shift-baseline,
+        not-alone-shift-baseline: not-alone-shift-baseline,
+        baseline-inset: baseline-inset,
+        ..label-border,
+        given-width: label-amount,
+        given-align: label-border-align,
+      )
+      // all the labels (ver0.3.0: feat)
+      let hide-number = get-all-labels(
+        styled-child-number,
+        i,
+        base-align,
+        label-height,
+        curr-baseline,
+        baseline-inset,
+        impact-first-line,
+        same-line-style,
       )
 
-      let inner-left-inset = get-block-left-inset(curr-text-size, (curr-body-border.inner)(i))
-
-      let label-inset = width + get-block-left-inset(curr-text-size, (curr-body-border.whole)(i)) + outer-left-inset
-
-      /*hanging-indent, first-line-indent*/
-      set par(
-        hanging-indent: curr-hanging-indent(i).to-absolute(),
-        first-line-indent: (amount: curr-line-indent(i).to-absolute(), all: true),
-      ) if hanging-type == "classic"
-
-      set par(
-        hanging-indent: (-max-width - curr-body-indent(i) + curr-hanging-indent(i) - inner-left-inset).to-absolute(),
-        first-line-indent: (
-          amount: (-max-width - curr-body-indent(i) + curr-line-indent(i) - inner-left-inset).to-absolute(),
-          all: true,
-        ),
-      ) if hanging-type == "paragraph"
-
-
-      // all the number
-      let the-number = if i == 0 {
-        display-label(
-          number-box,
-          label-inset,
-          inner-left-inset,
-          same-line-style,
-          label-height,
-          curr-baseline,
-        )
-      } else {
-        [#h(-inner-left-inset)#number-box(baseline: curr-baseline)#h(inner-left-inset)#h(0em, weak: true)]
-      }
-
-      // parse body (in order to determine how to display number)
-      let new-body = rebuild_block-level-elem(
-        parse-formatted-body(child.body),
-        the-number,
-        alignment: base-align,
-        auto-margin: enum-width(i) == auto,
-        text-size: curr-text-size,
+      // pre-parse body (in order to determine how to display label)
+      let new-body = detect-block-level-elem(
+        child.body,
+        number: hide-number,
+        label-height: label-height,
+        curr-baseline: curr-baseline,
+        body: styled-child-number,
+        alone: is-alone,
+        real-label-height: box-height,
       )
 
-      // [#repr(new-body)]
-      // record the left inset of the current block-level elems
-      parent-item-inset.update(push(inner-left-inset))
-      if new-body.inline == none {
-        // hold on displaying number
-        let item-inset = parent-item-inset.get()
-        parent-number-box.update(push((
-          body: number-box.with(alone: is-alone),
-          label-inset: label-inset,
-          label-height: label-height,
-          item-inset: item-inset,
-        )))
-        item-content(new-body.body)
+      // flag: show in same-line (like: 1.a.I.)
+      let is-holding = false
+      let (inline, body) = new-body
+      let item-content = if inline == InlineType.list {
+        // enum or list
+        is-holding = true
+        if base-align == none {
+          parent-number-box.update(
+            push((
+              body: styled-child-number,
+              label-height: label-height,
+              curr-baseline: curr-baseline,
+              alone: is-alone,
+              real-label-height: box-height,
+            )),
+          )
+        }
+        body
       } else {
+        // block-level or inline-level
         parent-number-box.update(())
-        parent-item-inset.update(())
-        if new-body.inline == true {
-          item-content(new-body.body, number-body: the-number)
+        if inline == InlineType.blank {
+          body
+          hide-number
+          baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)
         } else {
-          item-content(new-body.body)
+          parbreak()
+          body
         }
       }
+
+      let curr-block-args = get-current-block-args(block)
+      let item-baseline-align = if base-align == none { start } else { base-align }
+      let alone = if is-holding { is-alone } else { true }
+      let label-cell = grid.cell(x: 0, align: item-baseline-align, {
+        if base-align == none {
+          context {
+            let (dy, final-label-height, final-baseline) = get-body-baseline()
+            let curr-dy = here().position().y
+            let fix-baseline = dy - curr-dy
+            let p-baseline = get-baseline-with-style(
+              same-line-style,
+              label-height,
+              final-label-height,
+              final-baseline,
+            )
+            let max-height = box-height
+            for p in parent-number-box.get() {
+              // Since it occurs not many times, it doesn't matter to repeat the comparison multiple times
+              if max-height < p.real-label-height {
+                max-height = p.real-label-height
+              }
+            }
+            label-box-fix-baseline(
+              alone-shift-baseline: curr-baseline,
+              not-alone-shift-baseline: p-baseline,
+              fix-baseline: fix-baseline,
+              alone: alone,
+              fix-height: max-height,
+            )
+          }
+          // label-box-fix-baseline(alone: true, fix-height: real-label-height)
+        } else {
+          label-box-fix-baseline(alone: true, fix-height: box-height)
+        }
+      })
+
+      let inner-box(body) = (curr-body-format.inner)(i)(show-text((curr-body-style)(i), body))
+
+      /* hanging-indent, first-line-indent */
+      let _temp-line-indent = curr-line-indent(i)
+      let _line-indent = if _temp-line-indent == auto { auto } else { _temp-line-indent.to-absolute() }
+      let _temp-hanging-indent = curr-hanging-indent(i)
+      let _hanging-indent = if _temp-hanging-indent == auto { auto } else { _temp-hanging-indent.to-absolute() }
+
+      let body-cell = grid.cell(x: 1, {
+        // override (next)
+        // #show grid: set block(..default-block-args) // need
+        inner-box({
+          let (par-line-indent, par-hanging-indent) = {
+            if hanging-type == "classic" {
+              (0pt, 0pt)
+            } else if hanging-type == "paragraph" {
+              (-max-width - _body-indent, -max-width - _body-indent)
+            }
+          }
+          par-state.update(0)
+          let _first-line-indent = -max-width + real-box-width + _first-line-inset
+          // make par.first-line-indent.all be true when line-indent != auto
+          // compatible with parize
+          set par(first-line-indent: (amount: line-indent + par-line-indent, all: true)) if (
+            line-indent != auto
+          )
+          show par: par-box.with(
+            line-indent: _line-indent,
+            hanging-indent: _hanging-indent,
+            // line-inset: par-line-indent,
+            hanging-inset: par-hanging-indent,
+            first-line-indent: _first-line-indent,
+          )
+          // Sepecial case: terms
+          show: fix-terms
+          // #set block(..default-block-args)
+          set block(..curr-block-args) // need
+          item-content
+        })
+      })
+      // feat: item-spacing with above and below
+      let is-full-item-spacing = false
+      let above-item-spacing
+      let below-item-spacing
+      if type(_item-spacing) == dictionary {
+        above-item-spacing = _item-spacing.remove("above", default: 0pt)
+        above-item-spacing = get-auto-value(above-item-spacing, 0pt)
+        below-item-spacing = _item-spacing.remove("below", default: 0pt)
+        below-item-spacing = get-auto-value(below-item-spacing, 0pt)
+        assert(
+          type(above-item-spacing) in length-type-with-fraction
+            and type(below-item-spacing) in length-type-with-fraction
+            and _item-spacing == (:),
+          message: "The key value of item-spacing must be \"above\" and \"below\", with value be a length or `auto`",
+        )
+        is-full-item-spacing = true
+      }
+
+      /* item-spacing */
+      let (above-spacing, below-spacing) = if is-full-item-spacing == false {
+        if i == 0 {
+          if i == len - 1 {
+            // last and first
+            (enum-above-spacing, enum-below-spacing)
+          } else {
+            // first but not last
+            (enum-above-spacing, _item-spacing)
+          }
+        } else if i == len - 1 {
+          // last but not first
+          (_item-spacing, enum-below-spacing)
+        } else {
+          // not first and not last
+          (_item-spacing, _item-spacing)
+        }
+      } else {
+        if i == 0 {
+          using-first-full-item = hide-line(above: enum-above-spacing)
+        }
+        if i == len - 1 {
+          using-last-full-item = hide-line(below: enum-below-spacing)
+        }
+        (above-item-spacing, below-item-spacing)
+      }
+
+
+      // label-cell-width too large, and body-cell-width is negative? Now we can't handle it
+      let label-cell-width = box-width + _label-inset + _body-indent + _indent
+      let body-cell-width = if _enum-width == 100% { 1fr } else {
+        if _enum-width == auto { auto } else {
+          _enum-width - label-cell-width
+        }
+      }
+
+      let inner-border = (curr-body-border.inner)(i)
+      let inner-outset = inner-border.remove("outset", default: (:))
+      let inner-dir-outset = get-dir-inset(inner-outset, dir: dir)
+      inner-outset = parse-inset-without-dir(inner-outset, dir: dir)
+      inner-outset.insert(dir, -label-cell-width + inner-dir-outset)
+
+      let inner-inset = inner-border.remove("inset", default: (:))
+      let inner-dir-inset = get-dir-inset(inner-inset, dir: dir)
+      inner-inset = parse-inset-without-dir(inner-inset, dir: dir)
+
+      let inset = if text.dir == rtl {
+        (right: _indent, left: -_label-indent, rest: 0pt)
+      } else {
+        (left: _indent, right: -_label-indent, rest: 0pt)
+      }
+
+      let sec-inset = if text.dir == rtl {
+        (right: max-width - real-box-width + inner-dir-inset, rest: 0pt) + inner-inset
+      } else {
+        (left: max-width - real-box-width + inner-dir-inset, rest: 0pt) + inner-inset
+      }
+
+
+      let outer-border = (curr-body-border.outer)(i)
+      let outer-outset = outer-border.remove("outset", default: (:))
+      let outer-dir-outset = get-dir-inset(outer-outset, dir: dir)
+      outer-outset = parse-inset-without-dir(outer-outset, dir: dir)
+      outer-outset.insert(dir, -_indent + outer-dir-outset)
+
+      let (out-spacing, inner-spacing) = {
+        if outer-border == (:) {
+          ((:), (above: above-spacing, below: below-spacing))
+        } else {
+          ((above: above-spacing, below: below-spacing), (:))
+        }
+      }
+
+      let outer-block(body) = make-format-box.with(
+        format-args: outer-border,
+        outset: outer-outset,
+        ..out-spacing,
+      )(body)
+      // display: label + body
+      let outer-body = (curr-body-format.outer)(i)({
+        show grid.where(label: enum-grid-ID): set block(
+          // inner
+          ..default-block-args,
+          ..inner-spacing,
+          ..inner-border,
+          outset: inner-outset,
+        )
+        // override
+        // need
+        show grid.cell: set block(..default-block-args)
+        [#grid(
+            ..default-grid-args,
+            // for debug
+            // stroke: 1pt + red,
+            columns: (label-cell-width, body-cell-width),
+            inset: (inset, sec-inset),
+            label-cell, body-cell,
+          )#enum-grid-ID]
+      })
+      if is-full-item-spacing { [#hide-line()] }
+      outer-block(outer-body)
+      if is-full-item-spacing { [#hide-line()] }
 
       curr-parent-level.update(pop)
 
@@ -743,9 +1095,22 @@
       }
     }
 
-    let whole-block = make-format-box.with(format-args: (curr-body-border.whole)(0))
-    // body
-    (curr-item-format.whole)(0)(whole-block(body))
+    let whole-border = (curr-body-border.whole)(0)
+    let whole-outset = whole-border.remove("outset", default: (:))
+    let dir-outset = get-dir-inset(whole-outset, dir: dir)
+    whole-outset = parse-inset-without-dir(whole-outset, dir: dir)
+    whole-outset.insert(dir, -min-indent + dir-outset)
+    let is-whole-block = whole-border != (:)
+    let whole-block = make-format-box.with(
+      format-args: whole-border,
+      outset: whole-outset,
+      above: enum-above-spacing,
+      below: enum-below-spacing,
+    )
+    // display-whole
+    if not is-whole-block { using-first-full-item }
+    whole-block((curr-body-format.whole)(0)(next-show(item-body)))
+    if not is-whole-block { using-last-full-item }
   }
 
 
@@ -754,6 +1119,10 @@
   item-level.update(pop)
   enum-level.update(it => it - 1)
 
+  enum-numbering.update(pop)
+
+  auto-id-state.update(auto-pop-id)
+
   lw.update-auto_label-level(it => it - 1)
   lw.update-global_label-level(it => it - 1)
   /*
@@ -761,75 +1130,10 @@
   */
   rl.update_resume-level(it => it - 1)
   rl.restart_resuming()
-
-
-  if curr-level == 0 and elem != "list" {
-    state("_default-text-style", (default-text-args,)).update(pop)
-    state("_parent-hanging-indent_and_line-indent").update(pop)
-  }
 }
 
-
-
-#let get_marker-text(body) = {
-  if body == [ ] {
-    " "
-  } else if body == ["] {
-    "\""
-  } else if body == ['] {
-    "'"
-  } else if body.has("text") {
-    body.text
-  } else {
-    none
-  }
-}
-
-#let get_desc-marker(child) = {
-  if child.func() == metadata and child.value.kind == list-ID {
-    return child.value.body
-  } else {
-    return none
-  }
-}
-
-/// Enhances the `list` function with advanced formatting and layout options.
-///
-/// Parameters
-/// - `it`: The list object to format.
-/// - `elem`: Type of element (`"enum"`, `"list"`, or `"both"`).
-/// - `indent`: Indentation for each item.
-/// - `body-indent`: Spacing between marker and body.
-/// - `label-indent`: Indentation for labels.
-/// - `is-full-width`: If `true`, items span full width.
-/// - `item-spacing`: Spacing between items.
-/// - `enum-spacing`: Spacing around the list.
-/// - `enum-margin`: Margin around the list.
-/// - `hanging-type`: Hanging indent type (`"classic"` or `"paragraph"`).
-/// - `hanging-indent`: Hanging indent value.
-/// - `line-indent`: First line indent.
-/// - `absolute-level`: If `true`, uses absolute nesting levels.
-/// - `auto-base-level`: Auto-detects base level (v0.2.0).
-/// - `label-width`: Width of labels (v0.2.0).
-/// - `body-format`: Formatting for body content (v0.2.0).
-/// - `label-format`: Formatting for labels (v0.2.0).
-/// - `item-format`: Formatting for items (v0.2.0).
-/// - `label-align`: Label alignment (v0.2.0).
-/// - `label-baseline`: Label baseline (v0.2.0).
-/// - `checklist`: Enables checklist mode (v0.2.0).
-/// - `func-list`: Function for list formatting.
-/// - `func-enum`: Function for enum formatting.
-/// - `curr-level`: Current nesting level.
-/// - `curr-enum-level`: Current enum level.
-/// - `curr-list-level`: Current list level.
-/// - `auto-resuming`: Controls resume functionality (v0.2.0).
-/// - `auto-label-width`: Controls label width functionality (v0.2.0).
-/// - `enum-config`: Configuration for enum.
-/// - `list-config`: Configuration for list.
-/// - `args`:  Additional named arguments for text formatting.
-///
-/// Returns
-/// A formatted list with the specified styling and layout.
+/// Ver0.3.0: Reimplement lists using a new layout method
+/// Support additional features: auto-label-width, auto-resuming
 #let feat-list(
   it,
   elem: "list",
@@ -861,6 +1165,13 @@
   auto-label-width: none, /*new ver0.2.0*/
   enum-config: (:), /** config enum only */
   list-config: (:), /** config list only */
+  ref-numbering: none, /** new ver0.3.0 for enum */
+  supplement: auto, /** new ver0.3.0 for enum */
+  tight-mode: auto, /** new ver0.3.0 */
+  tight-item-mode: auto, /** new ver0.3.0 */
+  step: auto, /** new ver0.3.0 for enum */
+  label-inset: auto, /** new ver0.3.0 */
+  first-line-inset: auto, /** new ver0.3.0 */
   ..args,
 ) = {
   item-level.update(push("list"))
@@ -880,42 +1191,6 @@
     let level = if absolute-level { abs-level } else { it-list-level }
     let rel-level = if absolute-level { curr-level } else { curr-enum-level }
 
-    // format enum function
-    let list-config-args = parse-elem-args(elem-args: list-config)
-
-    // format function
-    let curr-item-format = {
-      let item-format-f = parse-item-format(item-format, rel-level, n-last: it.children.len())
-      let item-format-f-e = parse-item-format(list-config-args.item-format, curr-list-level, n-last: it.children.len())
-      for (k, f) in item-format-f {
-        (str(k): n => body => f(n)((item-format-f-e.at(str(k)))(n)(body)))
-      }
-    }
-
-    let (curr-body-border, curr-body-style) = {
-      let (border-f, style-f) = parse-body-format(body-format, rel-level, n-last: it.children.len())
-      let (border-f-e, style-f-e) = parse-body-format(
-        list-config-args.body-format,
-        curr-list-level,
-        n-last: it.children.len(),
-      )
-      (
-        for (k, value) in border-f {
-          (str(k): n => value(n) + (border-f-e.at(str(k)))(n))
-        },
-        n => style-f(n) + style-f-e(n),
-      )
-    }
-
-    let curr-label-format = {
-      let label-format-f = parse-format-func(label-format, n-last: it.children.len())(rel-level)
-      let label-format-f-e = parse-format-func(list-config-args.label-format, n-last: it.children.len())(
-        curr-list-level,
-      )
-      n => body => label-format-f(n)(label-format-f-e(n)(body))
-    }
-
-
     // for the next show-raw
     let all-args = (
       elem: elem,
@@ -930,21 +1205,27 @@
       hanging-indent: hanging-indent,
       line-indent: line-indent,
       absolute-level: absolute-level,
-      auto-base-level: auto-base-level,
-      label-width: label-width,
-      body-format: body-format,
-      label-format: label-format,
-      item-format: item-format,
-      label-align: label-align,
-      label-baseline: label-baseline,
-      checklist: checklist,
+      auto-base-level: auto-base-level, /*new ver0.2.0*/
+      label-width: label-width, /*new ver0.2.0*/
+      body-format: body-format, /*new ver0.2.0*/
+      label-format: label-format, /*new ver0.2.0*/
+      item-format: item-format, /*new ver0.2.0*/
+      label-align: label-align, /*new ver0.2.0*/
+      label-baseline: label-baseline, /*new ver0.2.0*/
+      checklist: checklist, /*new ver0.2.0*/
       func-enum: func-enum,
       func-list: func-list,
+      ref-numbering: ref-numbering, /*new ver0.3.0*/
+      supplement: supplement, /*new ver0.3.0*/
+      tight-mode: tight-mode, /** new ver0.3.0 */
+      tight-item-mode: tight-item-mode, /** new ver0.3.0 */
+      step: step, /** new ver0.3.0 */
+      label-inset: label-inset, /** new ver0.3.0 */
+      first-line-inset: first-line-inset, /** new ver0.3.0 */
+      // for levels (to void "layout did not converge within 5 attempts")
       curr-level: curr-level + 1,
       curr-enum-level: curr-enum-level,
       curr-list-level: curr-list-level + 1,
-      auto-resuming: auto-resuming,
-      auto-label-width: auto-label-width,
     )
     let next-show = body => {
       if elem == "both" {
@@ -970,43 +1251,98 @@
       }
     }
 
+    // format list function
+    let list-config-args = parse-elem-args(elem-args: list-config)
 
-    let parse-formatted-body = if item-format not in (none, (), auto, (:)) {
-      pre_parse-formatted-body
-    } else {
-      native-content
+    // config item function
+    let item-config-args = get-item-config-args(it.children)
+
+    // feat (ver0.3.0): The tag of the current item
+    let item-tag = n => item-config-args(n).tag
+    let item-enum-tag = item-config-args(0).enum-tag
+
+    // The total number of items
+    let len = it.children.len()
+
+    let args-with-tags = (tag: item-tag, enum-tag: item-enum-tag, n-last: len)
+    let args-with-tags-item = (enum-tag: item-enum-tag, n-last: len) // TODO: ??
+
+    let level-item = n => if item-config-args(n).absolute { curr-level } else { curr-list-level }
+
+    // format function
+    let (curr-body-border, curr-body-style, curr-body-format) = {
+      let (border-f, style-f, format-f) = parse-body-format(body-format, rel-level, ..args-with-tags)
+      let (border-f-e, style-f-e, format-f-e) = parse-body-format(
+        list-config-args.body-format,
+        curr-list-level,
+        ..args-with-tags,
+      )
+      let body-format-item = n => parse-body-format(
+        item-config-args(n).body-format,
+        level-item(n),
+        ..args-with-tags-item,
+      )
+      (
+        for (k, value) in border-f {
+          (str(k): n => value(n) + (border-f-e.at(str(k)))(n) + body-format-item(n).at(0).at(str(k))(n))
+        },
+        n => style-f(n) + style-f-e(n) + body-format-item(n).at(1)(n),
+        for (k, f) in format-f {
+          (
+            str(k): n => body => {
+              let f-e = format-f-e.at(str(k))
+              let f-item = body-format-item(n).at(2).at(str(k))
+              f(n)(f-e(n)(f-item(n)(body)))
+            },
+          )
+        },
+      )
     }
 
-
-    if curr-level == 0 and elem != "enum" {
-      state("_default-text-style", (default-text-args,)).update(push(get_current-text-args(text)))
-      state("_parent-hanging-indent_and_line-indent", ((0em, 0em),)).update(push(
-        (par.hanging-indent, par.first-line-indent.amount),
-      ))
+    // label-format
+    let (curr-label-border, curr-label-format) = {
+      let (border-f, format-f) = parse-label-format(label-format, rel-level, ..args-with-tags)
+      let (border-f-e, format-f-e) = parse-label-format(
+        list-config-args.label-format,
+        curr-list-level,
+        ..args-with-tags,
+      )
+      let body-format-item = n => parse-label-format(
+        item-config-args(n).label-format,
+        level-item(n),
+        ..args-with-tags-item,
+      )
+      (
+        n => border-f(n) + (border-f-e)(n) + body-format-item(n).at(0)(n),
+        n => body => {
+          let f-item = body-format-item(n).at(1)
+          format-f(n)(format-f-e(n)(f-item(n)(body)))
+        },
+      )
     }
 
-    let default-text-level0 = if curr-level == 0 {
-      get_current-text-args(text)
-    } else {
-      state("_default-text-style", (default-text-args,)).get().last()
-    }
 
     /*
     feat: custom label (list's marker)
     */
     let text-args = {
-      let curr-text-args = parse-args(..args, rel-level, n-last: it.children.len())
-      let elem-text-args = parse-args(..list-config-args.text-args, curr-list-level, n-last: it.children.len())
-      n => curr-text-args(n) + elem-text-args(n)
+      let curr-text-args = parse-text-args(
+        ..args,
+        rel-level,
+        ..args-with-tags,
+      )
+      let elem-text-args = parse-text-args(..list-config-args.text-args, curr-list-level, ..args-with-tags)
+      let item-text-args = n => parse-text-args(
+        ..item-config-args(n).text-args,
+        level-item(n),
+        ..args-with-tags-item,
+      )
+      n => curr-text-args(n) + elem-text-args(n) + item-text-args(n)(n)
     }
     let custom-text = n => body => {
-      set text(..default-text-level0, ..text-args(n), overhang: false)
-      if item-format not in (none, (), auto, (:)) {
-        show: show-label-text-style
-        curr-label-format(n)([#body#label-number-ID-label])
-      } else {
-        curr-label-format(n)(body)
-      }
+      // need all text-args
+      set text(..get_current-text-args(text), ..text-args(n), overhang: false)
+      curr-label-format(n)(body)
     }
 
     /*
@@ -1023,7 +1359,7 @@
     let desc-marker = ()
     let checklist-body = ()
     let setting = setting-checklist.get()
-    let curr-checklist = get_depth-value(checklist, rel-level) or get_depth-value(setting.enable, curr-list-level)
+    let curr-checklist = get-depth-value(checklist, rel-level) or get-depth-value(setting.enable, curr-list-level)
     let fill-check
     let radius-check
     let solid-check
@@ -1034,11 +1370,11 @@
     let checklist-label-baseline = none
     if curr-checklist {
       // since checklist works only for list, here, the level uses the `curr-list-level`
-      fill-check = get_depth-value(setting.checklist-fill, curr-list-level)
-      radius-check = get_depth-value(setting.checklist-radius, curr-list-level)
-      solid-check = get_depth-value(setting.checklist-solid, curr-list-level)
-      let checklist-map = get_depth-value(setting.checklist-map, curr-list-level)
-      checklist-label-baseline = get_depth-value(setting.label-baseline, curr-list-level)
+      fill-check = get-depth-value(setting.checklist-fill, curr-list-level)
+      radius-check = get-depth-value(setting.checklist-radius, curr-list-level)
+      solid-check = get-depth-value(setting.checklist-solid, curr-list-level)
+      let checklist-map = get-depth-value(setting.checklist-map, curr-list-level)
+      checklist-label-baseline = get-depth-value(setting.label-baseline, curr-list-level)
       let _temp-symbol-map
       if type(checklist-map) == function {
         _temp-symbol-map = checklist-map(
@@ -1050,14 +1386,14 @@
       if type(_temp-symbol-map) == dictionary {
         symbol-map = for (k, v) in _temp-symbol-map { (str(k): small-text(v)) }
       }
-      enable-character = get_depth-value(setting.enable-character, curr-list-level)
-      let extras = get_depth-value(setting.extras, curr-list-level)
+      enable-character = get-depth-value(setting.enable-character, curr-list-level)
+      let extras = get-depth-value(setting.extras, curr-list-level)
       symbol-list = (
         default-symbol-map(fill: fill-check, radius: radius-check, solid: solid-check, extras: extras) + symbol-map
       )
-      let enable-format = get_depth-value(setting.enable-format, curr-list-level)
+      let enable-format = get-depth-value(setting.enable-format, curr-list-level)
       if enable-format {
-        let checklist-format-map = get_depth-value(setting.checklist-format-map, curr-list-level)
+        let checklist-format-map = get-depth-value(setting.checklist-format-map, curr-list-level)
         format-map = default-format-map + checklist-format-map
       }
     }
@@ -1173,8 +1509,9 @@
     }
 
 
-    let markers-width = styled-markers.map(number => measure(number).width)
-
+    let markers-size = styled-markers.map(marker => measure(marker))
+    let markers-width = markers-size.map(marker => marker.width)
+    let markers-height = markers-size.map(marker => marker.height)
     let marker-max-width = calc.max(..markers-width)
 
 
@@ -1223,11 +1560,11 @@
         parse-label-width(
           list-config-args.label-width,
           marker-max-width,
-          curr-list-level,
+          curr-enum-level,
           labels-width: markers-width,
-          n-last: it.children.len(),
+          ..args-with-tags,
         )
-      } else { parse-label-width(label-width, marker-max-width, rel-level, n-last: it.children.len()) }
+      } else { parse-label-width(label-width, marker-max-width, rel-level, ..args-with-tags) }
     }
 
 
@@ -1237,6 +1574,19 @@
     label-width-list.update(push(marker-max-width))
     label-width-el.update(push(marker-max-width))
 
+    /*tight mode*/
+    let (curr-tight-mode, curr-tight-item-mode) = get-tight-mode(
+      item-config-args(0).tight-mode,
+      item-config-args(0).tight-item-mode,
+      level-item(0),
+      list-config-args.tight-mode,
+      list-config-args.tight-item-mode,
+      curr-list-level,
+      tight-mode,
+      tight-item-mode,
+      rel-level,
+      ..args-with-tags-item,
+    )
 
     /* spacings */
     let (
@@ -1249,7 +1599,9 @@
       enum-above-spacing-f,
       enum-below-spacing-f,
       item-spacing-f,
-    ) = parse(
+      label-inset-f,
+      first-line-inset-f,
+    ) = parse-all-length(
       it,
       rel-level,
       level,
@@ -1264,6 +1616,11 @@
       enum-margin: enum-margin,
       hanging-indent: hanging-indent,
       line-indent: line-indent,
+      curr-tight-mode: curr-tight-mode,
+      curr-tight-item-mode: curr-tight-item-mode,
+      label-inset: label-inset,
+      first-line-inset: first-line-inset,
+      ..args-with-tags,
     )
 
     let (
@@ -1276,7 +1633,9 @@
       enum-above-spacing-f-e,
       enum-below-spacing-f-e,
       item-spacing-f-e,
-    ) = parse(
+      label-inset-f-e,
+      first-line-inset-f-e,
+    ) = parse-all-length(
       it,
       curr-list-level,
       it-list-level,
@@ -1291,7 +1650,56 @@
       enum-margin: list-config-args.enum-margin,
       hanging-indent: list-config-args.hanging-indent,
       line-indent: list-config-args.line-indent,
+      curr-tight-mode: curr-tight-mode,
+      curr-tight-item-mode: curr-tight-item-mode,
+      label-inset: list-config-args.label-inset,
+      first-line-inset: list-config-args.first-line-inset,
+      ..args-with-tags,
     )
+
+
+    let (
+      indent-f-item,
+      body-indent-f-item,
+      label-indent-f-item,
+      hanging-indent-f-item,
+      line-indent-f-item,
+      enum-width-f-item,
+      enum-above-spacing-f-item,
+      enum-below-spacing-f-item,
+      item-spacing-f-item,
+      label-inset-f-item,
+      first-line-inset-f-item,
+    ) = {
+      let item-args = n => {
+        let args = item-config-args(n)
+        parse-all-length(
+          it,
+          level-item(n),
+          abs-list-level,
+          marker-max-width, /*ver0.1.x might change in the future*/
+          false,
+          indent: args.indent,
+          body-indent: args.body-indent,
+          label-indent: args.label-indent,
+          is-full-width: args.is-full-width,
+          item-spacing: args.item-spacing,
+          enum-spacing: args.enum-spacing,
+          enum-margin: args.enum-margin,
+          hanging-indent: args.hanging-indent,
+          line-indent: args.line-indent,
+          curr-tight-mode: curr-tight-mode,
+          curr-tight-item-mode: curr-tight-item-mode,
+          label-inset: args.label-inset,
+          first-line-inset: args.first-line-inset,
+          ..args-with-tags-item,
+        )
+      }
+      let args-size = 11
+      for i in range(args-size) {
+        (n => item-args(n).at(i),)
+      }
+    }
 
     let (
       curr-indent,
@@ -1303,20 +1711,26 @@
       enum-above-spacing,
       enum-below-spacing,
       curr-item-spacing,
+      curr-label-inset,
+      curr-first-line-inset,
     ) = (
-      n => get_none-value(indent-f(n), indent-f-e(n)),
-      n => get_none-value(body-indent-f(n), body-indent-f-e(n)),
-      n => get_none-value(label-indent-f(n), label-indent-f-e(n)),
-      n => get_none-value(hanging-indent-f(n), hanging-indent-f-e(n)),
-      n => get_none-value(line-indent-f(n), line-indent-f-e(n)),
-      n => get_none-value(enum-width-f(n), enum-width-f-e(n)),
-      get_none-value(enum-above-spacing-f, enum-above-spacing-f-e),
-      get_none-value(enum-below-spacing-f, enum-below-spacing-f-e),
-      n => get_none-value(item-spacing-f(n), item-spacing-f-e(n)),
+      n => get-none-value(indent-f(n), get-none-value(indent-f-e(n), indent-f-item(n)(n))),
+      n => get-none-value(body-indent-f(n), get-none-value(body-indent-f-e(n), body-indent-f-item(n)(n))),
+      n => get-none-value(label-indent-f(n), get-none-value(label-indent-f-e(n), label-indent-f-item(n)(n))),
+      n => get-none-value(hanging-indent-f(n), get-none-value(hanging-indent-f-e(n), hanging-indent-f-item(n)(n))),
+      n => get-none-value(line-indent-f(n), get-none-value(line-indent-f-e(n), line-indent-f-item(n)(n))),
+      n => get-none-value(enum-width-f(n), get-none-value(enum-width-f-e(n), enum-width-f-item(n)(n))),
+      get-none-value(enum-above-spacing-f, get-none-value(enum-above-spacing-f-e, enum-above-spacing-f-item(0))),
+      get-none-value(enum-below-spacing-f, get-none-value(enum-below-spacing-f-e, enum-below-spacing-f-item(0))),
+      n => get-none-value(item-spacing-f(n), get-none-value(item-spacing-f-e(n), item-spacing-f-item(n)(n))),
+      n => get-none-value(label-inset-f(n), get-none-value(label-inset-f-e(n), label-inset-f-item(n)(n))),
+      n => get-none-value(first-line-inset-f(n), get-none-value(
+        first-line-inset-f-e(n),
+        first-line-inset-f-item(n)(n),
+      )),
     )
 
 
-    let len = it.children.len()
     // label-align
     let curr-label-align = parse-general-args-with-level-n(
       label-align,
@@ -1324,7 +1738,9 @@
       list-config-args.label-align,
       curr-list-level,
       right,
-      n-last: it.children.len(),
+      n => item-config-args(n).label-align,
+      level-item,
+      ..args-with-tags,
     )
     // label-baseline
     let curr-label-baseline = parse-general-args-with-level-n(
@@ -1333,20 +1749,38 @@
       list-config-args.label-baseline,
       curr-list-level,
       0pt,
-      n-last: it.children.len(),
+      n => item-config-args(n).label-baseline,
+      level-item,
+      ..args-with-tags,
     )
 
-    let body = for i in range(len) {
+    // Used to determine whether the `above` and `below` attributes of `item-spacing` are used in the first and last items
+    let using-first-full-item = []
+    let using-last-full-item = []
+
+    let min-indent = float.inf * 1pt
+
+    let dir = if text.dir == rtl { "right" } else { "left" }
+
+    let item-body = for i in range(len) {
       let child = it.children.at(i)
       let curr-marker = styled-markers.at(i)
       let curr-width = markers-width.at(i)
 
-      let (amount, style) = curr-label-width(i)
+      let item-item-label-width = item-config-args(i).label-width
+      let (amount, style) = if item-item-label-width != none {
+        parse-label-width(
+          item-item-label-width,
+          marker-max-width,
+          level-item(i),
+          labels-width: markers-width,
+          ..args-with-tags-item,
+        )(i)
+      } else { curr-label-width(i) }
 
       let max-width = if amount == auto { curr-width } else { amount }
 
-      let width = (max-width + curr-indent(i) + curr-body-indent(i)).to-absolute()
-
+      /* list'marker (label) */
       let marker-width = if style == "native" {
         marker-max-width
       } else if amount != auto {
@@ -1371,47 +1805,6 @@
         (:)
       }
 
-      let outer-left-inset = get-block-left-inset(curr-text-size, (curr-body-border.outer)(i))
-
-      let outer = (curr-body-border.outer)(i)
-
-      let outer-inset = if outer != none {
-        outer.remove("inset", default: (:))
-      } else {
-        0pt
-      }
-      let outer-inset-without-left = parse-inset-without-left(outer-inset)
-
-      // in fact, ltl is not supported yet.
-      let inset = if text.dir == rtl { (right: width) } else {
-        (left: width + outer-left-inset) + outer-inset-without-left
-      }
-
-      // display content
-      let layout-block = get_layout-block(
-        i,
-        len,
-        inset,
-        enum-below-spacing,
-        enum-above-spacing,
-        curr-item-spacing(i),
-        enum-width(i),
-        ..outer,
-      )
-      let inner-box = make-format-box.with(width: enum-width(i), format-args: (curr-body-border.inner)(i))
-      // the item's content to display
-      let item-content(body, number-body: none) = (curr-item-format.outer)(i)(layout-block(
-        (curr-item-format.inner)(i)(inner-box(
-          if number-body == none {
-            show-text((curr-body-style)(i), next-show(body))
-          } else {
-            [
-
-              #fix-first-line#number-body#h(0em, weak: true)#show-text((curr-body-style)(i), next-show(body))
-            ]
-          },
-        )),
-      ))
 
       let curr-checklist-label-baseline = auto
       // re-parse body to support checklist
@@ -1440,103 +1833,386 @@
         } else { child.body }
       } else { child.body }
 
+      let _enum-width = enum-width(i)
+      let _item-spacing = curr-item-spacing(i)
+
+      let _label-indent = curr-label-indent(i).to-absolute()
+      let _label-inset = curr-label-inset(i).to-absolute()
+      let _first-line-inset = curr-first-line-inset(i).to-absolute()
+      let _body-indent = curr-body-indent(i).to-absolute()
+      let _indent = curr-indent(i).to-absolute()
+      if _indent < min-indent { min-indent = _indent }
+
+      let real-box-width = marker-width.to-absolute()
+      let real-box-height = markers-height.at(i).to-absolute()
+
+      // feat (ver0.3.0): label-border
+      let label-border = curr-label-border(i)
+      let (label-border-inset, label-border-align, label-width-style) = {
+        if label-border != none {
+          (
+            label-border.at("inset", default: none),
+            label-border.remove("align", default: none),
+            label-border.remove("width-style", default: none),
+          )
+        } else {
+          (none, none, none)
+        }
+      }
+
+      let (_label-inset-top, _label-inset-bottom, _label-inset-left, _label-inset-right) = if (
+        label-border-inset != none
+      ) {
+        for dir in ("top", "bottom") {
+          let _inset = get-dir-inset(label-border-inset, dir: dir)
+          let _inset-abs = get-absolute-length(_inset)
+          let _inset-ratio = get-relative-ratio(_inset)
+          let _inset = _inset-abs + _inset-ratio * real-box-height
+          (_inset,)
+        }
+        for dir in ("left", "right") {
+          let _inset = get-dir-inset(label-border-inset, dir: dir)
+          let _inset-abs = get-absolute-length(_inset)
+          let _inset-ratio = get-relative-ratio(_inset)
+          let _inset = _inset-abs + _inset-ratio * real-box-width
+          (_inset,)
+        }
+      } else { (0pt, 0pt, 0pt, 0pt) }
+
+      // width-style
+      let x-inset = _label-inset-left + _label-inset-right
+      let (label-amount, label-stretched) = parse-label-width-style(
+        label-width-style,
+        curr-width,
+        real-box-width,
+        x-inset,
+      )
+
+      let box-width = real-box-width + if label-stretched { x-inset }
+      let box-height = real-box-height + _label-inset-top
+
+
+      let baseline-inset = get-baseline-inset-in-box(curr-marker).to-absolute()
+
+      let label-height = box-height - baseline-inset
+
       /*label baseline*/
-      let (curr-baseline, same-line-style, base-align, is-alone, label-height) = parse-baseline(
+      let (
+        curr-baseline,
+        same-line-style,
+        base-align, /*ver0.3.0: different meaning*/
+        is-alone,
+        // label-height,
+        relative-to, /*ver0.3.0*/
+        impact-first-line, /*ver0.3.0*/
+      ) = parse-baseline(
         if curr-checklist-label-baseline != auto { curr-checklist-label-baseline } else { curr-label-baseline(i) },
         curr-marker,
         curr-text-style,
+        label-height: label-height,
       )
 
-
-      let pre-inset = h(
-        -max-width.to-absolute() - curr-body-indent(i).to-absolute() + curr-label-indent(i).to-absolute(),
-      )
-      let body-inset = h(curr-body-indent(i).to-absolute())
-      let box-width = marker-width.to-absolute()
       /* current label */
-      let marker-box(baseline: 0pt, alone: true) = label-box(
+      let label-box-fix-baseline(
+        fix-baseline: 0pt,
+        alone-shift-baseline: 0pt,
+        not-alone-shift-baseline: 0pt,
+        alone: true,
+        fix-height: 0pt,
+      ) = label-box-with-baseline(
         curr-marker,
-        box-width,
-        curr-baseline,
-        pre-inset: pre-inset,
-        body-inset: body-inset,
+        width: box-width,
+        fix-baseline: fix-baseline,
+        label-inset: _label-indent + _label-inset,
+        body-inset: _body-indent,
         label-align: curr-label-align(i),
         alone: alone,
-        baseline: baseline,
+        fix-height: fix-height + _label-inset-bottom,
+        alone-shift-baseline: alone-shift-baseline,
+        not-alone-shift-baseline: not-alone-shift-baseline,
+        baseline-inset: baseline-inset,
+        ..label-border,
+        given-width: label-amount,
+        given-align: label-border-align,
+      )
+
+      // all the labels (ver0.3.0: feat)
+      let hide-marker = get-all-labels(
+        curr-marker,
+        i,
+        base-align,
+        label-height,
+        curr-baseline,
+        baseline-inset,
+        impact-first-line,
+        same-line-style,
       )
 
 
-      let inner-left-inset = get-block-left-inset(curr-text-size, (curr-body-border.inner)(i))
+      // pre-parse body (in order to determine how to display label)
+      let new-body = detect-block-level-elem(
+        child-body,
+        number: hide-marker,
+        label-height: label-height,
+        curr-baseline: curr-baseline,
+        body: curr-marker,
+        alone: is-alone,
+        real-label-height: box-height,
+      )
 
-      let label-inset = width + get-block-left-inset(curr-text-size, (curr-body-border.whole)(i)) + outer-left-inset
-
-      /*hanging-indent, first-line-indent*/
-      set par(
-        hanging-indent: curr-hanging-indent(i).to-absolute(),
-        first-line-indent: (amount: curr-line-indent(i).to-absolute(), all: true),
-      ) if hanging-type == "classic"
-
-      set par(
-        hanging-indent: (-max-width - curr-body-indent(i) + curr-hanging-indent(i) - inner-left-inset).to-absolute(),
-        first-line-indent: (
-          amount: (-max-width - curr-body-indent(i) + curr-line-indent(i) - inner-left-inset).to-absolute(),
-          all: true,
-        ),
-      ) if hanging-type == "paragraph"
-
-
-      // all the label
-
-      let the-number = if i == 0 {
-        display-label(
-          marker-box,
-          label-inset,
-          inner-left-inset,
-          same-line-style,
-          label-height,
-          curr-baseline,
-        )
+      // flag: show in same-line (like: 1.a.I.)
+      let is-holding = false
+      let (inline, body) = new-body
+      let item-content = if inline == InlineType.list {
+        // enum or list
+        is-holding = true
+        if base-align == none {
+          parent-number-box.update(
+            push((
+              body: curr-marker,
+              label-height: label-height,
+              curr-baseline: curr-baseline,
+              alone: is-alone,
+              real-label-height: box-height,
+            )),
+          )
+        }
+        body
       } else {
-        [#h(-inner-left-inset)#marker-box(baseline: curr-baseline)#h(inner-left-inset)#h(0em, weak: true)]
+        // block-level or inline-level
+        parent-number-box.update(())
+        if inline == InlineType.blank {
+          body
+          hide-marker
+          baseline-tag-meta(height: label-height, baseline: curr-baseline, weak: false)
+        } else {
+          parbreak()
+          body
+        }
+      }
+
+      let curr-block-args = get-current-block-args(block)
+      let item-baseline-align = if base-align == none { start } else { base-align }
+      let alone = if is-holding { is-alone } else { true }
+
+      let label-cell = grid.cell(x: 0, align: item-baseline-align, {
+        if base-align == none {
+          context {
+            let (dy, final-label-height, final-baseline) = get-body-baseline()
+            if dy == none {
+              label-box-fix-baseline(alone: false)
+            } else {
+              let curr-dy = here().position().y
+              let fix-baseline = dy - curr-dy
+              let p-baseline = get-baseline-with-style(
+                same-line-style,
+                label-height,
+                final-label-height,
+                final-baseline,
+              )
+              let max-height = box-height
+              for p in parent-number-box.get() {
+                // Since it occurs not many times, it doesn't matter to repeat the comparison multiple times
+                if max-height < p.real-label-height {
+                  max-height = p.real-label-height
+                }
+              }
+              label-box-fix-baseline(
+                alone-shift-baseline: curr-baseline,
+                not-alone-shift-baseline: p-baseline,
+                fix-baseline: fix-baseline,
+                alone: alone,
+                fix-height: max-height,
+              )
+            }
+          }
+        } else {
+          label-box-fix-baseline(alone: true, fix-height: box-height)
+        }
+      })
+
+
+      let inner-box(body) = (curr-body-format.inner)(i)(show-text((curr-body-style)(i), body))
+
+      /* hanging-indent, first-line-indent */
+      let _temp-line-indent = curr-line-indent(i)
+      let _line-indent = if _temp-line-indent == auto { auto } else { _temp-line-indent.to-absolute() }
+      let _temp-hanging-indent = curr-hanging-indent(i)
+      let _hanging-indent = if _temp-hanging-indent == auto { auto } else { _temp-hanging-indent.to-absolute() }
+
+      let body-cell = grid.cell(x: 1, {
+        // override (next)
+        // #show grid: set block(..default-block-args) // need
+        inner-box({
+          let (par-line-indent, par-hanging-indent) = {
+            if hanging-type == "classic" {
+              (0pt, 0pt)
+            } else if hanging-type == "paragraph" {
+              (-max-width - _body-indent, -max-width - _body-indent)
+            }
+          }
+          par-state.update(0)
+          let _first-line-indent = -max-width + real-box-width + _first-line-inset
+          // make par.first-line-indent.all be true when line-indent != auto
+          // compatible with parize
+          set par(first-line-indent: (amount: line-indent + par-line-indent, all: true)) if (
+            line-indent != auto
+          )
+          show par: par-box.with(
+            line-indent: _line-indent,
+            hanging-indent: _hanging-indent,
+            // line-inset: par-line-indent,
+            hanging-inset: par-hanging-indent,
+            first-line-indent: _first-line-indent,
+          )
+          // Sepecial case: terms
+          show: fix-terms
+          // #set block(..default-block-args)
+          set block(..curr-block-args) // need
+          item-content
+        })
+      })
+
+      // feat: item-spacing with above and below
+      let is-full-item-spacing = false
+      let above-item-spacing
+      let below-item-spacing
+      if type(_item-spacing) == dictionary {
+        above-item-spacing = _item-spacing.remove("above", default: 0pt)
+        above-item-spacing = get-auto-value(above-item-spacing, 0pt)
+        below-item-spacing = _item-spacing.remove("below", default: 0pt)
+        below-item-spacing = get-auto-value(below-item-spacing, 0pt)
+        assert(
+          type(above-item-spacing) in length-type-with-fraction
+            and type(below-item-spacing) in length-type-with-fraction
+            and _item-spacing == (:),
+          message: "The key value of item-spacing must be \"above\" and \"below\", with value being a length or `auto`",
+        )
+        is-full-item-spacing = true
+      }
+
+      /* item-spacing */
+      let (above-spacing, below-spacing) = if is-full-item-spacing == false {
+        if i == 0 {
+          if i == len - 1 {
+            // last and first
+            (enum-above-spacing, enum-below-spacing)
+          } else {
+            // first but not last
+            (enum-above-spacing, _item-spacing)
+          }
+        } else if i == len - 1 {
+          // last but not first
+          (_item-spacing, enum-below-spacing)
+        } else {
+          // not first and not last
+          (_item-spacing, _item-spacing)
+        }
+      } else {
+        if i == 0 {
+          using-first-full-item = hide-line(above: enum-above-spacing)
+        }
+        if i == len - 1 {
+          using-last-full-item = hide-line(below: enum-below-spacing)
+        }
+        (above-item-spacing, below-item-spacing)
+      }
+
+      // label-cell-width too large, and body-cell-width is negative? Now we can't handle it
+      let label-cell-width = box-width + _label-inset + _body-indent + _indent
+      let body-cell-width = if _enum-width == 100% { 1fr } else {
+        if _enum-width == auto { auto } else {
+          _enum-width - label-cell-width
+        }
       }
 
 
-      // parse body (in order to determine how to display number)
-      let new-body = rebuild_block-level-elem(
-        parse-formatted-body(child-body),
-        the-number,
-        alignment: base-align,
-        auto-margin: enum-width(i) == auto,
-        text-size: curr-text-size,
-      )
+      let inner-border = (curr-body-border.inner)(i)
+      let inner-outset = inner-border.remove("outset", default: (:))
+      let inner-dir-outset = get-dir-inset(inner-outset, dir: dir)
+      inner-outset = parse-inset-without-dir(inner-outset, dir: dir)
+      inner-outset.insert(dir, -label-cell-width + inner-dir-outset)
 
-      // record the left inset of the current block-level elems
-      parent-item-inset.update(push(inner-left-inset))
-      if new-body.inline == none {
-        // record the left inset of block-level elems
-        let item-inset = parent-item-inset.get()
-        parent-number-box.update(push((
-          body: marker-box.with(alone: is-alone),
-          label-inset: label-inset,
-          label-height: label-height,
-          item-inset: item-inset,
-        )))
+      let inner-inset = inner-border.remove("inset", default: (:))
+      let inner-dir-inset = get-dir-inset(inner-inset, dir: dir)
+      inner-inset = parse-inset-without-dir(inner-inset, dir: dir)
 
-        item-content(new-body.body)
+      let inset = if text.dir == rtl {
+        (right: _indent, left: -_label-indent, rest: 0pt)
       } else {
-        parent-number-box.update(())
-        parent-item-inset.update(())
-        if new-body.inline == true {
-          item-content(new-body.body, number-body: the-number)
+        (left: _indent, right: -_label-indent, rest: 0pt)
+      }
+
+      let sec-inset = if text.dir == rtl {
+        (right: max-width - real-box-width + inner-dir-inset, rest: 0pt) + inner-inset
+      } else {
+        (left: max-width - real-box-width + inner-dir-inset, rest: 0pt) + inner-inset
+      }
+
+
+      let outer-border = (curr-body-border.outer)(i)
+      let outer-outset = outer-border.remove("outset", default: (:))
+      let outer-dir-outset = get-dir-inset(outer-outset, dir: dir)
+      outer-outset = parse-inset-without-dir(outer-outset, dir: dir)
+      outer-outset.insert(dir, -_indent + outer-dir-outset)
+
+      let (out-spacing, inner-spacing) = {
+        if outer-border == (:) {
+          ((:), (above: above-spacing, below: below-spacing))
         } else {
-          item-content(new-body.body)
+          ((above: above-spacing, below: below-spacing), (:))
         }
+      }
+      let outer-block(body) = make-format-box.with(
+        format-args: outer-border,
+        outset: outer-outset,
+        ..out-spacing,
+      )(body)
+
+      // display: label + body
+      let outer-body = (curr-body-format.outer)(i)({
+        show grid.where(label: list-grid-ID): set block(
+          // inner
+          ..default-block-args,
+          ..inner-spacing,
+          ..inner-border,
+          outset: inner-outset,
+        )
+        // override
+        // need
+        show grid.cell: set block(..default-block-args)
+        [#grid(
+            ..default-grid-args,
+            columns: (label-cell-width, body-cell-width),
+            inset: (inset, sec-inset),
+            label-cell, body-cell,
+          )#list-grid-ID]
+      })
+      if is-full-item-spacing { [#hide-line()] }
+      outer-block(outer-body)
+      if is-full-item-spacing { [#hide-line()] }
+      curr-parent-level.update(pop)
+      if auto-base-level {
+        curr-base-parent-level.update(pop)
       }
     }
 
-    let whole-block = make-format-box.with(format-args: (curr-body-border.whole)(0))
-    // body
-    (curr-item-format.whole)(0)(whole-block(body))
+    let whole-border = (curr-body-border.whole)(0)
+    let whole-outset = whole-border.remove("outset", default: (:))
+    let dir-outset = get-dir-inset(whole-outset, dir: dir)
+    whole-outset = parse-inset-without-dir(whole-outset, dir: dir)
+    whole-outset.insert(dir, -min-indent + dir-outset)
+    let is-whole-block = whole-border != (:)
+    let whole-block = make-format-box.with(
+      format-args: whole-border,
+      outset: whole-outset,
+      above: enum-above-spacing,
+      below: enum-below-spacing,
+    )
+    // display-whole
+    if not is-whole-block { using-first-full-item }
+    whole-block((curr-body-format.whole)(0)(next-show(item-body)))
+    if not is-whole-block { using-last-full-item }
   }
 
   label-width-list.update(pop)
@@ -1549,11 +2225,4 @@
 
   lw.update-auto_label-level(it => it - 1)
   lw.update-global_label-level(it => it - 1)
-
-
-  if curr-level == 0 and elem != "enum" {
-    state("_default-text-style", (default-text-args,)).update(pop)
-    state("_parent-hanging-indent_and_line-indent").update(pop)
-  }
 }
-

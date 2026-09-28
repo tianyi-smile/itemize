@@ -3,9 +3,11 @@
 /// - c: The character to check.
 /// -> string
 ///
-/// Reference: Andrew's solution (https://forum.typst.app/t/can-i-use-show-rule-only-in-content-of-enum-but-not-numbering/4590/2)
-#let numbering-kind-from-char(c) = {
-  let numberings = (
+/// Reference: Andrew's solution (https://github.com/typst/typst/issues/5095#issuecomment-2973642456)
+
+// https://github.com/typst/typst/pull/7529/changes: ա Ա
+#let numberings = (
+  (
     "1",
     "a",
     "A",
@@ -31,6 +33,9 @@
     "①",
     "⓵",
   )
+    + if sys.version > version(0, 14, 2) { (ա, Ա) }
+)
+#let numbering-kind-from-char(c) = {
   if c in numberings { c }
 }
 
@@ -39,7 +44,7 @@
 /// - pattern: The numbering pattern string.
 /// -> dictionary
 ///
-/// Reference: Andrew's solution (https://forum.typst.app/t/can-i-use-show-rule-only-in-content-of-enum-but-not-numbering/4590/2)
+/// Reference: Andrew's solution (https://github.com/typst/typst/issues/5095#issuecomment-2973642456)
 #let numbering-pattern-from-str(pattern) = {
   let pieces = ()
   let handled = 0
@@ -66,20 +71,24 @@
 /// - number: The number to format.
 /// -> string
 ///
-/// Reference: Andrew's solution (https://forum.typst.app/t/can-i-use-show-rule-only-in-content-of-enum-but-not-numbering/4590/2)
+/// Reference: Andrew's solution (https://github.com/typst/typst/issues/5095#issuecomment-2973642456)
 #let apply-numbering-kth(numbering, k, number) = {
-  let fmt = ""
-  let self = numbering-pattern-from-str(numbering)
-  if self.pieces.len() > 0 {
-    let (prefix, _) = self.pieces.first()
-    fmt += prefix
-    let (_, kind) = if k < self.pieces.len() {
-      self.pieces.at(k)
-    } else {
-      self.pieces.last()
+  if type(numbering) == str {
+    let fmt = ""
+    let self = numbering-pattern-from-str(numbering)
+    if self.pieces.len() > 0 {
+      let (prefix, _) = self.pieces.first()
+      fmt += prefix
+      let (_, kind) = if k < self.pieces.len() {
+        self.pieces.at(k)
+      } else {
+        self.pieces.last()
+      }
+      fmt += std.numbering(kind, number)
     }
-    fmt += std.numbering(kind, number)
+    fmt += self.suffix
+    return fmt
+  } else {
+    return std.numbering(numbering, number)
   }
-  fmt += self.suffix
-  return fmt
 }

@@ -1,23 +1,23 @@
-
+#import "../util/version.typ": package-version
 
 /// State variable to track the maximum width of labels.
 ///
 /// - level (int): Current nesting level.
 /// - width (array): Array of widths for each level.
 /// - unlock (bool): Whether the state is unlocked for modification.
-#let max-width-label = state("_max-width-label", (level: 0, width: (), unlock: false))
+#let max-width-label = state("_max-width-label" + package-version, (level: 0, width: (), unlock: false))
 
 /// Global state variable to track the maximum width of labels across all levels.
 ///
 /// - level (int): Current nesting level.
 /// - width (array): Array of widths for each level.
-#let max-width-label-global = state("_max-width-label-global", (level: 0, width: ()))
+#let max-width-label-global = state("_max-width-label-global" + package-version, (level: 0, width: ()))
 
 /// Default width values for enum and list labels.
 ///
 /// - enum (length): Default width for enum labels.
 /// - list (length): Default width for list labels.
-#let default-width = (enum: 0em, list: 0em)
+#let default-width = (enum: 0pt, list: 0pt)
 
 
 /// Internal function to update the nesting level in a dictionary.
