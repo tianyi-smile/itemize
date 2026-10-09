@@ -1,24 +1,39 @@
 #import "core/feat-enum-list.typ" as fel
+#import "core/new-enum-list.typ" as nel: ElemType, HangingType
+#import "core/inline-enum-list.typ" as iel
 
+#import "util/level-state.typ": *
 
-/// To generate methods for exporting and configuring enums and lists
+#let deprecated-args = (
+  "enum-spacing": ", use `whole-spacing` instead (since 0.3.0).",
+  "enum-margin": ", use `body-margin` instead, which is more flexible (since 0.3.0).",
+  "is-full-width": ", now `is-full-width: true` is equivalent to `body-format: (whole: (width: 100%))` (since 0.3.0).",
+  "item-format": ", use `body-format` instead (since 0.3.0).",
+)
+
+#let ExportType = (
+  "default": "default",
+  "inline": "inline",
+)
+
+/// To generate methods for exporting and configuring `enum` and `list`.
 #let get-list-enum-method(
   doc,
   elem, // "both", "list", "enum"
   indent,
   body-indent,
   label-indent,
-  is-full-width,
+  // is-full-width, // deprecated
   item-spacing,
-  enum-spacing,
-  enum-margin,
+  // enum-spacing, // deprecated, use whole-spacing instead
+  // enum-margin, // deprecated
   hanging-type,
   hanging-indent,
   line-indent,
   label-width,
   body-format,
   label-format,
-  item-format,
+  // item-format,
   auto-base-level,
   label-align,
   label-baseline,
@@ -27,113 +42,162 @@
   checklist,
   enum-config,
   list-config,
+  ref-numbering, /** new ver0.3.0 */
+  supplement, /** new ver0.3.0 */
+  tight-mode, /** new ver0.3.0 */
+  tight-item-mode, /** new ver0.3.0 */
+  step, /** new ver0.3.0 */
+  label-inset, /** new ver0.3.0 */
+  first-line-inset, /** new ver0.3.0 */
+  description-config, /** new ver0.3.0 */
+  body-margin, /*new new ver0.3.0*/
+  whole-spacing, /*new new ver0.3.0*/
+  style-type: ExportType.default, // TODO: inline??? feat-inline ???
   ..args,
 ) = {
-  let nested-auto-resume = state("__nested-auto-resume___", false)
+  // verfiy the deprecated arguments
+  let use-deprecated-args = args.named().keys().filter(it => it in deprecated-args.keys())
+  if use-deprecated-args != () {
+    let msg = for it in use-deprecated-args {
+      (
+        "`" + it + "` is deprecated" + if deprecated-args.at(it) != none { deprecated-args.at(it) } else { "." },
+      )
+    }
+    panic(
+      msg.join("\n"),
+    )
+  }
+
+  let nested-auto-resume = fel.nested-auto-resume
   if auto-resuming != none {
     if auto-resuming == auto {
       context if nested-auto-resume.get() {
-        panic("Inside `list` or `enum`, `auto-resuming` can not be set to be `auto` again.")
+        panic(
+          (
+            "Inside `list` or `enum`, `auto-resuming` can not be set to be `auto` again."
+              + "\nHint: set `auto-resuming` to be `auto` and then use the method `auto-resume-enum`."
+          ),
+        )
       }
       nested-auto-resume.update(true)
-    }
-    if auto-resuming != auto {
+    } else {
       context if fel.item-level.get().len() > 0 {
-        panic("Inside `list` or `enum`, `auto-resuming` can not be set to be`" + [#auto-resuming].text + "`.")
+        panic("Inside `list` or `enum`, `auto-resuming` can not be set to be`" + repr(auto-resuming) + "`.")
       }
-      let global-resuming = state(fel.global-setting-ID-auto-resuming, false)
+      let global-resuming = fel.global-setting-ID-auto-resuming
       context if global-resuming.get() {
-        panic("In each document, `auto-resuming` can be set once for non `auto` or `none`.")
+        panic(
+          (
+            "Inside this method, `auto-resuming` can be set once for non `auto` or `none`."
+              + "\nHint: set `auto-resuming` to be `auto` and then use the method `auto-resume-enum`."
+              + "\nHint: Wrap the method in `#[]`."
+          ),
+        )
       }
-
       global-resuming.update(true)
     }
   }
   if auto-label-width != none {
     if auto-label-width != auto {
       context if fel.item-level.get().len() > 0 {
-        panic("Inside `list` or `enum`, `auto-label-width` can not be set to `" + [#auto-label-width].text + "`.")
+        panic(
+          (
+            "Inside `list` or `enum`, `auto-label-width` can not be set to `"
+              + repr(auto-label-width)
+              + "`."
+              + "\nHint: set `auto-label-width` to be `auto` and then use the method `auto-label-item`."
+          ),
+        )
       }
       context {
-        let global-label-width = state(fel.global-setting-ID-auto-label-width, false)
-
+        let global-label-width = fel.global-setting-ID-auto-label-width
         assert(
           not global-label-width.get(),
-          message: "In each document, `auto-label-width` can be set once for non `auto` or `none`"
-            + "\n"
-            + "Hint: set `auto-label-width` to be `auto` and use method `auto-label-item` instead.",
+          message: (
+            "Inside this method, `auto-label-width` can be set once for non `auto` or `none`."
+              + "\nHint: set `auto-label-width` to be `auto` and then use the method `auto-label-item`."
+              + "\nHint: Wrap the method in `#[]`."
+          ),
         )
         global-label-width.update(true)
       }
     }
   }
 
-  let override-enum = if auto-resuming == none and auto-label-width == none {
-    fel.fix-enum
+  assert(
+    style-type in ExportType,
+    message: "`style-type` must be one of the following string: "
+      + ExportType.keys().map(it => "\"" + it + "\"").join(", ")
+      + "."
+      + "\nBut found: "
+      + repr(style-type)
+      + ".",
+  )
+
+  let my-enum = if style-type == ExportType.inline {
+    iel.inline-enum
   } else {
-    if elem == "list" {
-      fel.fix-enum
-    } else {
-      fel.feat-enum.with(auto-resuming: auto-resuming, auto-label-width: auto-label-width)
-    }
+    nel.new-enum
+  }
+  let my-list = if style-type == ExportType.inline {
+    iel.inline-list
+  } else {
+    nel.new-list
+  }
+
+  let override-enum = if auto-resuming == none and auto-label-width == none {
+    my-enum
+  } else {
+    fel.feat-enum.with(auto-resuming: auto-resuming, auto-label-width: auto-label-width)
   }
   let override-list = if auto-resuming == none and auto-label-width == none {
-    fel.fix-list
+    my-list
   } else {
-    if elem == "enum" {
-      fel.fix-list
-    } else {
-      if elem == "list" {
-        if auto-label-width != none {
-          fel.feat-list.with(auto-label-width: auto-label-width)
-        } else {
-          fel.fix-list
-        }
+    if elem == ElemType.list {
+      if auto-label-width != none {
+        fel.feat-list.with(auto-label-width: auto-label-width)
       } else {
-        // elem == "both"
-        fel.feat-list.with(auto-resuming: auto-resuming, auto-label-width: auto-label-width)
+        my-list
       }
+    } else {
+      fel.feat-list.with(auto-resuming: auto-resuming, auto-label-width: auto-label-width)
     }
   }
+
+  assert(
+    type(auto-base-level) == bool,
+    message: "`auto-base-level` must be a bool." + "\nBut found: " + repr(auto-base-level),
+  )
+
   let argument = (
     elem: elem,
     indent: indent,
     body-indent: body-indent,
     label-indent: label-indent,
-    is-full-width: is-full-width,
     item-spacing: item-spacing,
-    enum-spacing: enum-spacing,
-    enum-margin: enum-margin,
     hanging-type: hanging-type, // classic paragraph
     hanging-indent: hanging-indent,
     line-indent: line-indent,
     label-width: label-width,
     body-format: body-format,
     label-format: label-format,
-    item-format: item-format,
+    // item-format: item-format,
     label-align: label-align,
     label-baseline: label-baseline,
     checklist: checklist,
     auto-base-level: auto-base-level,
+    ref-numbering: ref-numbering, /** new ver0.3.0*/
+    supplement: supplement, /** new ver0.3.0  */
+    tight-mode: tight-mode, /** new ver0.3.0 */
+    tight-item-mode: tight-item-mode, /** new ver0.3.0 */
+    step: step, /** new ver0.3.0 */
+    label-inset: label-inset, /** new ver0.3.0 */
+    first-line-inset: first-line-inset, /** new ver0.3.0 */
+    description-config: description-config, /** new ver0.3.0 */
+    body-margin: body-margin, /*new new ver0.3.0*/
+    whole-spacing: whole-spacing, /*new new ver0.3.0*/
   )
-  let parse-doc = doc => {
-    if item-format != none {
-      if elem == "both" {
-        show selector(enum).or(list): fel.privent-label-text-style-all
-        doc
-      } else if elem == "enum" {
-        show enum: fel.privent-label-text-style-all
-        doc
-      } else if elem == "list" {
-        show list: fel.privent-label-text-style-all
-        doc
-      }
-    } else {
-      doc
-    }
-  }
-
-  if elem == "both" {
+  if elem == ElemType.all {
     show enum: override-enum.with(
       ..args,
       ..argument,
@@ -142,6 +206,7 @@
       func-enum: override-enum,
       func-list: override-list,
       absolute-level: true,
+      // curr-abs-enum-level: auto, // TODO
     )
     show list: override-list.with(
       ..args,
@@ -152,8 +217,8 @@
       func-list: override-list,
       absolute-level: true,
     )
-    parse-doc(doc)
-  } else if elem == "enum" {
+    doc
+  } else if elem == ElemType.enum {
     show enum: override-enum.with(
       ..args,
       ..argument,
@@ -162,27 +227,23 @@
       list-config: (:),
       absolute-level: false,
     )
-    show list: override-list.with(
-      elem: "enum",
-
-      is-full-width: false, // make the same behaviour as native one
-      // func-enum: override-enum,
-      func-list: override-list,
-      enum-config: (:),
-      list-config: (:),
-      absolute-level: false,
-    )
-    parse-doc(doc)
-  } else if elem == "list" {
-    show enum: override-enum.with(
-      elem: "list",
-
-      is-full-width: false, // make the same behaviour as native one
-      func-enum: override-enum,
-      enum-config: (:),
-      list-config: (:),
-      absolute-level: false,
-    )
+    // show list: override-list.with(
+    //   elem: ElemType.enum,
+    //   // func-enum: override-enum,
+    //   func-list: override-list,
+    //   enum-config: (:),
+    //   list-config: (:),
+    //   absolute-level: false,
+    // )
+    doc
+  } else if elem == ElemType.list {
+    // show enum: override-enum.with(
+    //   elem: ElemType.list,
+    //   func-enum: override-enum,
+    //   enum-config: (:),
+    //   list-config: (:),
+    //   absolute-level: false,
+    // )
     show list: override-list.with(
       ..args,
       ..argument,
@@ -191,268 +252,1412 @@
       list-config: (:),
       absolute-level: false,
     )
-    parse-doc(doc)
+    doc
   }
   if auto-resuming == auto {
     nested-auto-resume.update(false)
   }
+
+  if auto-label-width != none {
+    if auto-label-width != auto {
+      [#metadata(fel.global-auto-label-ID)]
+      fel.lw.update-global_label-width-clear()
+      fel.global-setting-ID-auto-label-width.update(false)
+    }
+  }
+  if auto-resuming != none {
+    if auto-resuming != auto {
+      fel.global-setting-ID-auto-resuming.update(false)
+    }
+  }
 }
 
-
-/*自动生成*/
-
-
 /// Configures default styling for `enum` and `list`.
-///
-/// - doc (content): The document content to process.
-/// - indent (length, array, function, auto): The indent of enum or list (default: auto).
-///   - If `indent` is `auto`, the item will be indented by the value of `indent` of `enum` or `list`.
-///   - If `indent` is an `array`, whose elements are `length` or `auto` or `array`, each level of the item will be indented by the corresponding value of the array at position `level - 1`. The last value of the array will be used for residual levels.
-///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically.
-///     - The elements in the array can also be an array, where each element applies to the corresponding item.
-///   - If `indent` is a `function`, the return value will be used for each level and each item. The function should be declared as:
-///     ```typ
-///     it => length | auto | array
+/// - doc (content): `enum` and `list` in `doc` to be process.
+/// - indent (auto, length, array, function): The indentation of the `enum` or `list`.
+///   - Usage:
 ///     ```
-///     - `it` is a dictionary that contains the following keys:
-///       - `level`: The level of the item, starting from 1.
-///       - `n`: The index of the item, starting from 1.
-///       - `n-last`: The index of the last item in the current level, starting from 1.
-///       - `label-width`: The label max-width of the item. `label-width` captures the label width of items from level 1 to the current level (i.e., [1, `level`]). Use `(label-width.get)(some-level)` to get the label width at level `some-level` or `label-width.current` for the current level (equivalent to `(label-width.get)(level)`).
-///       - `e`: captures the construction (`enum` or `list`) of items from level 1 to the current level. Use `(level-type.get)(some-level)` or `level-type.current`.
-///     Here's an example using a `function` to align all `label`s to the left:
-///      ```typst
-///      #let indent-f = it => {
-///         if it.level >= 2 {
-///            -(it.label-width.get)(it.level - 1) - (it.e.get)(it.level - 1).body-indent
-///          } else {
-///            auto
-///          }
-///      }
-///      #show: el.default-enum-list.with(indent: indent-f)
-///      ```
-///    - If the return value is an `array`, it will be used for each item.
-/// - body-indent (length, array, function, auto): Body indentation value (default: auto), i.e., the space between the label and the body of each item.
-///   - If `auto`, it uses the value of `body-indent` of `enum` or `list`.
-///   - Similar to the `indent` parameter.
-/// - label-indent (length, array, function, auto): The indentation value for the first line of an item. (default: `0em` if `auto`).
-///   - Similar to the `indent` parameter.
-/// - is-full-width (bool): Whether to use full width (default: true). This may temporarily fix the bug where block-level equations in the item are not center-aligned in some cases (not an ideal solution).
-/// - item-spacing (length, array, function, auto): Spacing between items (default: auto).
-///   - If `length`, the spacing between each item is this value.
-///   - If `auto`, it uses the value of `spacing` of `enum` or `list`.
-///   - If `array`, each level of the item uses the corresponding value of the array at position `level - 1`.
-///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically, else,
-///     - The last value is used for residual levels.
-///   - If `function`, the return value will be used for each level and each item.
-///     - See `indent` for details.
-///
-/// - enum-spacing (length, array, dictionary, auto): Spacing between enums and lists (default: auto).
-///   - If `auto`, it uses the current paragraph spacing or leading (`par.spacing` or `par.leading`), depending on the `tight` parameter of `enum` or `list`.
-///   - Similar to `item-spacing`.
-/// - enum-margin (length, array, auto, function): Margin of items for enums and lists (default: auto).
-///   - To make `enum-margin` effective, set `is-full-width` to `false`.
-///   - If `auto`, the item width is `auto`.
-///   - Similar to `item-spacing`.
-/// - hanging-indent (length, array, function, auto): The indent for all but the first line of a paragraph (default: auto).
-///   - If `auto`, it uses the hanging indent of the current paragraph (`par.hanging-indent`).
-///   - Similar to `indent`.
-/// - line-indent (length, array, function, auto): The indent for the first line of a paragraph excluding the first paragraph (default: auto).
-///   - If `auto`, it uses the first line indent of current paragraph  (`par.first-line-indent.amount`).
-///   - Similar to `indent`.
-/// - auto-base-level (bool): To maintain compatibility with native behavior, the display of `numbering` and `marker` still uses absolute levels. This means even if you reconfigure `enum.numbering` and `list.marker` in sublists, the display of `numbering` and `marker` in sublists follows the absolute level rules. Default: `false`.
-///   - If `auto-base-level` is set to `true`, then it treats the current level as 1.
-///   - Note the difference when `enum.full` is set to `true` (only affects the current sublist).
-///   - ⚠️ *Breaking change*: When configuring enums and lists using `*-enum-list`, `*-enum`, or `*-list`, the current level is treated as 1
-/// - label-baseline (auto, length, array, function, dictionary, "center", "top", "bottom"): An amount to shift the label baseline by. It can be taken
-///   + `length`, `auto` or `"center"`, `"top"`, `"bottom"`,
-///   + or a `dictionary` with the keys:
-///     - `amount`: `length`, `auto` or `"center"`, `"top"`, `"bottom"`
-///     - `same-line-style` : `"center"`, `"top"`, `"bottom"`
-///     - `alone`: `bool`
-///   - The first case is interpreted as `(amount: len, same-line-style: "bottom", alone: false)`
-///   - When the label has a paragraph relationship with the first line of text in the current item, the label baseline will shift based on the value of `amount`.
-///   - For `"center"`, `"top"`, and `"bottom"`, the label will be aligned to the center, top, or bottom respectively.
-///     - ⚠️ We use the height of the first character (e.g., [A]) in the first line of the paragraph where the label is located. If you manually set the font style of the paragraph's text, this alignment may not be accurate, It is recommended to use the `style` parameter in `body-format` for adjustments.
-///   - When the value of `amount` is `auto`, set it to `0pt`.
-///   - If labels from different levels appear on the same line, their alignment is determined by `same-line-style`.
-///   - If `alone` is `true`, it will not participate in the alignment of labels on the same line.
-/// - body-format (none, dictionary): Sets the *text style* and *border style* of the body (default: none). It is a dictionary containing the following keys:
-///   - `none`: Does not take effect.
-///   - `style`: A dictionary that can include any named arguments of `text` to format the text style of `body`.
-///   - `whole`, `outer`, `inner`: Dictionaries used to set the borders of the item.
-///     - `whole`: Wraps the entire `enum` or `list`
-///     - `outer`: Wraps the item (including the label)
-///     - `inner`: Wraps the item (excluding the label)
-///   - If `whole`, `outer`, or `inner` is omitted, the default is to set the border for `outer`.
-///   - Supported border properties (consistent with `block` borders): `stroke`, `radius`, `outset`, `fill`, `inset`, `clip`.
-///      - ⚠️ In ver0.2.x, `inset` with `relative` length is temporarily _not supported_!!!
-///   - Each value in `style`, `whole`, `outer`, `inner` is also supported `array` and `function` types.
-/// - label-format (none, function, array): Customize labels in any way. It takes
-///   - `none`: Does not take effect
-///   - `function`
-///     - The form is: `it => ...`, Access
-///       - `it.body` to get the label content,
-///       - `it.level` for the current label's level
-///       - `it.n` for the current label's index, and
-///       - `it.n-last` for the index of the last label in the current level
-///   - `array`
-///     - The (`level-1`)-th element of the array applies to the label at the `level`-th level.
-///     - Each element in the array can be:
-///       + A `function` with the form `body => ...`, which applies the label's content to this function.
-///       + A `content`, which outputs this content directly.
-///       + `auto` or `none`, which means no processing will be done.
-///       + An `array`:
-///         - Its elements follow the meanings of 1, 2, and 3 above.
-///         - The (`n-1`)-th element of the array applies to the `n`-th item's label at the current level.
-///    - This method can not only control the style of labels, but also control the content displayed by the current label. In the current version `0.2.x`, we recommend using `enum.numbering` (along with the `numbly` package) to control the output content of labels in `enum`, and `list.marker` to control the output content of labels in `list`.
-///    - ⚠️ We no longer recommend formatting labels using `enum.numbering` as in ver0.1.x, In complex cases, it may also cause "layout did not converge within 5 attempts".
-///
-/// - item-format (function, array, none): Experimental Feature. Freely customize the format of each item's body (default: none).
-///  + `none`: Does not take effect.
-///  + It accepts a `function` with form:
-///    ```typst
-///    it => ...
-///    ```
-///    which will apply to the body of each item'body. `it` has the following properties:
-///     - `it.level`: The level of the current item.
-///     - `it.body`: The body of the current item.
-///     - `it.n`: The index of the current item in the current level.
-///     - `it.n-last`: The index of the last item in the current level.
-///   + an `array`, whose elements are `function` with form `body => ...` which will be applied to the body of each item in turn.
-///   + or a `dictionary` with the following keys:
-///     - `whole`: Wraps the entire `enum` or `list`
-///     - `outer`: Wraps each item (including the label)
-///     - `inner`: Wraps each item (excluding the label)
-///     - If `whole`, `outer`, or `inner` is omitted, the default is `outer`.
-///     - The values are taken as Case 2 and Case 3 above.
-///
-///  - However, this may disrupt the correct positioning of the list labels. (The main reason is that `itemize` needs to treat the label and the first line of the body as the same paragraph.).
-/// - label-align (alignment, array, auto, function): The `alignment` that enum numbers and list markers should have.
-///   - Unless `auto` is used, it cannot be be changed via `#set enum(number-align: ...)`.
-///   - For native `list`, it has no such property.
-/// - label-width (auto, length, dictionary, array, function): The width of the label.
-///   +  `auto`: Uses the native behavior.
-///   +  `length`: The width of the label.
-///   +  `dictionary`, with keys:
-///      - `amount`: `length`, `auto`, or `"max"`.
-///      - `style`: `"default"`, `"constant"`, `"auto"`, or `"native"`.
-///   - The first case is equivalent to `(amount: len, style: "default")`, where `len` is the specified width value; The second case is equivalent to `(amount: max-width, style: "native")`, where `max-width` is the maximum width of labels at the current level.
-///   - Here, `amount` also represents the hanging indent of the item's body (i.e., for the default style, the hanging indent length = `amount` + `body-indent`; for the paragraph style, the hanging indent length = `amount`).
-///   - When `amount` is `"max"`, the value of `amount` is the maximum actual width of labels at the current level.
-///   - Currently, the setting of `label-width` is also affected by the format of `label-format`, especially when `label-format` specifies width information. In this case, the actual width of the label will be determined by the width specified in `label-format` (usually set via constructs like `box.with(width: ...)`). It is recommended to set the container width in `label-format` to `auto` and then control it via `label-width`.
-/// - auto-resuming (none, auto, array, bool): Relate to the feature `Resuming Enum`.
-///   - `none`: Disables this feature.
-///   - `auto`: Enables this feature. In this case, the following methods can be used.
-///      - Use the method `resume()` to continue using the enum numbers from the previous enum at the same level.
-///      - Use `resume[...]` to explicitly continue using the enum numbers from the previous level (especially in ambiguous cases) and treat the `[...]` as a new `enum`.
-///      - Use the method `resume-label(<some-label>)` to label the enum you want to resume, and then use `resume-list(<some-label>)` in the desired enum to continue using the labelled enum numbers.
-///         -  If you use the following in your document:
-///            ```typst
-///            #show: el.config.ref-resume
-///            ```
-///            You can use `@some-label` instead of `resume-list(<some-label>)`.
-///     - Or use the method `auto-resume-enum(auto-resuming: true)[...]`, where all enum numbers within `[...]` will continue from the previous ones.
-///     - The method `isolated-resume-enum[...]` allows the `[...]` to be treated as a new enum with independent numbering, without affecting other enums.
-///   - `bool` | `array`: If `auto-resuming` is set to `true`, all enum numbers will continue from the previous ones. It can also be set as an array, e.g., `(false, true)` means the first level does not enable the resuming feature, while subsequent levels do.
-///      - For small documents like exams, exercises, or CVs, if you need to resume enum numbers throughout the document, you can use the following at the beginning:
+///     #show: el.default-enum-list.with(indent: 1em) // all items are indented by 1em
+///     #show: el.default-enum-list.with(indent: (1em, 2em, auto)) // the first level is indented by 1em, the second level is indented by 2em, the third level and beyond are indented by the `enum.indent` or `list.indent`
+///     #show: el.default-enum-list.with(indent: (1em, 2em, el.LOOP)) // the first level is indented by 1em, the second level is indented by 2em, the third level is indented by 1em, the fourth level is indented by 2em, and so on
+///     #show: el.default-enum-list.with(indent: ((2em, 1em, auto), 1em, auto)) // in the first level, the first item is indented by 2em, the second item is indented by 1em, the third item and beyond are indented by the `enum.indent` or `list.indent`; the second level is indented by 1em, the third level and beyond are indented by the `enum.indent` or `list.indent`
+///     #show: el.default-enum-list.with(indent: it => it.level * 1em)
+///     ```
+///   - `auto`: The indentation is determined by the `enum.indent` or `list.indent`.
+///   - `length`: The value of `indent`.
+///   - `array` (level-property): The elements are `length`, `auto` or `array`, the item at `level`-th level will be indented by the corresponding value of the array at position `level - 1`.
+///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
+///     - otherwise, the last value of the array will be used for residual levels.
+///     - The elements in the array can also be an array, where the element at position `n - 1` applies to the item of index `n`.
+///   - `function` (level-property): The return value will be used for each level and each item.
+///     - The function form: `it => length | auto | array`
+///     - If the returned value is a `array`, then the elements in the array will be used for each item.
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n`: The index of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.tag` (since ver0.3.0): The tag of the current item.
+///       - `it.elem-tag` (since ver0.3.0): The tag of the current enum or list.
+///       - `it.e` (since ver0.3.0): The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type` (since ver0.3.0): The hanging type of the current level.
+///       - `it.marker` (since ver0.3.0): The marker of the current label if it is a `list`.
+///       - `it.number` (since ver0.3.0): The number of the current label if it is a `enum`.
+///       - `it.label-width` (dictionary) (since ver0.3.0): The width info of the current label.
+///         - `it.label-width.max`: The maximum width of the labels in the current level.
+///         - `it.label-width.current`: The current width of the label.
+///       - `it.parent` (since ver0.3.0): The parameter info of the parent containing the current list — the parent's construction element `e`, the item `n` where the parent is located, and the horizontal spacing parameters: `label-indent`, `label-inset`, `body-indent`, `indent`, `body-margin`, `label-width` (`max`, `current`)
+///       - `it.get` (since ver0.3.0): Access the parameter info (see `it.parent`) of the current list's ancestors by level
+/// - body-indent (auto, length, array, function): The indentation of the item body, i.e., the space between the label and the body of each item.
+///   - Usage: See `indent`.
+///   - `auto`: The indentation is determined by the `enum.body-indent` or `list.body-indent`.
+///   - `length`: The value of `body-indent`.
+///   - `array` (level-property): The elements are `length`, `auto` or `array`, each level of the item will be indented by the corresponding value of the array at position `level - 1`.
+///     - See also `indent`.
+///   - `function` (level-property): The return value will be used for each level and each item.
+///     - The function form: `it => length | auto | array`
+///     - If the returned value is a `array`, then the elements in the array will be used for each item.
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n`: The index of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.tag`: The tag of the current item.
+///       - `it.elem-tag`: The tag of the current enum or list.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type`: The hanging type of the current level.
+///       - `it.marker`: The marker of the current label if it is a `list`.
+///       - `it.number`: The number of the current label if it is a `enum`.
+///       - `it.label-width` (dictionary): The width info of the current label.
+///         - `it.label-width.max`: The maximum width of the labels in the current level.
+///         - `it.label-width.current`: The current width of the label.
+///       - `it.parent`: The parameter info of the parent containing the current list — the parent's construction element `e`, the item `n` where the parent is located, and the horizontal spacing parameters: `label-indent`, `label-inset`, `body-indent`, `indent`, `body-margin`, `label-width` (`max`, `current`)
+///       - `it.get`: Access the parameter info (see `it.parent`) of the current list's ancestors by level
+/// - label-indent (auto, length, array, function): The indentation for the label (the enum's number or the list's marker).
+///   - Usage: See `indent`.
+///   - ⚠️ *Breaking change*: The `label-indent` now does not impact the width of the label nor the first-line indentation of the body.
+///   - `auto`: The label is not indented (equivalent to `0pt`).
+///   - `length`: The label is indented by the given value.
+///   - `array` (level-property): The elements are `length`, `auto` or `array`, each level of the item will be indented by the corresponding value of the array at position `level - 1`.
+///     - See also `indent`
+///   - `function` (level-property): The return value will be used for each level and each item.
+///     - The function form: `it => length | auto | array`
+///     - If the returned value is a `array`, then the elements in the array will be used for each item.
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n`: The index of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.tag`: The tag of the current item.
+///       - `it.elem-tag`: The tag of the current enum or list.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type`: The hanging type of the current level.
+///       - `it.marker`: The marker of the current label if it is a `list`.
+///       - `it.number`: The number of the current label if it is a `enum`.
+///       - `it.label-width` (dictionary): The width info of the current label.
+///         - `it.label-width.max`: The maximum width of the labels in the current level.
+///         - `it.label-width.current`: The current width of the label.
+///       - `it.parent`: The parameter info of the parent containing the current list — the parent's construction element `e`, the item `n` where the parent is located, and the horizontal spacing parameters: `label-indent`, `label-inset`, `body-indent`, `indent`, `body-margin`, `label-width` (`max`, `current`)
+///       - `it.get`: Access the parameter info (see `it.parent`) of the current list's ancestors by level
+/// - label-inset (auto, length, array, function): Adds an inset to the label (default: `0pt` if `auto`).
+///   - Note: It translates labels horizontally (without affecting the label width and the inset of the first line).
+///   - Usage: See `indent`.
+///   - `auto`: The label is not inset (equivalent to `0pt`).
+///   - `length`: The inset is the specified value.
+///   - `array` (level-property): The elements are `length`, `auto` or `array`, each level of the item will be inset by the corresponding value of the array at position `level - 1`.
+///     - See also `indent`.
+///   - `function` (level-property): The return value will be used for each level and each item.
+///     - The function form: `it => length | auto | array`
+///     - If the returned value is a `array`, then the elements in the array will be used for each item.
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n`: The index of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.tag`: The tag of the current item.
+///       - `it.elem-tag`: The tag of the current enum or list.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type`: The hanging type of the current level.
+///       - `it.marker`: The marker of the current label if it is a `list`.
+///       - `it.number`: The number of the current label if it is a `enum`.
+///       - `it.label-width` (dictionary): The width info of the current label.
+///         - `it.label-width.max`: The maximum width of the labels in the current level.
+///         - `it.label-width.current`: The current width of the label.
+///       - `it.parent`: The parameter info of the parent containing the current list — the parent's construction element `e`, the item `n` where the parent is located, and the horizontal spacing parameters: `label-indent`, `label-inset`, `body-indent`, `indent`, `body-margin`, `label-width` (`max`, `current`)
+///       - `it.get`: Access the parameter info (see `it.parent`) of the current list's ancestors by level
+/// - body-margin (auto, relative, dictionary, array, function): The left and right margin of the current item body. Based on the `itemize` design, `label-indent`, the label's content, `body-indent` are belong to the label's body. For `ltr`, the left margin starts from the left of the label's body; for `rtl`, the right margin starts from the right of the label's body.
+///   - In particular, `body-margin` can control the starting alignment position of the block-level element in the item body and the actual `100%` width.
+///   - *Note*: In general, the layout of `inline-level` elements in the item body are not affected by `body-margin` (except for the actual `100%` width).
+///     - The layout of `inline-level` elements usually are affected by `line-indent` and `hanging-indent`.
+///   - With this attribute, it is now very easy to implement some lists with very special layouts.
+///     - Example: The body of all nested lists is aligned to the left.
 ///       ```typst
-///       #show : el.default-enum-list.with(auto-resuming: true)
+///       #show: el.default-enum-list.with(
+///         body-margin: 0pt,
+///         indent: (2em, auto),
+///         label-indent: it => { -it.label-width.current - it.e.body-indent },
+///       )
+///       #set enum(full: true)
+///       + Level One
+///         + Level Two
+///           + #lorem(2)
+///         + Level Two
+///       + Level One
 ///       ```
-///       We recommend using this only at the document's start. Generally,
-///         - `el.default-enum-list.with(auto-resuming: true)` and
-///         - `el.default-enum-list.with(auto-resuming: auto)`
-///       may interfere with each other.
-///     - For large documents like books or articles, we recommend not setting `auto-resuming` at the beginning (i.e., leave it as `none`). Instead, set this parameter to `auto` in the required sublists and use it with methods like `resume`, `resume-label`, `resume-list`, or `auto-resume-enum`.
-/// - auto-label-width (none, auto, array, "all", "each", "list", "enum"): To ensure consistent first-line indentation of the body across different enums and lists, you can now set `auto-label-width` to `auto` and use the method `auto-label-item` to align the sublists within.
-///   - `none`: Disables this feature.
-///   - `auto`: Enables this feature and uses the method `auto-label-item` to align the sublists within.
-///   - "all", "each", "list", "enum" or an array: The values and meanings of `auto-label-width` are the same as those of the `form` parameter in the `auto-label-item` method.
-///    - In a document, `auto-label-width` only retrieves the actual maximum width of labels at the current level of enums and lists.
-/// - checklist (bool, array): Enables checklist.
-///   - Alternatively, You can also enable and configure checklist-related features using the method `config.checklist`.
-/// - args (arguments): Used to format the text of the numbering. Accepts all named parameters of the `text` function (e.g., `fill: red`, `size: 4em`, `weight: "bold"`).
-///   - Values can be `array`, `auto` or `function`:
-///     - If `auto`, it uses the current `text` value.
-///     - If `array`, each level uses the corresponding value of the array at position `level - 1`.
-///       - If the last element of the array is `LOOP`, the values in the array will be used cyclically, else,
-///       - The last value is used for residual levels.
-///    - if `function`, the return value will be used for each level and each item. The function should be declared as:
-///     ```typ
-///     it => some-value | auto | array
+///     - Example: Align the (first-level) item body and the first line of the paragraph, e.g., indent both by 2em.
+///       ```typst
+///       #let indent = 2em
+///       #set par(first-line-indent: (amount: indent, all: true))
+///       #show: el.default-enum-list.with(
+///         body-margin: (0pt, auto),
+///         indent: (indent, auto),
+///         label-indent: it => {
+///           if it.level == 1 {
+///             -it.label-width.current - it.e.body-indent
+///           } else {
+///             auto
+///           }
+///         },
+///       )
+///       #lorem(15)
+///       + #lorem(15)
+///         + #lorem(15)
+///       + #lorem(15)
+///       ```
+///     - Example: Align the (first level) item body and the first line of the paragraph with the `paragraph` hanging style.
+///       ```typst
+///       #let indent = 2em
+///       #set par(first-line-indent: (amount: indent, all: true))
+///       #show: el.default-enum-list.with(
+///         body-margin: (0pt, auto),
+///         indent: (0pt, indent, auto),
+///         label-indent: it => {
+///           if it.level == 1 {
+///             indent - it.label-width.current - it.e.body-indent
+///           } else {
+///             auto
+///           }
+///         },
+///       )
+///       #lorem(15)
+///       + #lorem(15)
+///         + #lorem(15)
+///       + #lorem(15)
+///       ```
+///   - For `ltr` typography, `body-margin.left` (left body margin) is called `start-margin`, `body-margin.right` (right body margin) is called `end-margin`; for `rtl` typography, `body-margin.left` (left body margin) is called `end-margin`, `body-margin.right` (right body margin) is called `start-margin`.
+///   - `auto`: Set `start-margin` and `end-margin` to `auto`. In this case:
+///     - `end-margin` is `0pt`
+///     - `start-margin` is the label's body width, i.e., the rendered width of the label + `label-indent` + `body-indent`. (Also affected by the `label-width`.)
+///       - *Note*: This also works for `hanging-type` is `paragraph` (and so `paragraph-*` method); but in this case, the `hanging-indent` and `line-indent` are reset to make the paragraphs in item body aligned to the left.
+///   - `relative`: Set `start-margin` and `end-margin` to the same specified value.
+///     - For `start-margin`, the ratio part of `start-margin` is relative to the `label-width`, that is, `start-margin` = `start-margin.length + start-margin.ratio × label's body width`, where *label's body width* = the rendered width of the label + `label-indent` + `body-indent`.
+///     - For `end-margin`, the ratio part of `end-margin` is relative to the parent container's width.
+///   - `dictionary`: The key values are `left` and `right`, each of which can be `relative`, `auto`. Then the `start-margin` and `end-margin` are set to the corresponding value.
+///   - `array` (level-property): The elements are `relative`, `auto`, `dictionary`, or `array`. The `level`-th of the `enum` or `list` will be set to the corresponding value of the array at position `level - 1`.
+///     - See `indent`.
+///   - `function` (level-property): The return value will be used for each level.
+///     - The function form: `it => relative | auto | dictionary | array`.
+///     - See `indent`.
+/// - hanging-type (string, array, function): The hanging type of the paragraphs inside the item body.
+///   - Usage:
+///     ```typst
+///     #show: el.default-enum-list.with(hanging-type: "paragraph")
+///     #show: el.default-enum-list.with(hanging-type: ("classic", "paragraph", "classic"))
+///     #show: el.default-enum-list.with(hanging-type: it => if calc.odd(it.level) {"paragraph"} else {"classic"})
+///    ```
+///   - `"classic"`: The native behavior of `enum` or `list`.
+///   - `"paragraph"`: For each level, paragraphs inside the item body are not indented; they align to the current `body-margin`'s beginning margin (the same as the `paragraph-*` methods).
+///     - Note: But the current `body-margin`'s beginning margin is the same as the `"classic"` one.
+///     - Hint: See also the `inline-*` methods.
+///   - `array` (level-property): The elements are `"classic"` or `"paragraph"`. Each level of `hanging-type` will be determined by the corresponding value of the array at position `level - 1`.
+///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
+///     - otherwise, the last value of the array will be used for residual levels.
+///   - `function` (level-property): The return value ("classic" or "paragraph") will be used for each level.
+///     - The function form: `it => "classic" | "paragraph"`
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.elem-tag`: The tag of the current enum or list.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+/// - line-indent (auto, length, array, function): The indentation for the first line of a paragraph, excluding the first paragraph (default: `auto`).
+///   - Note: Paragraphs inside `block-level` elements that appear in the item body are not processed (the related settings are not yet exposed).
+///   - Usage: See `indent`.
+///   - `auto`: It uses the first line indent of the current paragraph (`par.first-line-indent.amount`).
+///   - `length`: The value of the line indent.
+///   - `array` (level-property): The elements are `length`, `auto` or `array`, each level of the item will be indented by the corresponding value of the array at position `level - 1`.
+///     - See also `indent`.
+///   - `function` (level-property): The return value will be used for each level and each item.
+///     - The function form: `it => length | auto | array`
+///     - If the returned value is a `array`, then the elements in the array will be used for each item.
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n`: The index of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.tag`: The tag of the current item.
+///       - `it.elem-tag`: The tag of the current enum or list.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type`: The hanging type of the current level.
+///       - `it.marker`: The marker of the current label if it is a `list`.
+///       - `it.number`: The number of the current label if it is a `enum`.
+///       - `it.label-indent`, `it.label-inset`, `it.body-indent`, `it.indent`, `it.body-margin`: All the horizontal spacing parameters.
+///       - `it.label-width` (dictionary): The width info of the current label.
+///         - `it.label-width.max`: The maximum width of the labels in the current level.
+///         - `it.label-width.current`: The current width of the label.
+///       - `it.parent`: The parameter info of the parent containing the current list — the parent's construction element `e`, the item `n` where the parent is located, and the horizontal spacing parameters: `label-indent`, `label-inset`, `body-indent`, `indent`, `body-margin`, `label-width` (`max`, `current`)
+///       - `it.get`: Access the parameter info (see `it.parent`) of the current list's ancestors by level
+/// - first-line-inset (auto, length, array, function): Adds an inset to the first line of the item body (default: `0pt` if `auto`). If there is no first line, it is ignored.
+///   - Note: Paragraphs inside `block-level` elements that appear in the item body are not processed (the related settings are not yet exposed).
+///   - Usage: See `indent`.
+///   - `auto`: The first line is not inset (equivalent to `0pt`).
+///   - `array` (level-property): The elements are `length`, `auto` or `array`, each level of the item will be inset by the corresponding value of the array at position `level - 1`.
+///     - See also `indent`.
+///   - `function` (level-property): The return value will be used for each level and each item.
+///     - The function form: `it => length | auto | array`
+///     - If the returned value is a `array`, then the elements in the array will be used for each item.
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n`: The index of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.tag`: The tag of the current item.
+///       - `it.elem-tag`: The tag of the current enum or list.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type`: The hanging type of the current level.
+///       - `it.marker`: The marker of the current label if it is a `list`.
+///       - `it.number`: The number of the current label if it is a `enum`.
+///       - `it.label-indent`, `it.label-inset`, `it.body-indent`, `it.indent`, `it.body-margin`: All the horizontal spacing parameters.
+///       - `it.label-width` (dictionary): The width info of the current label.
+///         - `it.label-width.max`: The maximum width of the labels in the current level.
+///         - `it.label-width.current`: The current width of the label.
+///       - `it.parent`: The parameter info of the parent containing the current list — the parent's construction element `e`, the item `n` where the parent is located, and the horizontal spacing parameters: `label-indent`, `label-inset`, `body-indent`, `indent`, `body-margin`, `label-width` (`max`, `current`)
+///       - `it.get`: Access the parameter info (see `it.parent`) of the current list's ancestors by level
+/// - hanging-indent (auto, length, array, function): The hanging indentation for item body.
+///   - Note: Paragraphs inside `block-level` elements that appear in the item body are not processed (the related settings are not yet exposed).
+///   - Usage: See `indent`.
+///   - `auto`: It uses the hanging indent of the current paragraph (`par.hanging-indent`).
+///   - `length`: The hanging indentation is fixed to the specified value.
+///   - `array` (level-property): The elements are `length`, `auto` or `array`, each level of the item will be indented by the corresponding value of the array at position `level - 1`.
+///     - See also `indent`
+///   - `function` (level-property): The return value will be used for each level and each item.
+///     - The function form: `it => length | auto | array`
+///     - If the returned value is a `array`, then the elements in the array will be used for each item.
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n`: The index of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.tag`: The tag of the current item.
+///       - `it.elem-tag`: The tag of the current enum or list.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type`: The hanging type of the current level.
+///       - `it.marker`: The marker of the current label if it is a `list`.
+///       - `it.number`: The number of the current label if it is a `enum`.
+///       - `it.label-indent`, `it.label-inset`, `it.body-indent`, `it.indent`, `it.body-margin`: All the horizontal spacing parameters.
+///       - `it.label-width` (dictionary): The width info of the current label.
+///         - `it.label-width.max`: The maximum width of the labels in the current level.
+///         - `it.label-width.current`: The current width of the label.
+///       - `it.parent`: The parameter info of the parent containing the current list — the parent's construction element `e`, the item `n` where the parent is located, and the horizontal spacing parameters: `label-indent`, `label-inset`, `body-indent`, `indent`, `body-margin`, `label-width` (`max`, `current`)
+///       - `it.get`: Access the parameter info (see `it.parent`) of the current list's ancestors by level
+/// - whole-spacing (auto, relative, fraction, dictionary, array, function): The above and below spacing of the current `enum` or `list`.
+///   - Usage: See `item-spacing`.
+///   - `auto`: The above and below spacing are set to `auto` (See also `block.spacing`). In this case, it may be affected by the `tight-mode`.
+///   - `relative`, `fraction`: The above and below spacing are set to the specified value.
+///   - `dictionary`: The key values are `above` and `below`, each of which can be `relative`, `fraction` or `auto`. Then the above and below spacing are set to the corresponding value.
+///   - `array` (level-property): The elements are `relative`, `fraction`, `auto`, or `dictionary`, the `level`-th of the `enum` or `list` will be set to the corresponding value of the array at position `level - 1`.
+///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
+///     - otherwise, the last value of the array will be used for residual levels.
+///   - `function` (level-property): The return value will be used for each level.
+///     - The function form: `it => auto | relative | fraction | dictionary`
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.elem-tag`: The tag of the current enum or list.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type`: The hanging type of the current level.
+/// - item-spacing (auto, relative, fraction, dictionary, array, function): Spacing between items.
+///   - Usage:
+///     ```typst
+///     #show: el.default-enum-list.with(item-spacing: 1em)
+///     #show: el.default-enum-list.with(item-spacing: (below: 1fr, above: auto))
+///     #show: el.default-enum-list.with(item-spacing: (1em, (below: 1fr), auto))
+///     #show: el.default-enum-list.with(item-spacing: it => it.level * 1em)
 ///     ```
-///     - `it` is a dictionary that contains the following keys:
-///       - `level`: The level of the item.
-///       - `n`: The index of the item.
-///       - `n-last`: The index of the last item.
-/// - enum-config (dictionary): Configure `enum` in `doc` (default: (:)).
-///    - The parameter type is a dictionary, and the currently allowed properties (keys) are:
-///       - `indent`,
-///       - `body-indent`,
-///       - `label-indent`,
-///       - `is-full-width`,
-///       - `item-spacing`,
-///       - `enum-spacing`,
-///       - `enum-margin`,
-///       - `hanging-indent`,
-///       - `line-indent`,
-///       - `label-width`,
-///       - `label-align`,
-///       - `label-baseline`,
-///       - `label-format`,
-///       - `body-format`,
-///       - any named arguments of the function `text`
-///    - Rules: If both `*-enum-list` and `enum-config` have the same property set, the rules are:
-///       - The settings in `enum-config`  take precedence.
-///       - For properties of function type, a composite operation is used, where the inner function is provided by `enum-config`:
-///           - `label-format`, `item-format`
-///       - For properties that are dictionaries composed of multiple attributes, these attributes are merged, and if the same attribute exists, the value from `enum-config` is used.
-//            - `body-format`
-/// - list-config (dictionary): Configure `list` in `doc` (default: (:)).
-///   - Similar to `enum-config`.
+///   - `auto`: The spacing is determined by the `enum.spacing` or `list.spacing`. And in this case, it may be affected by the `tight-item-mode`.
+///   - `relative`, `fraction`: The value of spacing between each item; whose rule is the same as `block.spacing`.
+///   - `dictionary`: The key values are `above` and `below`, each of which can be `relative`, `fraction` or `auto`.
+///     - Note: The `above` spacing is ignored for the first item, but the `below` spacing is added to the last item.
+///     - The spacing between the previous and current items is the previous `below` plus the current `above`.
+///       - Note: This differs from setting `item-spacing` to a concrete value.
+///   - `array` (level-property): The elements are `relative`, `fraction`, `dictionary`, `auto`, and `array`.
+///     - See also `indent`.
+///   - `function` (level-property): The return value will be used for each level and each item.
+///     - The function form: `it => relative | fraction | dictionary | auto | array`
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n`: The index of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.tag`: The tag of the current item.
+///       - `it.elem-tag`: The tag of the current enum or list.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type`: The hanging type of the current level.
+///       - `it.marker`: The marker of the current label if it is a `list`.
+///       - `it.number`: The number of the current label if it is a `enum`.
+/// - tight-mode (auto, string, dictionary, array, function): If `whole-spacing` are `auto`, then `tight-mode` is used to determine the above and below spacing of `enum` or `list`.
+///   - Usage:
+///     ```typst
+///     #show: el.default-enum-list.with(tight-mode: "always-tight")
+///     #show: el.default-enum-list.with(tight-mode: ("never-tight", "always-tight", auto))
+///     #show: el.default-enum-list.with(tight-mode: (tight: auto, not-tight: 2em))
+///     ```
+///   - Background: For the current `enum` or `list`, the above spacing (denoted as `above-spacing`) and the below spacing (denoted as `below-spacing`) are determined by the following cases:
+///     1. The current `enum` or `list` is `tight` (i.e. `enum.tight` or `list.tight` is `true`, see the `tight-item-mode`);
+///     2. The current `enum` or `list` is not `tight` (i.e. `enum.tight` or `list.tight` is `false`, see the `tight-item-mode`);
+///     3. There is a `parbreak()` between the above paragraph and the current `enum` or `list`: like
+///        ```typst
+///        The preceding paragraph.  // below has a `parbreak()`
+///
+///        + items
+///        ```
+///     4. There is no `parbreak()` between the above paragraph and the current `enum` or `list`: like
+///        ```typst
+///        The preceding paragraph.
+///        + items
+///        ```
+///     - Combining these cases, we call
+///       - case 1 with case 3 *par-tight* (i.e. `tight` with a `parbreak()` above),
+///       - case 2 with case 3 *par-not-tight*,
+///       - case 1 with case 4 *tight*,
+///       - case 2 with case 4 *not-tight*.
+///     - Note: In native Typst behavior, cases *par-not-tight*, *par-tight* and *not-tight* are the same.
+///   - `auto`: Use the native Typst behavior of `enum` or `list`.
+///     - for the *tight* case: `above-spacing` is `enum.spacing` or `list.spacing` (if `auto`, representing `par.leading`); for the other cases it is `auto` (representing `par.spacing`).
+///     - `below-spacing` is `auto` (representing `par.spacing`)
+///   - `"always-tight"`: `above-spacing` and `below-spacing` are `par.leading` and `auto`, respectively.
+///   - `"never-tight"`: `above-spacing` and `below-spacing` are `par.spacing` and `auto`, respectively.
+///   - `"compact-tight"`: `above-spacing` and `below-spacing` are both `par.leading`.
+///   - `dictionary`: The keys are: `tight`, `not-tight`, `par-tight`, `par-not-tight`, with values of `auto`, `relative`, `fraction`, `array` (with two elements representing the above and below spacing).
+///     - If values of the keys are taken `auto`, `relative`, `fraction`, then they represent the `above-spacing`; `below-spacing` is `auto`.
+///     - If values of the keys are `array`, then the first element represents the `above-spacing`, and the second element represents the `below-spacing`.
+///     - If `tight` is `auto`, use `enum.spacing` or `list.spacing` (if `auto`, representing `par.leading`); if `not-tight` is `auto`, use `auto` (representing `par.spacing`); if `par-tight` and `par-not-tight` are `auto`, use the value of `not-tight`
+///     - `tight`, `not-tight`, `par-tight`, `par-not-tight` represent the *tight* case, *not-tight* case, *par-tight* case, *par-not-tight* case, respectively.
+///     - *Note*: In order to set `below-spacing` from `par-tight` and `par-not-tight`, you need to add in the document:
+///       ```typst
+///       #show: el.config.auto-detect-tight
+///       ```
+///     - Example:
+///       ```typst
+///       #let first-level-tight-mode = (
+///         tight: (auto, 0.65em),
+///         par-tight: (auto, auto),
+///         not-tight: (1.5em, 1.5em),
+///         par-not-tight: (2em, 2em),
+///        )
+///       #show: el.default-enum-list.with(tight-mode: (first-level-tight-mode, auto))
+///       #show: el.config.auto-detect-tight
+///       ```
+///   - `array` (level-property): Sets `tight-mode` by level. The elements are `auto`, `"always-tight"`, `"never-tight"`, `"compact-tight"`, `dictionary`.
+///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
+///     - otherwise, the last value of the array will be used for residual levels.
+///   - `function` (level-property): The return value will be used for each level.
+///     - The function form: `it => auto | "always-tight" | "never-tight" | "compact-tight" | dictionary`
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.elem-tag`: The tag of the current enum or list.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type`: The hanging type of the current level.
+/// - tight-item-mode (auto, string, dictionary, array, function): If `item-spacing` is `auto`, then `tight-item-mode` is used to determine the spacing between items.
+///   - Usage:
+///     ```typst
+///     #show: el.default-enum-list.with(tight-item-mode: "always-tight")
+///     #show: el.default-enum-list.with(tight-item-mode: ("never-tight", auto))
+///     #show: el.default-enum-list.with(tight-item-mode: ((tight: auto, not-tight: 2em), auto))
+///     ```
+///   - Background: The spacing between items is determined by the following cases:
+///     1. *tight*: There is no `parbreak()` between items, like:
+///       ```typst
+///       + item one // no `parbreak()` below
+///       + item two // no `parbreak()` below
+///       + item three
+///       ```
+///     2. *not-tight*: There is a `parbreak()` between items, like:
+///       ```typst
+///       + item one // has a `parbreak()` below
+///
+///       + item two
+///       + item three
+///       ```
+///   - `auto`: Use the native Typst behavior of `enum` or `list`.
+///     - The spacing uses `enum.spacing` or `list.spacing` (if `auto`, representing `par.leading` for the *tight* case and `par.spacing` for the *not-tight* case).
+///   - `"always-tight"`: The spacing is `par.leading`.
+///   - `"never-tight"`: The spacing is `par.spacing`.
+///   - `dictionary`: The keys are `tight`, `not-tight`, with values of `auto`, `relative`, `fraction`.
+///     - If `tight` is `auto`, use `par.leading`
+///     - If `not-tight` is `auto`, use `par.spacing`
+///     - Use the values of `tight` and `not-tight` for the *tight* case and the *not-tight* case, respectively.
+///   - `array` (level-property): Sets `tight-item-mode` by level. The elements are `auto`, `"always-tight"`, `"never-tight"`, `dictionary`.
+///     - See also `tight-mode`.
+///   - `function` (level-property): The return value will be used for each level.
+///     - The function form: `it => auto | "always-tight" | "never-tight" | dictionary`
+///     - See also `tight-mode`.
+/// - label-width (auto, relative, string, dictionary, array, function): Render the width of the label.
+///   - Usage:
+///     ```typst
+///     #show : el.default-enum-list.with(label-width: 2em)
+///     #show : el.default-enum-list.with(label-width: ((amount: 2em, style: "constant"), auto))
+///     ```
+///   - *Notation*:
+///     - `real-width`: The real width of the current label's content (calculated by `measure`).
+///     - `max-width`: The maximum value of all `real-width`s in the current level.
+///   - `auto`: Use the native behavior. That is, the current width of the label will be set to `max-width`.
+///   - `relative`: This is the same as `(amount: len, style: "default")`.
+///   - `"max"`: This is the same as `auto`.
+///   - `dictionary`: The keys are `amount` and `style`.
+///     - `amount` can be taken `relative`, `auto` or `"max"`
+///       - `relative`: The value is `amount.length + amount.ratio * real-width`.
+///       - `auto`: `real-width`.
+///       - `"max"`: `max-width`.
+///     - `style` can be `"default"`, `"constant"`, `"auto"`, or `"native"`.
+///       - `"default"`: If `real-width` is less than `amount`, the label's width is rendered as `amount`; otherwise, the label's width is rendered as `real-width`.
+///       - `"constant"`: The label's width is rendered as `amount`.
+///       - `"auto"`: The label's width is rendered as `real-width`.
+///       - `"native"`: The label's width is rendered as `max-width`.
+///         - Also `amount` is set to `max-width` (since ver0.3.0).
+///       - *Note*: In order to make the layout more in line with expectations, the `start-margin` (i.e., `body-margin.left` if `text.dir` is `ltr`, `margin-body.right` if `text.dir` is `rtl`) will be set to `amount + body-indent` (if `start-margin` is `auto`).
+///   - `array` (level-property): The elements are `auto`, `relative`, `string`, `dictionary` or `array`. The element at the position `level - 1` will be used for the `level`-th level.
+///     - See also `indent`.
+///   - `function` (level-property): The return value will be used for each level and each item.
+///     - The function form: `it => auto | relative | string | dictionary | array`
+///     - If the returned value is a `array`, then the elements in the array will be used for each item.
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n`: The index of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.tag` (since ver0.3.0): The tag of the current item.
+///       - `it.elem-tag` (since ver0.3.0): The tag of the current enum or list.
+///       - `it.e` (since ver0.3.0): The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type` (since ver0.3.0): The hanging type of the current level.
+///       - `it.marker` (since ver0.3.0): The marker of the current label if it is a `list`.
+///       - `it.number` (since ver0.3.0): The number of the current label if it is a `enum`.
+///       - `it.max-width` (since ver0.3.0): The maximum width of the labels in the current level.
+///       - `it.width` (since ver0.3.0): The current width of the label.
+/// - label-align (auto, alignment, array, function): The `alignment` that enum numbers and list markers should have.
+///   - Note: This is different with `enum.number-align` and `list.marker-align` (the latter are align whole enum numbers and list markers). We suggest to make `enum.number-align` and `list.marker-align` to be default when using `itemize`.
+///   - *Note*: In general, this parameter is used to set *horizontal* alignment for label. If want 2D-alignment, then see `label-baseline`.
+///   - Usage:
+///     ```typst
+///     #show : el.default-enum-list.with(label-align: left)
+///     #show : el.default-enum-list.with(label-align: (left, right))
+///     ```
+///   - `auto`: Use `end`.
+///   - `alignment`: The alignment of the label.
+///   - `array` (level-property): The elements are `auto`, `alignment` or `array`, each level of the item will be set to the corresponding value of the array at position `level - 1`.
+///     - See also `indent`.
+///   - `function` (level-property): The return value will be used for each level and each item.
+///     - The function form: `it => auto | alignment | array`
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n`: The index of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.tag`: The tag of the item.
+///       - `it.elem-tag`: The tag of the `enum` or `list`.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type`: The hanging type of the current level.
+/// - label-baseline (auto, relative, string, dictionary, array, function): Set the baseline style of the label body.
+///   - Usage:
+///     ```typst
+///     #show : el.default-enum-list.with(label-baseline: "center")
+///     #show : el.default-enum-list.with(label-baseline: ("top-item", auto))
+///     #show : el.default-enum-list.with(label-baseline: (same-line-style: "top-item")) // The default behavior of native `enum` or `list` (Typst 0.15.1)
+///     #show : el.default-enum-list.with(label-baseline: 1em)
+///     #show : el.default-enum-list.with(label-baseline: (impact-first-line: true))
+///     ```
+///   - *Note*: By default, `itemize` prioritizes the vertical component of `enum.number-align` or `list.marker-align`. For `label-baseline` to control the vertical alignment of the label body, set the corresponding `number-align`/`marker-align` to its default value (i.e., `end`).
+///   - The full form of `label-baseline` is a dictionary with the following keys:
+///     - `amount`
+///     - `at`
+///     - `relative-to`: a dictionary with keys:
+///       - `to`, `at`, `shift`
+///     - `same-line-style`: a dictionary with keys:
+///       - `amount`, `at`, `relative-to` (a dictionary with keys: `to`, `at`, `shift`)
+///     - `impact-first-line`
+///   - `auto`: The default of `label-baseline` configuration (i.e., using the native behavior), which is the same as `(amount: 0pt, at: auto, relative-to: "baseline", same-line-style: auto, impact-first-line: auto) `
+///   - `relative`: An amount to shift the label baseline by.
+///     - The same as `(amount: label-baseline)`.
+///     - The ratio part is relative to the (rendered) height of the (whole) label body.
+///   - `"center"`, `"top"`, `"bottom"`, `"baseline"`: The (first line of the) label body and the first line of the item body will be aligned at the specified (i.e., horizontal, top, bottom, baseline) position. For example, for `"top"`, it means that the top of label body and the top of item body will be aligned.
+///     - The same as `(amount: label-baseline, at: at)`, where `at` is `auto` if `label-baseline` is `baseline`, `top` if `label-baseline` is `top`, `bottom` if `label-baseline` is `bottom`, and `horizon` if `label-baseline` is `center`.
+///   - `"top-item"`, `"horizon-item"`, `"bottom-item"`: The top, horizontal, or bottom of the label body will be aligned to the top, horizontal, or bottom of the whole item body, respectively.
+///     - The same as `(amount: label-baseline)`.
+///     - *Note*: `itemize` uses the height of the first character (i.e., [A]) in the first line of the item body. If you manually set the font style of the paragraph's text, this alignment may not be accurate. It is recommended to use the `style` parameter in `body-format` for adjustments.
+///   - `dictionary`: The keys are
+///     - `amount` (`auto`, `relative`, `"center"`, `"top"`, `"bottom"`, `"baseline"`, `"top-item"`, `"horizon-item"`, `"bottom-item"`): The shift amount of the label body.
+///       - `auto` == `0pt` (default)
+///       - *Note*: Only when `amount` is `auto` or `relative`, the keys `at` and `relative-to` can work.
+///     - `at` (`auto`, `top`, `bottom`, `horizon`): Used to set what the position of the label body to be aligned; the default of `at` is `auto`, meaning the the baseline of the (first line of the) label body. See also the `baseline` parameter of `box`, https://typst.app/docs/reference/layout/box/#parameters-baseline.
+///     - `relative-to` (`string`, `content`, `relative`, `array`, `dictionary`): Used to set the offset relative to what position (of item body). Default is `"baseline"`.
+///       - `"bottom"`, `"center"`, `"top"`, `"baseline"`: Relative to the first line of the current item body.
+///       - `"top-item"`, `"horizon-item"`, `"bottom-item"`: Relative to the top, horizontal, or bottom of the whole item.
+///       - `content`: The passed content is used to calculate the height. The same as `(to: relative-to, at: auto, shift: 0pt)`.
+///       - `relative`: Representing the height of the first line of the current item body. The same as `(to: [A], at: auto, shift: relative-to)`.
+///         - The ratio part is relative to the (rendered) height of the (whole) item body.
+///       - `array` with 2 elements like `(relative-shift, relative-to)`. This means the label body should be aligned to `relative-to` with the offset of `relative-shift`.
+///          - The first element `relative-shift` can be `content` or `relative`.
+///          - The second element `relative-to` can be `"bottom"`, `"center"`, `"top"`, `"baseline"`.
+///       - `dictionary` with keys: `to`, `at`, `shift`. This means the label body should be aligned to the content of `to`, at the `at` position with the offset of `shift`.
+///          - *Note*: Usually, the content of `to` should be added to the first line of the item body.
+///          - `to` (`auto`, `content`): If `auto`, it is `[A]`.
+///          - `at` (`auto`, `top`, `bottom`, `horizon`): Used to set what the position of `to` to be aligned.
+///          - `shift` (`relative`): The offset of `shift` at `at` position. The ratio part is relative to the height of the content `to`.
+///     - `impact-first-line` (`auto`, `bool`): Whether to impact the first line of the label body by `label-baseline`.
+///       - `auto`: If `hanging-typ` is `"paragraph"`, then `true`, else `false`.
+///     - `same-line-style` (`auto`, `string`, `dictionary`): If labels from different levels appear on the same line, their alignment is determined by `same-line-style`. That is, it deals with like `+ + Item`. Default is `auto`.
+///       - In Typst 0.15, like `+ + Item`, the first label is "top-aligned" to `+ Item` (since `enum` or `list` has no baseline). In default, in `itemize` (since ver0.2.0), the first label and `+ Item` is aligned at baseline.
+///       - `auto`: The same as `"baseline"`.
+///       - `"top"`, `"center"`, `"bottom"`, `"baseline"`: The (first line of the) label body on the same line and the first line of the item body will be aligned at the specified (i.e., top, horizontal, bottom, baseline) position.
+///       - `"top-item"`, `"horizon-item"`, `"bottom-item"`: The top, horizontal, or bottom of the label body on the same line will be aligned to the top, horizontal, or bottom of the whole item body, respectively.
+///       - `"top-label"`, `"center-label"`, `"bottom-label"`, `"baseline-label"`: The top, horizontal, or bottom of the label body on the same line will be aligned to the top, horizontal, or bottom of the *last* label body, respectively.
+///       - `dictionary` with keys `amount`, `at`, `relative-to`. This means the label body on the same line will be shifted at the `at` position with the offset of `amount`, and will be aligned determined by `relative-to`.
+///         - `amount` (`auto`, `relative`): The shift amount of the label body on the same line. Default is `0pt`.
+///           - `auto` == `0pt`.
+///           - The ratio part is relative to the (rendered) height of the (whole) label body.
+///         - `at` (`auto`, `top`, `bottom`, `horizon`): Used to set what the position of the label body on the same line to be aligned. Default is `auto` (the baseline of the label body).
+///         - `relative-to` (`string`, `array`, `dictionary`): Used to set the offset relative to what position (of item body). Default is `"baseline"`. See also the key `relative-to` in `label-baseline`.
+///           - `"top"`, `"center"`, `"bottom"`, `"baseline"`: Relative to the first line of the current item body.
+///           - `"top-item"`, `"horizon-item"`, `"bottom-item"`: Relative to the top, horizontal, or bottom of the whole item.
+///           - `"top-label"`, `"center-label"`, `"bottom-label"`, `"baseline-label"`: Relative to the top, horizontal, or bottom of the last label body.
+///           - `content`: The passed content is used to calculate the height. The same as `(to: relative-to, at: auto, shift: 0pt)`.
+///           - `relative`: Representing the height of the first line of the current item body. The same as `(to: [A], at: auto, shift: relative-to)`.
+///             - The ratio part is relative to the (rendered) height of the (whole) item body.
+///           - `array` with 2 elements like `(relative-shift, relative-to)`. This means the label body on the same line should be aligned to `relative-to` with the offset of `relative-shift`.
+///             - The first element `relative-shift` can be `content` or `relative`.
+///             - The second element `relative-to` can be `"bottom"`, `"center"`, `"top"`, `"baseline"`.
+///           - `dictionary` with keys `to`, `at`, `shift`. This means the label body on the line should be aligned to `to` (the last label body or content), at the `at` position with the offset of `shift`.
+///             - `to` (`auto`, `"label"`, `content`): If `"label"`, this means the label body on the line should be aligned to the last label body. If `auto`, it is `[A]`.
+///             - `at` (`auto`, `top`, `horizon`, `bottom`): Used to set what the position of `to` to be aligned.
+///             - `shift` (`relative`): The offset of `shift` at `at` position. The ratio part is relative to the height of the content `to` if `to` is `content` or the last label body if `to` is `"label"`.
+///         - Example: In the following, the bottom of the first label is aligned to the bottom of second label.
+///           ```typst
+///           #show: el.default-enum-list.with(
+///             body-format: (stroke: (red, auto)),
+///             label-baseline: ((same-line-style: "bottom-label"), auto),
+///           )
+///           #set list(marker: [#circle(width: 1em, fill: red)])
+///           - - #el.item(label-format: (stroke: blue), [$vec(1, 1, 1)$]) #lorem(20)
+///             #lorem(10)
+///           ```
+///   - `array` (level-property): The elements are `auto`, `relative`, `"center"`, `"top"`, `"bottom"`, `"top-item"`, `"horizon-item"`, `"bottom-item"`, `"baseline"`, `dictionary`, or `array`.
+///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
+///     - otherwise, the last value of the array will be used for residual levels.
+///     - The elements in the array can also be an array, where the element at position `n - 1` applies to the item of index `n`.
+///   - `function` (level-property): The return value will be used for each level and each item.
+///     - The function form: `it => auto | relative | "center" | "top" | "bottom" | "top-item" | "horizon-item" | "bottom-item" | "baseline" | dictionary | array`.
+///     - If the returned value is a `array`, then the elements in the array will be used for each item.
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n`: The index of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.tag`: The tag of the current item.
+///       - `it.elem-tag`: The tag of the current enum or list.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type`: The hanging type of the current level.
+///       - `it.marker`: The marker of the current label if it is a `list`.
+///       - `it.number`: The number of the current label if it is a `enum`.
+/// - label-format (none, dictionary, function, array): Customize item labels.
+///   - Usage:
+///     ```typst
+///     #show: el.default-enum-list.with(label-format: (stroke: red))
+///     #show: el.default-enum-list.with(label-format: (fill: (red, blue, auto)))
+///     #show: el.default-enum-list.with(label-format: (emph, strong))
+///     #show: el.default-enum-list.with(label-format: it => {
+///       if it.level == 1 {
+///         circle(it.body, inset: 1pt)
+///       } else {
+///         strong(it.body)
+///       }
+///     })
+///     ```
+///   - `none`: Does not take effect.
+///   - `dictionary`: The keys are
+///     - `format` : The format of the label.
+///       - `none` == `auto` (default): The same as `it => it.body`.
+///       - `function` (base-property):
+///         - The function form: `body => content`. Apply the function to the label's content (generated by `enum.item.number` + `enum.numbering` or `list.marker`).
+///         - The `function` should be wrapped in an `array`, like: `(strong, )`.
+///       - `array` (level-property): The elements are `function` (base-property) or `array`. The element at the position `level - 1` will be used for the `level`-th level.
+///         - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
+///         - otherwise, the last value of the array will be used for residual levels.
+///       - `function` (level-property):
+///         - The function form: `it => content | array`.
+///         - If the return value is `array`, then each element in the array should be `function` (base-property), which will be applied to the label's content for each item in the current level.
+///         - Access the following values available on `it`:
+///           - `it.body`: The current label's content.
+///           - `it.level`: The level of the item, starting from 1.
+///           - `it.n`: The index of the item, starting from 1.
+///           - `it.n-last`: The index of the last item in the current level.
+///           - `it.tag`: The tag of the item.
+///           - `it.elem-tag`: The tag of the `enum` or `list`.
+///           - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///           - `it.hanging-type`: The hanging type of the current level.
+///         - Example:
+///           ```typst
+///           #show: el.default-enum-list(label-format: (format: it => {
+///             if it.tag == "strong" {
+///               set text(fill: red, weight: "bold")
+///               it.body
+///             } else {
+///               it.body
+///             }
+///           }))
+///           + #el.item(tag: "strong") #lorem(2)
+///           + #lorem(2)
+///             + #lorem(2)
+///             + #el.item(tag: "strong") #lorem(2)
+///           ```
+///     - `stroke`, `radius`, `outset`, `fill`, `inset`, `clip`: The *border* of the label, which are the same as `box` arguments.
+///       - `auto`: The default value of the argument.
+///       - the values of the corresponding named arguments of `box` that can be set.
+///       - `array` (level-property): The elements are `auto`, the values of the corresponding named arguments of `box` that can be set, or `array`. The element at the position `level - 1` will be used for the `level`-th level.
+///         - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
+///         - otherwise, the last value of the array will be used for residual levels.
+///       - `function` (level-property): The return value will be used for each level and each item.
+///         - The function form: `it => auto | the value of the corresponding named argument of `box` that can be set | array`
+///         - Access the following values available on `it`:
+///           - `it.level`: The level of the item, starting from 1.
+///           - `it.n`: The index of the item, starting from 1.
+///           - `it.n-last`: The index of the last item in the current level.
+///           - `it.tag`: The tag of the item.
+///           - `it.elem-tag`: The tag of the `enum` or `list`.
+///           - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///           - `it.hanging-type`: The hanging type of the current level.
+///     - `align` (auto, alignment, array, function): The alignment of the label. See `stroke` etc.
+///     - `width-style`, `height-style`: Set the width and height style of the label.
+///       - `width-style`:
+///         - *Note*: This does not affect the maximum width of the labels in the current level.
+///         - `"real-width"`, `"label-width"`, `relative`: The same as `(amount: len, stretched: false)`.
+///           - `"real-width"`: The real width of the label.
+///           - `"label-width"`: The rendered width of the label determined by the `label-width` parameter.
+///         - `dictionary`: The keys are
+///           - `amount` (`"real-width"`, `"label-width"`, or `relative`): Set the width of the label to be the specified value.
+///             - The ratio part of `amount` is relative to the real width of the label, i.e., the value of `amount` is `amount.ratio × real-width + amount.length`, where `real-width` is the real width of the label.
+///           - `stretched` (bool): If `true`, the rendered width of the label will be set to `amount` + `inset.x`, else the rendered width of the label will be determined by the `label-width` parameter (in particular, it does not affect the layout of the item body.).
+///       - `height-style`:
+///         - `"real-height"`, `relative`: The same as `(amount: len, stretched: false)`.
+///         - `"real-height"`: The real height of the label.
+///         - `dictionary`: The keys are
+///           - `amount` (`"real-height"`, `relative`): Set the height of the label to be the specified value.            - The ratio part of `amount` is relative to the real height of the label, i.e., the value of `amount` is `amount.ratio × real-height + amount.length`, where `real-height` is the real height of the label.
+///           - `stretched` (bool): If `true`, the rendered height of the label will be set to `amount` + `inset.y`, else use the real height of the label (in particular, it does not affect the layout of the item body.).
+///     - Example
+///       ```typst
+///       #show: el.default-enum-list.with(label-format: (
+///         stroke: (red, blue),
+///         align: center + horizon,
+///         width-style: (amount: 1.2em, stretched: true),
+///         height-style: (amount: 1.2em, stretched: true),
+///         radius: 1em,
+///       ))
+///       #set enum(numbering: "1.A")
+///       + #lorem(10)
+///       + #lorem(10)
+///         + #lorem(10)
+///         + #lorem(10)
+///       ```
+///   - `function` (base-property): The same as `(format: func)`.
+///   - `array` (level-property): The same as `(format: (func1, func2,...))`.
+///   - `function` (level-property): The same as `(format: func)`.
+/// - body-format (none, dictionary, function, array): Customize item bodies.
+///   - Usage:
+///     ```typst
+///     #show: el.default-enum-list.with(body-format: (stroke: red))
+///     #show: el.default-enum-list.with(body-format: (whole: (stroke: (red, blue, auto))))
+///     #show: el.default-enum-list.with(body-format: (
+///       inner: (
+///         stroke: (red, blue, auto),
+///         inset: (5pt, 5pt, auto),
+///       ),
+///     ))
+///     #show: el.default-enum-list.with(body-format: (
+///       style: (
+///         fill: (red, blue, auto),
+///         size: (1.2em, 12pt, auto),
+///       )
+///     ))
+///     #show: el.default-enum-list.with(body-format: (emph, strong, auto))
+///     #show: el.default-enum-list.with(body-format: it => {
+///       if it.e.tight {
+///         show: strong
+///         set text(fill: red)
+///         it.body
+///       } else {
+///         it.body
+///       }
+///     })
+///     ```
+///   - `none`: Does not take effect.
+///   - `dictionary`: The keys are
+///     - `style`: Any `text` named arguments (like: `fill`, `size`, `font`, etc.; see https://typst.app/docs/reference/text/text/). The *text-style* of the item body.
+///       - See also `..args`.
+///     - `whole`, `outer`, `inner`: Format the item body.
+///       - `whole`: Wrap the entire `enum` or `list`
+///       - `outer`: Wrap the item (including the label)
+///       - `inner`: Wrap the item body (excluding the label)
+///         - Example:
+///           ```typst
+///           #show: el.default-enum-list.with(body-format: (
+///             inner: (
+///               stroke: (red, blue, auto),
+///               inset: (5pt,),
+///             ),
+///             outer: (
+///               stroke: (yellow, green, auto),
+///               inset: (5pt,),
+///             ),
+///             whole: (
+///               stroke: (purple, maroon, auto),
+///               inset: (5pt,),
+///             ),
+///           ))
+///           + Item one
+///             + Sub Item one
+///             + Sub Item two
+///           + Item two
+///           ```
+///       - *Note*: If `whole`, `outer`, or `inner` is omitted, the default is `outer`.
+///       - `whole`, `outer`, or `inner` can be taken `dictionary` with the following keys:
+///         - `format` (function, array): The format of the item body.
+///           - See the `format` in `label-format`.
+///           - *Note*: Use the `format` function (since ver0.3.0) to replace the `item-format` (in ver0.2.0) parameter .
+///         - `stroke`, `radius`, `outset`, `fill`, `inset`, `clip`, `breakable`, `sticky`, `width`: The *border* of the item body, which are the same as the `block` named elements (note: `width` only works for `whole`).
+///           - `auto`: The default value of the argument.
+///           - the values of the corresponding named arguments of `block` that can be set.
+///           - `array` (level-property), `function` (level-property):
+///             - See the *border* in `label-format`.
+/// - auto-resuming (none, auto, bool, array, function): Relate to the feature *Resuming Enum*.
+///   - `none`: Disable this feature.
+///   - `auto`: Enable this feature. In this case, the following methods (`resume`, `resume-label`, `resume-list`, `auto-resume-enum`, `isolated-resume-enum`) can be used.
+///     - Use the method `el.resume()` to continue using the enum numbers from the previous enum at the same level.
+///       - Example:
+///         ```typst
+///         #show: el.default-enum-list.with(auto-resuming: auto)
+///         + Item one
+///         + Item two
+///         Paragraph
+///         #el.resume()
+///         + new list item one
+///         ```
+///     - Or use `el.resume[/*content*/]` to explicitly continue using the enum numbers from the previous level (especially in ambiguous cases) and treat the `[/*content*/]` as new `enum`s.
+///       - Example:
+///         ```typst
+///         #show: el.default-enum-list.with(auto-resuming: auto)
+///         + Item one
+///         + Item two
+///           + Sub item one
+///         Paragraph
+///         #el.resume[
+///           + New list item // resume
+///             + Sub item // not resume
+///           + New list item
+///         ]
+///         + New list item one // not resume
+///         ```
+///     - Use the method `el.resume-label(<some-label>)` to label the enum you want to resume, and then use `el.resume-list(<some-label>)` in the desired enum to continue using the labelled enum numbers.
+///       - If you use the following in your document:
+///         ```typst
+///         #show: el.config.ref-resume
+///         ```
+///         then you can use `@some-label` instead of `resume-list(<some-label>)`.
+///       - Example:
+///         ```typst
+///         #show: el.default-enum-list.with(auto-resuming: auto)
+///         + Item one
+///         + Item two
+///           + Sub item one
+///           + Sub item Two  #el.resume-label(<resume:sub>) // The enum you want to resume
+///         Paragraph
+///         #el.resume-list(<resume:sub>)
+///         + New Item // resume
+///         ```
+///     - Use the method `el.auto-resume-enum(auto-resuming: true)[...]`, where all enum numbers within `[...]` will continue from the previous ones.
+///       - See the method `el.auto-resume-enum` for the details of the argument `auto-resuming` (`bool`, `array`, `function`).
+///       - Example:
+///         ```typst
+///         #show: el.default-enum-list.with(auto-resuming: auto)
+///         + Item one
+///         + Item two
+///           + Sub item one
+///         Paragraph
+///         #el.auto-resume-enum(auto-resuming: true)[
+///           + New list item // resume
+///             + Sub item // resume
+///           + New list item
+///           Paragraph
+///           + New list item // resume
+///         ]
+///         + New list item // not resume
+///         ```
+///     - The method `el.isolated-resume-enum[...]` allows the `[...]` to be treated as a new enum with independent numbering, without affecting other enums out of the `[...]`.
+///   - `bool`: If `auto-resuming` is set to `true`, then all enum numbers will continue from the previous ones.
+///   - `array` (level-property): The elements are `bool`. The `level`-th level will be set to the corresponding value of the array at position `level - 1`; now `true` means the enum numbers at the `level`-th level will continue from the previous ones.
+///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
+///     - otherwise, the last value of the array will be used for residual levels.
+///   - `function` (level-property): The return value will be used for each level.
+///     - The function form: `it => bool`
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.elem-tag`: The tag of the `enum` or `list`.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type`: The hanging type of the current level.
+///     - Example: Using `elem-tag`, specify which `enum` continues to use the previous enum's numbers.
+///       ```typst
+///       #show: el.default-enum-list.with(auto-resuming: it => {
+///         if (it.elem-tag == "resume") { true } else { false }
+///       })
+///       + Item one
+///       + Item two
+///         + Sub item one
+///         + Sub item two
+///       New paragraph
+///       + Item one // not resume
+///         + #el.item(elem-tag: "resume") Sub item // resume
+///       ```
+///   - *Note*: Generally,
+///     - `el.default-enum-list.with(auto-resuming: true)` and
+///     - `el.default-enum-list.with(auto-resuming: auto)`
+///     may interfere with each other.
+///     - For large documents like books or articles, set `auto-resuming` to `auto` in the required sublists and use it with methods like `resume`, `resume-label`, `resume-list`, or `auto-resume-enum`.
+///     - For small documents like exams, exercises, or CVs, if need to resume enum numbers throughout the document, then use the following at the beginning:
+///       - `#show : el.default-enum-list.with(auto-resuming: true)`,
+///       or if specify certain enums to continue using the number of the previous enum (with the help of `el.item(elem-tag: ...)`)
+///       - `#show : el.default-enum-list.with(auto-resuming: it => /* ... */)`.
+/// - auto-label-width (none, auto, string, array, function): Used to share the same maximum label width for different `enum`s and `list`s.
+///   - `none`: Disable this feature.
+///   - `auto`: Enable this feature. In this case, use the method `el.auto-label-item[...]` to share the same maximum label width for `enum` or `list` in `[...]`.
+///     - Example: In the following, `List A` and `List B` share the same maximum label width.
+///       ```typst
+///       #show: el.default-enum-list.with(auto-label-width: auto)
+///       + Item one
+///       #el.auto-label-item(form: "each")[
+///          + Item two // List A
+///          Paragraph
+///          + New Item one // List B
+///          10. Item
+///       ]
+///       + New enum
+///       ```
+///     - See the method `el.auto-label-item` for the details of the argument `form` (Similar to `auto-label-width`).
+///   - `"each"`: The maximum widths of `enum`'s labels and `list`'s labels are considered separately.
+///     - Example: In the following, `List A` and `List B` share the same maximum label width, `Enum A` and `Enum B` share the same maximum label width.
+///     ```typst
+///     #show: el.default-enum-list.with(auto-label-width: "each")
+///     - item // List A
+///     - item
+///     + item // Enum A
+///     10. item
+///     - #el.item([#square(width: 1em)]) item // List B
+///     Paragraph
+///     100. item // Enum B
+///     ```
+///   - `"list"`: Only the maximum widths of `list`'s labels are considered.
+///   - `"enum"`: Only the maximum widths of `enum`'s labels are considered.
+///   - `"all"`: The maximum widths of `enum`'s labels and `list`'s labels are both considered.
+///   - `array` (level-property): The elements are `none`, `auto`, `"each"`, `"list"`, `"enum"`, `"all"`. The `level`-th level will be set to the corresponding value of the array at position `level - 1`.
+///     - For array elements, `"each"` is equivalent to `auto`.
+///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
+///     - otherwise, the last value of the array will be used for residual levels.
+///   - `function` (level-property): The return value will be used for each level.
+///     - The function form: `it => none | auto | "each" | "list" | "enum" | "all"`
+///     - For returned values, `"each"` is equivalent to `auto`.
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.elem-tag`: The tag of the `enum` or `list`.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type`: The hanging type of the current level.
+///     - Example: In the following, for the same level of `enum`s or `list`s, if they are marked as "auto-label" (with the help of `el.item(elem-tag: ...)`), then they will share the same maximum label width.
+///       ```typst
+///       #show: el.default-enum-list.with(auto-label-width: it => {
+///         if it.elem-tag == "auto-label" { auto }
+///       })
+///       + Item one
+///         + #el.item(elem-tag: "auto-label") Sub Item one
+///         + Sub item two
+///       + Item one
+///         + #el.item(elem-tag: "auto-label") Sub Item one
+///         + Sub item two
+///       ```
+/// - auto-base-level (bool): By default (since ver0.3.0), `auto-base-level` is set to `true`, meaning each `default-*` (`inline-*`, `paragraph-*`) method now maintains its own level counter, starting from 1. This behavior almost only affects the display of `enum.number` (by `enum.numbering`).
+///   - If want to all `enum` use the same counter (as in ver0.2.x), set `auto-base-level` to `false` (but then at least three layout iterations are required).
+/// - step (auto, int, function, array): Used to set the step size for `enum`'s number.
+///   - Usage:
+///     ```typst
+///     #show: el.default-enum-list.with(step: 2) // the next enum's number is 2 greater than the current enum's number.
+///     ```
+///   - `auto`: The step size is `1` if `enum.reversed` is `false`, otherwise it is `-1`.
+///   - `int`: The step size is the specified value.
+///   - `function` (base-property): The next enum's number is the return value of the function. If the return value is `auto` or `none` (usually used as an initial value), then the step size is `1` if `enum.reversed` is `false`, otherwise it is `-1`.
+///     - The function form: `(..nums) => int | auto | none`
+///     - Here is an example to make enum's number like factorial:
+///       ```typst
+///       #let factorial-step = (..nums) => {
+///         let numbers = nums.pos()
+///         let n = numbers.len()
+///         if n >= 2 {
+///           return numbers.at(n - 2) + numbers.at(n - 1)
+///         }
+///       }
+///       #show: el.default-enum-list.with(step: (factorial-step,))
+///       1. #lorem(2)
+///       1. #lorem(2)
+///       + #lorem(2)
+///       + #lorem(2)
+///       + #lorem(2)
+///       ```
+///   - `array` (level-property): The elements are `int`, `function`, `auto` and `none`. The element at position `level - 1` sets the step size for the `level`-th level.
+///     - `int`: The step size is the specified value.
+///     - `auto` or `none`: The step size is `1` if `enum.reversed` is `false`, otherwise it is `-1`.
+///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
+///     - otherwise, the last value of the array will be used for residual levels.
+///   - `function` (level-property): The return value will be used for each level.
+///     - The function form: `it => int | auto | function`
+///     - If the returned value is a `function`, it should be the above form of `function` (base-property).
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.elem-tag`: The tag of the current enum or list.
+///       - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type`: The hanging type of the current level.
+///     - Example: for all odd levels, the `enum` numbers are reversed.
+///       ```typst
+///       #show: el.default-enum-list.with(step: it => {
+///         if calc.odd(it.level) {
+///           (..nums) => {
+///             let numbers = nums.pos()
+///             let n = numbers.len() // 1-based count of previous numbers
+///             if n == 0 { it.n-last } else { numbers.at(n - 1) - 1 }
+///           }
+///         } else { auto }
+///       })
+///       ```
+/// - ref-numbering (function, string, none): How to number the `enum`'s reference (default: `none`, determined by `enum.numbering` or `el.config.ref.numbering`).
+///   - See also `enum.numbering`.
+/// - supplement (auto, content, dictionary, function, array): Used to set supplementary content when referencing enum labels.
+///   - Note: This is independent of the `el.config.ref.supplement` setting, meaning the supplement content and the referenced enum or list label will be passed as a whole to `el.config.ref.supplement`.
+///   - Usage:
+///     ```typst
+///     #show: el.default-enum-list.with(supplement: [Item])
+///     #show: el.default-enum-list.with(supplement: (prefix: [第], suffix: [项]))
+///     #show: el.default-enum-list.with(supplement: it => [#numbering(heading.numbering, ..counter(heading).at(it.target)).#it.body])
+///     ```
+///   - `auto`: No supplementary content will be added.
+///   - `content`: Uses `content` as supplementary content. The effect is that when referencing `enum` labels, `content` is added before the label.
+///   - `dictionary`: The keys are: `prefix`, `suffix`, with values of `content`. The effect is that when referencing `enum` labels, `prefix` content is added before the label, and `suffix` content is added after the label.
+///   - `array` (level-property): Sets `supplement` by level. The elements are `content`, `dictionary`, `auto`, `array`.
+///     - See also `indent`.
+///   - `function` (level-property): The return value will be used for each level and each item.
+///     - The function form: `it => content | dictionary | auto | array`
+///     - If the returned value is a `array`, then the elements in the array will be used for each item.
+///       - Access the following values available on `it`:
+///         - `it.body`: The referenced `enum` labels.
+///         - `it.level`: The level of the item, starting from 1.
+///         - `it.n`: The index of the item, starting from 1.
+///         - `it.n-last`: The index of the last item in the current level.
+///         - `it.tag` (since ver0.3.0): The tag of the item.
+///         - `it.elem-tag` (since ver0.3.0): The tag of the `enum` or `list`.
+///         - `it.e` (since ver0.3.0): The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///         - `it.hanging-type` (since ver0.3.0): The hanging type of the current level.
+///         - `it.target` (since ver0.3.0): The target of the referenced label.
+/// - checklist (bool, array): Whether to use checklist (default: `false`). If set to `true` (since ver0.3.0), then configure checklist-related features using the method `el.config.checklist`.
+///   - Usage:
+///     ```typst
+///     #show: el.default-enum-list.with(checklist: true)
+///     #show: el.config.checklist.with(
+///       // configure
+///     )
+///     ```
+///     See the method `el.config.checklist` for more details.
+///   - `array` (level-property): The elements are `bool`, each level of the item will be set to the corresponding value of the array at position `level - 1`; now `true` means to use checklist for the current level.
+///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
+///     - otherwise, the last value of the array will be used for residual levels.
+/// - enum-config (dictionary): Configure `enum` in `doc`.
+///   - The keys are:
+///     - any named arguments of the function `text` (like: `fill`, `size`, `font`, etc.)
+///     - `indent`
+///     - `body-indent`
+///     - `label-indent`
+///     - `label-inset`
+///     - `body-margin`
+///     - `hanging-indent`
+///     - `line-indent`
+///     - `first-line-inset`
+///     - `whole-spacing`
+///     - `item-spacing`
+///     - `tight-mode`
+///     - `tight-item-mode`
+///     - `label-width`
+///     - `label-baseline`
+///     - `label-format`
+///     - `label-align`
+///     - `body-format`
+///     - `step`
+///     - `ref-numbering`
+///     - `supplement`
+///     - `description-config`
+///     - `hanging-type`
+///   - Rules: If both `*-enum-list` and `enum-config` have the same property set, the settings in `enum-config` take precedence.
+///     - For `label-format` and `body-format`, the settings are folded.
+///   - The level used in `enum-config` is the relative level of `enum` (i.e., ignore `list`).
+///   - The values allowed to be passed in the keys are consistent with the corresponding parameters in the method `default-enum-list`.
+/// - list-config (dictionary): Configure `list` in `doc`.
+///   - See `enum-config`.
+/// - description-config (dictionary, none): Configure the description list.
+///   - Using the syntax:
+///     - `+ / term: description`
+///     - `- / term: description`
+///   - The description list is like the following:
+///     ```
+///     [marker] / [number] [term-body] [description-body]
+///     term-body: [prefix] [term] [separator.prefix]
+///     description-body: [separator.suffix] [description] [suffix]
+///     ```
+///     *Note*: Usually, when the `term` and `description` are paragraphs, this will work as expected.
+///   - Provide four styles: horizontal description list, hanging description list, stacked description list, plain description list.
+///   - Support checklist style for description list (requires setting `checklist` to `true` in `description-config` and this method).
+///   - Usage:
+///     ```typst
+///     #show: el.default-enum-list.with(description-config: {
+///       style: "horizontal",
+///       term-format: (strong,),
+///     })
+///     - / Windows: Windows is a family of graphical operating systems, developed by Microsoft.
+///     - / macOS: macOS is a series of graphical operating systems developed and marketed by Apple Inc.
+///     - / Linux: Linux is a family of free and open-source operating systems.
+///     + / Windows: Windows is a family of graphical operating systems, developed by Microsoft.
+///     + / macOS: macOS is a series of graphical operating systems developed and marketed by Apple Inc.
+///     + / Linux: Linux is a family of free and open-source operating systems.
+///     ```
+///   - `none`: Disable the description list.
+///   - `dictionary`: The keys are:
+///     - `style` (auto, string, array, function): The style of the description list.
+///       - `"plain"` == `auto`: Plain description list. The `term-body` and `description-body` are displayed in a single paragraph.
+///       - `"hanging"`: Hanging description list. The `term-body` and `description-body` are displayed in a single paragraph, but `hanging-indent` is `2em` in default. The same as native Typst `terms`.
+///       - `"stacked"`: Stacked description list. The `term-body` and `description-body` are displayed as two start-aligned paragraphs, respectively.
+///       - `"horizontal"`: Horizontal description list. The `term-body` and `description-body` are displayed in a single paragraph, but `description-body` will be indented and aligned according to `term-width` (by default, using the maximum width of the `term-body`).
+///       - `array` (level-property): The elements are `auto`, `"plain"`, `"hanging"`, `"stacked"`, `"horizontal"`, or `array`. The element at the position `level - 1` will be used for the `level`-th level.
+///         - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
+///         - otherwise, the last value of the array will be used for residual levels.
+///         - The elements in the array can also be an array, where the element at position `n - 1` applies to the item of index `n`.
+///       - `function` (level-property): The return value will be used for each level and each item.
+///         - The function form: `it => auto | "plain" | "hanging" | "stacked" | "horizontal" | array`
+///         - If the returned value is a `array`, then the elements in the array will be used for each item.
+///         - Access the following values available on `it`:
+///           - `it.level`: The level of the item, starting from 1.
+///           - `it.n`: The index of the item, starting from 1.
+///           - `it.n-last`: The index of the last item in the current level.
+///           - `it.tag`: The tag of the current item.
+///           - `it.elem-tag`: The tag of the current enum or list.
+///           - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///           - `it.hanging-type`: The hanging type of the current level.
+///           - `it.marker`: The marker of the current label if it is a `list`.
+///           - `it.number`: The number of the current label if it is a `enum`.
+///           - `it.term-width` (dictionary): The width info of the current label.
+///             - `it.term-width.max`: The maximum width of the `term-body` in the current level and in the current style.
+///             - `it.term-width.current`: The current width of the `term-body`.
+///     - `term-width` (auto, relative, string, dictionary, array, function): The width of the `term-body`.
+///       - `auto`: In default,
+///         - for "horizontal" style, the `term-width` uses the maximum width of the `term-body` in the current level and in the "horizontal" style. That is, use `(amount: "max", style: "native")`.
+///         - for other styles, the `term-width` uses the real width of the `term-body`. That is, use `(amount: auto, style: "native")`.
+///       - `relative`, `"max"`, `dictionary`, `array` (level-property): See `label-width` (in *`default-enum-list`*).
+///         - The maximum width of the `term-body` in the current level is calculated for different styles.
+///       - `function` (level-property): The return value will be used for each level and each item.
+///         - The function form: `it => auto | relative | string | dictionary | array`.
+///         - Access the following values available on `it`:
+///           - `it.level`: The level of the item, starting from 1.
+///           - `it.n`: The index of the item, starting from 1.
+///           - `it.n-last`: The index of the last item in the current level.
+///           - `it.tag`: The tag of the current item.
+///           - `it.elem-tag`: The tag of the current enum or list.
+///           - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///           - `it.hanging-type`: The hanging type of the current level.
+///           - `it.marker`: The marker of the current label if it is a `list`.
+///           - `it.number`: The number of the current label if it is a `enum`.
+///           - `it.style`: The description list style of the current item.
+///           - `it.max-width`: The maximum width of the `term-body` in the current level and in the current style.
+///           - `it.width`: The width of the `term-body` of the current item.
+///     - `term-align` (auto, alignment, array, function): The alignment of the `term-body`.
+///       - *Note*: The `term-align` works for the following cases.
+///         - The "horizontal" and "stacked" styles;
+///         - For "hanging" and "plain" styles, the `term-width` is not `auto` (that is, the real width of the `term-body` is not equal to the rendered width).
+///       - `auto` == `start`.
+///       - `alignment`: The alignment of the `term-body`.
+///       - `array` (level-property): The elements are `auto`, `alignment`, or `array`.
+///         - See `style`.
+///       - `function` (level-property): The return value will be used for each level and each item.
+///         - The function form: `it => auto | alignment | array`.
+///         - Access the following values available on `it`: See `separator`.
+///     - `separator` (auto, content, dictionary, array, function): The separator between `term-body` and `description`.
+///       - *Note*: `separator` contains two parts: `prefix` and `suffix`.
+///         - In default, `separator.prefix` is added after `term` and `separator.suffix` is added before `description`.
+///       - `auto`: The `separator.prefix` is `[]` for "stacked" style and `[#h(.6em)#h(0pt, weak: true)]` for other styles. `separator.suffix` is `[]`.
+///       - `dictionary`:
+///         - The keys are `prefix` and `suffix`, with `content` values.
+///           - In default, the `prefix` is `[]` and the `suffix` is `[]`.
+///         - Now, `separator.prefix` is `prefix` and `separator.suffix` is `suffix`.
+///       - `array` (level-property): The elements are `auto`, `content`, `dictionary`, or `array`.
+///         - See `style`.
+///       - `function` (level-property): The return value will be used for each level and each item.
+///         - The function form: `it => auto | content | dictionary | array`.
+///         - Access the following values available on `it`:
+///           - `it.style`: The description list style of the current item.
+///           - For others, see `style`.
+///     - `prefix` (content, array, function): The prefix of the `term`. Default is `[]`. The `prefix` is added before `term`.
+///       - `array` (level-property): The elements are `content` or `array`.
+///         - See `style`.
+///       - `function` (level-property):
+///         - The function form: `it => content | array`.
+///         - Access the following values available on `it`: See `separator`.
+///     - `suffix` (content, array, function): The suffix of the `description`. Default is `[]`. The `suffix` is added after `description`.
+///       - *Suggestion*: Using it, control the description list's below spacing (like `block(above: 0pt, below: len)`), or add special symbols, and so on.
+///     - `hanging-indent` (auto, length, array, function): The hanging indent of the description list.
+///       - `auto`: The `hanging-indent` is `2em` for "hanging" style, and `0pt` for other styles.
+///       - `length`: The value of hanging indent.
+///       - `array` (level-property): The elements are `auto`, `length`, or `array`.
+///         - See `style`.
+///       - `function` (level-property): The return value will be used for each level and each item.
+///         - The function form: `it => auto | length | array`.
+///         - Access the following values available on `it`: See `separator`.
+///     - `term-format` (function, array): The format of the `term`.
+///       - `function` (base-property): Apply the function to the `term` (not the `term-body`).
+///         - The function form: `body => content`.
+///         - The `function` should be wrapped in an `array`, like: `(strong, )`.
+///         - Example: In the following, the `Terms` will be colored by `red` and formatted by `strong`.
+///           ```typst
+///           #let term-f = body => {
+///             show: strong
+///             set text(fill: red)
+///             body
+///           }
+///           #show: el.default-enum-list.with(description-config: (
+///             term-format: (term-f,),
+///           ))
+///           / Terms: #lorem(10)
+///           ```
+///       - `array` (level-property): The elements are `function` or `array`.
+///         - See `style`.
+///         - Example: In the following, the `Terms` and `Sub Terms` will be formatted by `strong` and `emph`, respectively.
+///           ```typst
+///           #show: el.default-enum-list.with(description-config: (
+///             term-format: (strong, emph),
+///           ))
+///           - / Terms: #lorem(10)
+///             - / Sub terms: #lorem(10)
+///           ```
+///       - `function` (level-property): The return value will be used for each level and each item.
+///         - The function form: `it => content | array`.
+///         - Access the following values available on `it`:
+///           - `it.body`: The `term` of the current item.
+///           - `it.level`: The level of the item, starting from 1.
+///           - `it.n`: The index of the item, starting from 1.
+///           - `it.n-last`: The index of the last item in the current level.
+///           - `it.tag`: The tag of the current item.
+///           - `it.elem-tag`: The tag of the current enum or list.
+///           - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///           - `it.hanging-type`: The hanging type of the current level.
+///           - `it.marker`: The marker of the current label if it is a `list`.
+///           - `it.number`: The number of the current label if it is a `enum`.
+///           - `it.term-width` (dictionary): The width info of the current label.
+///             - `it.term-width.max`: The maximum width of the `term-body` in the current level and in the current style.
+///             - `it.term-width.current`: The current width of the `term-body`.
+///         - Example: Format `term` for different styles.
+///           ```typst
+///           #let desc-style = style => (description-config: (style: style), for-elem: true)
+///           #show: el.default-enum-list.with(description-config: (
+///             term-format: it => {
+///               let format(body) = if it.style == "stacked" {
+///                 strong(body)
+///                 block(above: 0pt, below: par.leading)
+///               } else { emph(body) }
+///               format(it.body)
+///             },
+///           ))
+///           - #el.item(..desc-style("stacked"))
+///             / CPU: #lorem(10)
+///           - / GPU: #lorem(10)
+///           Paragraph
+///           - #el.item(..desc-style("horizontal"))
+///             / CPU: #lorem(10)
+///           - / GPU: #lorem(10)
+///           ```
+///     - `description-format` (function, array): The format of the `description`.
+///       - See `term-format`.
+///     - `checklist` (bool, array, function): Whether to use checklist style description list.
+///       - *Note*: In order to enable checklist style, the `checklist` in `default-*` (or `paragraph-*`) must be `true`.
+///       - Usage:
+///         ```typst
+///         #show: el.default-enum-list.with(checklist: true, description-config: (checklist: true))
+///         - / [ ] : #lorem(2)
+///         + / [-] : #lorem(2)
+///         ```
+///       - `true`: Enable checklist style.
+///       - `false`: Disable checklist style.
+///       - `array` (level-property): The elements are `bool` or `array`.
+///         - See `style`.
+///       - `function` (level-property): The return value will be used for each level and each item.
+///         - The function form: `it => bool | array`.
+///         - Access the following values available on `it`: See `separator`.
+///     - `enable-first-par` (auto, bool, array, function): To make all the paragraphs in the description list like the first paragraph.
+///       - `auto`: For `stacked` style, the `enable-first-par` is `true`, and for other styles, the `enable-first-par` is `false`.
+///       - `bool`: Whether to enable the first paragraph.
+///       - `array`: The elements are `bool` or `array`.
+///         - See `style`.
+///       - `function` (level-property): The return value will be used for each level and each item.
+///         - The function form: `it => bool | array`.
+///         - Access the following values available on `it`: See `separator`.
+///     - `format` (function, array): The format of the description list.
+///       - If the default style is not suitable, you can use `format` to customize the style.
+///       - `function` (base-property): Apply the function to the whole description list.
+///         - The function form: `body => content`.
+///         - The `function` should be wrapped in an `array`, like: `(strong, )`.
+///         - Example: In the following, the whole description list will be colored by `red`.
+///           ```typst
+///           #show: el.default-enum-list.with(description-config: (
+///             format: (text.with(fill: red),),
+///           ))
+///           - / CPU: #lorem(10)
+///           - / GPU: #lorem(10)
+///           ```
+///       - `array` (level-property): The elements are `function` or `array`.
+///         See `term-format`.
+///       - `function` (level-property): The return value will be used for each level and each item.
+///         - The function form: `it => content | array`.
+///           - If the return value is `array`, the elements are `function` (base-property).
+///         - Access the following values available on `it`:
+///           - `it.body`: The current description list.
+///           - `it.level`: The level of the item, starting from 1.
+///           - `it.n`: The index of the item, starting from 1.
+///           - `it.n-last`: The index of the last item in the current level.
+///           - `it.tag`: The tag of the current item.
+///           - `it.elem-tag`: The tag of the current enum or list.
+///           - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///           - `it.hanging-type`: The hanging type of the current level.
+///           - `it.marker`: The marker of the current label if it is a `list`.
+///           - `it.number`: The number of the current label if it is a `enum`.
+///           - `it.term`, `it.description`: The `term` and the `description` of the current item.
+///           - `it.separator`: The `separator`.
+///           - `it.prefix`, `it.suffix`: The `prefix` and `suffix` of the current item.
+///           - `it.hanging-indent`: The hanging indent of the current item.
+///           - `it.style`: The current description list style.
+///           - `it.enable-first-par`: The `enable-first-par` of the current item.
+///           - `it.term-align`: The `term-align` of the current item.
+///           - `it.term-width` (dictionary): The width info of the current label.
+///             - `it.term-width.max`: The maximum width of the `term-body` in the current level and in the current style.
+///             - `it.term-width.current`: The current width of the `term-body`.
+/// - args (arguments): Any `text` named arguments (like: `fill`, `size`, `font`, etc.; see https://typst.app/docs/reference/text/text/). Format the current item label.
+///   - Usage:
+///     ```typst
+///     #show: el.default-enum-list.with(fill: red) // All labels are colored red.
+///     #show: el.default-enum-list.with(size: (2em, 1.2em, auto)) // The label's size for first level is 2em, the label's size for second level is 1.2em, and the label's size for other levels is `auto` (use the current `text.size`).
+///     #show: el.default-enum-list.with(fill: it => {
+///       if it.e.tight { // tight enum or list use `red` for label
+///         red
+///       } else { // otherwise, use `black`
+///         black
+///       }
+///     })
+///     ```
+///   - *Note*: If some named argument of `text` allows being set as an `array` (base-property), in order to apply it to the current level, you need to further wrap it in an `array`.
+///     - Example: In the following, the first level of labels use the font `(name: "DejaVu Sans Mono", covers: "latin-in-cjk")`, and other levels use the font `"Noto Serif CJK SC"`.
+///       ```typst
+///       #let label-font = ((name: "DejaVu Sans Mono", covers: "latin-in-cjk"), "Noto Serif CJK SC")
+///       #show: el.default-enum-list.with(font: label-font)
+///       #set enum(numbering: "（1）")
+///       + #lorem(2)
+///       + #lorem(2)
+///         + #lorem(2)
+///         + #lorem(2)
+///       ```
+///     - Example: In the following, for each level, the first index of label uses the font `(name: "DejaVu Sans Mono", covers: "latin-in-cjk")`, and other indices use the font `"Noto Serif CJK SC"`.
+///       ```typst
+///       #let label-font = ((name: "DejaVu Sans Mono", covers: "latin-in-cjk"), "Noto Serif CJK SC")
+///       #show: el.default-enum-list.with(font: (label-font,))
+///       #set enum(numbering: "（1）")
+///       + #lorem(2)
+///       + #lorem(2)
+///         + #lorem(2)
+///         + #lorem(2)
+///       ```
+///     - Example: In the following, all the levels of labels use the font `((name: "DejaVu Sans Mono", covers: "latin-in-cjk"), "Noto Serif CJK SC")`.
+///       ```typst
+///       #let label-font = ((name: "DejaVu Sans Mono", covers: "latin-in-cjk"), "Noto Serif CJK SC")
+///       #show: el.default-enum-list.with(font: ((label-font,),))
+///       #set enum(numbering: "（1）")
+///       + #lorem(2)
+///       + #lorem(2)
+///         + #lorem(2)
+///         + #lorem(2)
+///       ```
+///   - `array`: All the named arguments of `text` are supported for `array`. The `level`-th of the `enum` or `list` will be set to the corresponding value of the array at position `level - 1`.
+///     - The elements of the array are the values of the named arguments of `text` that can be set.
+///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
+///     - otherwise, the last value of the array will be used for residual levels.
+///     - Then elements of the array can be `array`, meaning the element at position `n-1` will apply to the `n`-th index of the label for the current level.
+///   - `function`: The return value will be used for each level and each item.
+///     - The function form: `it => value | array`, where `value` is any value accepted by the corresponding `text` named argument.
+///     - If the return value is `array`, the element at position `n-1` will apply to the `n`-th index of the label for the current level.
+///     - Access the following values available on `it`:
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n`: The index of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.tag` (since ver0.3.0): The tag of the current item.
+///       - `it.elem-tag` (since ver0.3.0): The tag of the current enum or list.
+///       - `it.e` (since ver0.3.0): The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type` (since ver0.3.0): The hanging type of the current level.
+///       - `it.marker` (since ver0.3.0): The marker of the current label if it is a `list`.
+///       - `it.number` (since ver0.3.0): The number of the current label if it is a `enum`.
 /// -> content
 #let default-enum-list(
   doc,
   indent: auto,
   body-indent: auto,
   label-indent: auto,
-  is-full-width: true,
   item-spacing: auto,
-  enum-spacing: auto,
-  enum-margin: auto,
+  hanging-type: "classic",
   hanging-indent: auto,
   line-indent: auto,
-  auto-base-level: false,
+  auto-base-level: true, // change to true in default
   label-width: auto,
   body-format: none,
   label-format: none,
-  item-format: none,
   label-align: auto,
   label-baseline: auto,
   auto-resuming: none,
   auto-label-width: none,
   checklist: false,
-  ..args,
+  ref-numbering: none, /** new ver0.3.0 */
+  supplement: auto, /** new ver0.3.0*/
+  tight-mode: auto, /** new ver0.3.0 */
+  tight-item-mode: auto, /** new ver0.3.0 */
+  step: auto, /** new ver0.3.0*/
+  label-inset: auto, /** new ver0.3.0 */
+  first-line-inset: auto, /** new ver0.3.0 */
+  description-config: none, /** new ver0.3.0 */
+  body-margin: auto, /*new new ver0.3.0*/
+  whole-spacing: auto, /*new new ver0.3.0*/
   enum-config: (:),
   list-config: (:),
+  ..args,
 ) = {
   return get-list-enum-method(
     doc,
-    "both", // "both", "list", "enum"
+    ElemType.all, // "both", "list", "enum"
     indent,
     body-indent,
     label-indent,
-    is-full-width,
+    // is-full-width, //
     item-spacing,
-    enum-spacing,
-    enum-margin,
-    "classic",
+    // enum-spacing, //
+    // enum-margin, //
+    hanging-type,
     hanging-indent,
     line-indent,
     label-width,
     body-format,
     label-format,
-    item-format,
+    // item-format,
     auto-base-level,
     label-align,
     label-baseline,
@@ -461,7 +1666,18 @@
     checklist,
     enum-config,
     list-config,
+    ref-numbering, /** new ver0.3.0 */
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    step, /** new ver0.3.0*/
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
+    description-config, /** new ver0.3.0 */
+    body-margin, /*new new ver0.3.0*/
+    whole-spacing, /*new new ver0.3.0*/
     ..args,
+    style-type: ExportType.default,
   )
 }
 
@@ -469,73 +1685,58 @@
 /// Configures paragraph styling for `enum` and `list`.
 ///
 /// See `default-enum-list`.
-///
-/// - doc (content): The document to process.
-/// - indent (length, array, function, auto): The indentation level.
-/// - body-indent (length, array, function, auto): The body indentation level.
-/// - label-indent (length, array, function, auto): The label indentation level.
-/// - is-full-width (bool): Whether the element spans full width.
-/// - item-spacing (length, array, function, auto): Spacing between items.
-/// - enum-spacing (length, array, dictionary, auto): Spacing specific to enumerations.
-/// - enum-margin (length, array, auto, function): Margin around enumerations.
-/// - hanging-indent (length, array, function, auto): The hanging indentation level.
-/// - line-indent (length, array, function, auto): The line indentation level.
-/// - label-width (auto, length, dictionary, array, function): The width of the label.
-/// - body-format (none, dictionary): Formatting for the body.
-/// - label-format (none, function, array): Formatting for the label.
-/// - item-format (function, array, none): Formatting for individual items.
-/// - auto-base-level (bool): Whether to auto-detect the base level.
-/// - label-align (alignment, array, auto, function): Alignment for the label.
-/// - label-baseline (auto, length, array, function, dictionary, "center", "top", "bottom"): Baseline alignment for the label.
-/// - auto-resuming (none, auto, array, bool): Whether to auto-resume the element.
-/// - auto-label-width (none, auto, array, "all", "each", "list", "enum"): Whether to auto-adjust the label width.
-/// - checklist (boolean, array): Whether the list is a checklist.
-/// - enum-config (dictionary): Configuration for enumerations.
-/// - list-config (dictionary): Configuration for lists.
-/// - args (any): Used to format the text of the numbering. Accepts all named parameters of the `text` function
-/// -> content
 #let paragraph-enum-list(
   doc,
   indent: auto,
   body-indent: auto,
   label-indent: auto,
-  is-full-width: true,
+  // is-full-width: if sys.version <= version(0, 14, 2) { true } else { false }, /**new ver0.3.0 native, deprecated*/
   item-spacing: auto,
-  enum-spacing: auto,
-  enum-margin: auto,
+  // enum-spacing: none, //
+  // enum-margin: auto, //
   hanging-indent: auto,
   line-indent: auto,
-  auto-base-level: false,
+  auto-base-level: true, // change to true in default
   label-width: auto,
   body-format: none,
   label-format: none,
-  item-format: none,
+  // item-format: none,
   label-align: auto,
   label-baseline: auto,
   auto-resuming: none,
   auto-label-width: none,
   checklist: false,
+  ref-numbering: none, /** new ver0.3.0 */
+  supplement: auto, /** new ver0.3.0*/
+  tight-mode: auto, /** new ver0.3.0 */
+  tight-item-mode: auto, /** new ver0.3.0 */
+  step: auto, /** new ver0.3.0*/
+  label-inset: auto, /** new ver0.3.0 */
+  first-line-inset: auto, /** new ver0.3.0 */
+  description-config: none, /** new ver0.3.0 */
+  body-margin: auto, /*new new ver0.3.0*/
+  whole-spacing: auto, /*new new ver0.3.0*/
   enum-config: (:),
   list-config: (:),
   ..args,
 ) = {
   return get-list-enum-method(
     doc,
-    "both", // "both", "list", "enum"
+    ElemType.all, // "both", "list", "enum"
     indent,
     body-indent,
     label-indent,
-    is-full-width,
+    // is-full-width, //
     item-spacing,
-    enum-spacing,
-    enum-margin,
-    "paragraph",
+    // enum-spacing, //
+    // enum-margin, //
+    HangingType.paragraph,
     hanging-indent,
     line-indent,
     label-width,
     body-format,
     label-format,
-    item-format,
+    // item-format,
     auto-base-level,
     label-align,
     label-baseline,
@@ -544,228 +1745,226 @@
     checklist,
     enum-config,
     list-config,
+    ref-numbering, /** new ver0.3.0 */
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    step, /** new ver0.3.0*/
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
+    description-config, /** new ver0.3.0 */
+    body-margin, /*new new ver0.3.0*/
+    whole-spacing, /*new new ver0.3.0*/
     ..args,
+    style-type: ExportType.default,
   )
 }
 
 /// Configures default styling for `enum`.
 ///
 /// See `default-enum-list`.
-///
-/// - doc (content): The document to process.
-/// - indent (length, array, function, auto): The indentation level.
-/// - body-indent (length, array, function, auto): The body indentation level.
-/// - label-indent (length, array, function, auto): The label indentation level.
-/// - is-full-width (bool): Whether the element spans full width.
-/// - item-spacing (length, array, function, auto): Spacing between items.
-/// - enum-spacing (length, array, dictionary, auto): Spacing specific to enumerations.
-/// - enum-margin (length, array, auto, function): Margin around enumerations.
-/// - hanging-indent (length, array, function, auto): The hanging indentation level.
-/// - line-indent (length, array, function, auto): The line indentation level.
-/// - label-width (auto, length, dictionary, array, function): The width of the label.
-/// - body-format (none, dictionary): Formatting for the body.
-/// - label-format (none, function, array): Formatting for the label.
-/// - item-format (function, array, none): Formatting for individual items.
-/// - auto-base-level (bool): Whether to auto-detect the base level.
-/// - label-align (alignment, array, auto, function): Alignment for the label.
-/// - label-baseline (auto, length, array, function, dictionary, "center", "top", "bottom"): Baseline alignment for the label.
-/// - auto-resuming (none, auto, array, bool): Whether to auto-resume the element.
-/// - auto-label-width (none, auto, array, "all", "each", "list", "enum"): Whether to auto-adjust the label width.
-/// - args (any): Used to format the text of the numbering. Accepts all named parameters of the `text` function
-/// -> content
 #let default-enum(
   doc,
   indent: auto,
   body-indent: auto,
   label-indent: auto,
-  is-full-width: true,
+  // is-full-width: if sys.version <= version(0, 14, 2) { true } else { false }, /**new ver0.3.0 native*/
   item-spacing: auto,
-  enum-spacing: auto,
-  enum-margin: auto,
+  // enum-spacing: none, //
+  // enum-margin: auto, //
+  hanging-type: "classic",
   hanging-indent: auto,
   line-indent: auto,
-  auto-base-level: false,
+  auto-base-level: true,
   label-width: auto,
   body-format: none,
   label-format: none,
-  item-format: none,
+  // item-format: none,
   label-align: auto,
   label-baseline: auto,
   auto-resuming: none,
   auto-label-width: none,
+  checklist: false,
+  ref-numbering: none, /** new ver0.3.0 */
+  supplement: auto, /** new ver0.3.0*/
+  tight-mode: auto, /** new ver0.3.0 */
+  tight-item-mode: auto, /** new ver0.3.0 */
+  step: auto, /** new ver0.3.0*/
+  label-inset: auto, /** new ver0.3.0 */
+  first-line-inset: auto, /** new ver0.3.0 */
+  description-config: auto, /** new ver0.3.0 */
+  body-margin: auto, /*new new ver0.3.0*/
+  whole-spacing: auto, /*new new ver0.3.0*/
   ..args,
 ) = {
   return get-list-enum-method(
     doc,
-    "enum", // "both", "list", "enum"
+    ElemType.enum, // "both", "list", "enum"
     indent,
     body-indent,
     label-indent,
-    is-full-width,
+    // is-full-width, //
     item-spacing,
-    enum-spacing,
-    enum-margin,
-    "classic",
+    // enum-spacing, //
+    // enum-margin, //
+    hanging-type,
     hanging-indent,
     line-indent,
     label-width,
     body-format,
     label-format,
-    item-format,
+    // item-format,
     auto-base-level,
     label-align,
     label-baseline,
     // label-text-indent,
     auto-resuming,
     auto-label-width,
-    false,
+    checklist,
     (:),
     (:),
+    ref-numbering, /** new ver0.3.0 */
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    step, /** new ver0.3.0*/
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
+    description-config, /** new ver0.3.0 */
+    body-margin, /*new new ver0.3.0*/
+    whole-spacing, /*new new ver0.3.0*/
     ..args,
+    style-type: ExportType.default,
   )
 }
 
 /// Configures paragraph styling for `enum`.
 ///
 /// See `default-enum-list`.
-///
-/// - doc (content): The document to process.
-/// - indent (length, array, function, auto): The indentation level.
-/// - body-indent (length, array, function, auto): The body indentation level.
-/// - label-indent (length, array, function, auto): The label indentation level.
-/// - is-full-width (bool): Whether the element spans full width.
-/// - item-spacing (length, array, function, auto): Spacing between items.
-/// - enum-spacing (length, array, dictionary, auto): Spacing specific to enumerations.
-/// - enum-margin (length, array, auto, function): Margin around enumerations.
-/// - hanging-indent (length, array, function, auto): The hanging indentation level.
-/// - line-indent (length, array, function, auto): The line indentation level.
-/// - label-width (auto, length, dictionary, array, function): The width of the label.
-/// - body-format (none, dictionary): Formatting for the body.
-/// - label-format (none, function, array): Formatting for the label.
-/// - item-format (function, array, none): Formatting for individual items.
-/// - auto-base-level (bool): Whether to auto-detect the base level.
-/// - label-align (alignment, array, auto, function): Alignment for the label.
-/// - label-baseline (auto, length, array, function, dictionary, "center", "top", "bottom"): Baseline alignment for the label.
-/// - auto-resuming (none, auto, array, bool): Whether to auto-resume the element.
-/// - auto-label-width (none, auto, array, "all", "each", "list", "enum"): Whether to auto-adjust the label width.
-/// - args (any): Used to format the text of the numbering. Accepts all named parameters of the `text` function
-/// -> content
 #let paragraph-enum(
   doc,
   indent: auto,
   body-indent: auto,
   label-indent: auto,
-  is-full-width: true,
+  // is-full-width: if sys.version <= version(0, 14, 2) { true } else { false }, /**new ver0.3.0 native*/
   item-spacing: auto,
-  enum-spacing: auto,
-  enum-margin: auto,
+  // enum-spacing: none, //
+  // enum-margin: auto, //
   hanging-indent: auto,
   line-indent: auto,
-  auto-base-level: false,
+  auto-base-level: true,
   label-width: auto,
   body-format: none,
   label-format: none,
-  item-format: none,
+  // item-format: none,
   label-align: auto,
   label-baseline: auto,
   auto-resuming: none,
   auto-label-width: none,
+  checklist: false,
+  ref-numbering: none, /** new ver0.3.0 */
+  supplement: auto, /** new ver0.3.0*/
+  tight-mode: auto, /** new ver0.3.0 */
+  tight-item-mode: auto, /** new ver0.3.0 */
+  step: auto, /** new ver0.3.0*/
+  label-inset: auto, /** new ver0.3.0 */
+  first-line-inset: auto, /** new ver0.3.0 */
+  description-config: none, /** new ver0.3.0 */
+  body-margin: auto, /*new new ver0.3.0*/
+  whole-spacing: auto, /*new new ver0.3.0*/
   ..args,
 ) = {
   return get-list-enum-method(
     doc,
-    "enum", // "both", "list", "enum"
+    ElemType.enum, // "both", "list", "enum"
     indent,
     body-indent,
     label-indent,
-    is-full-width,
+    // is-full-width, //
     item-spacing,
-    enum-spacing,
-    enum-margin,
-    "paragraph",
+    // enum-spacing, //
+    // enum-margin, //
+    HangingType.paragraph,
     hanging-indent,
     line-indent,
     label-width,
     body-format,
     label-format,
-    item-format,
+    // item-format,
     auto-base-level,
     label-align,
     label-baseline,
     auto-resuming,
     auto-label-width,
-    false,
+    checklist,
     (:),
     (:),
+    ref-numbering, /** new ver0.3.0 */
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    step, /** new ver0.3.0*/
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
+    description-config, /** new ver0.3.0 */
+    body-margin, /*new new ver0.3.0*/
+    whole-spacing, /*new new ver0.3.0*/
     ..args,
+    style-type: ExportType.default,
   )
 }
 
 /// Configures default styling for `list`.
 ///
 /// See `default-enum-list`.
-///
-/// - doc (content): The document to process.
-/// - indent (length, array, function, auto): The indentation level.
-/// - body-indent (length, array, function, auto): The body indentation level.
-/// - label-indent (length, array, function, auto): The label indentation level.
-/// - is-full-width (bool): Whether the element spans full width.
-/// - item-spacing (length, array, function, auto): Spacing between items.
-/// - enum-spacing (length, array, dictionary, auto): Spacing specific to enumerations.
-/// - enum-margin (length, array, auto, function): Margin around enumerations.
-/// - hanging-indent (length, array, function, auto): The hanging indentation level.
-/// - line-indent (length, array, function, auto): The line indentation level.
-/// - label-width (auto, length, dictionary, array, function): The width of the label.
-/// - body-format (none, dictionary): Formatting for the body.
-/// - label-format (none, function, array): Formatting for the label.
-/// - item-format (function, array, none): Formatting for individual items.
-/// - auto-base-level (bool): Whether to auto-detect the base level.
-/// - label-align (alignment, array, auto, function): Alignment for the label.
-/// - label-baseline (auto, length, array, function, dictionary, "center", "top", "bottom"): Baseline alignment for the label.
-/// - auto-resuming (none, auto, array, bool): Whether to auto-resume the element.
-/// - auto-label-width (none, auto, array, "all", "each", "list", "enum"): Whether to auto-adjust the label width.
-/// - checklist (boolean, array): Whether the list is a checklist.
-/// - args (any): Used to format the text of the numbering. Accepts all named parameters of the `text` function
-/// -> content
 #let default-list(
   doc,
   indent: auto,
   body-indent: auto,
   label-indent: auto,
-  is-full-width: true,
+  // is-full-width: if sys.version <= version(0, 14, 2) { true } else { false }, /**new ver0.3.0 native*/
   item-spacing: auto,
-  enum-spacing: auto,
-  enum-margin: auto,
+  // enum-spacing: none, //
+  // enum-margin: auto, //
+  hanging-type: "classic",
   hanging-indent: auto,
   line-indent: auto,
-  auto-base-level: false,
+  auto-base-level: true,
   label-width: auto,
   body-format: none,
   label-format: none,
-  item-format: none,
+  // item-format: none,
   label-align: auto,
   label-baseline: auto,
   auto-label-width: none,
   checklist: false,
+  supplement: auto, /** new ver0.3.0*/
+  tight-mode: auto, /** new ver0.3.0 */
+  tight-item-mode: auto, /** new ver0.3.0 */
+  label-inset: auto, /** new ver0.3.0 */
+  first-line-inset: auto, /** new ver0.3.0 */
+  description-config: none, /** new ver0.3.0 */
+  body-margin: auto, /*new new ver0.3.0*/
+  whole-spacing: auto, /*new new ver0.3.0*/
   ..args,
 ) = {
   return get-list-enum-method(
     doc,
-    "list", // "both", "list", "enum"
+    ElemType.list, // "both", "list", "enum"
     indent,
     body-indent,
     label-indent,
-    is-full-width,
+    // is-full-width, //
     item-spacing,
-    enum-spacing,
-    enum-margin,
-    "classic",
+    // enum-spacing, //
+    // enum-margin, //
+    hanging-type,
     hanging-indent,
     line-indent,
     label-width,
     body-format,
     label-format,
-    item-format,
+    // item-format,
     auto-base-level,
     label-align,
     label-baseline,
@@ -774,75 +1973,71 @@
     checklist,
     (:),
     (:),
+    none,
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    auto,
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
+    description-config, /** new ver0.3.0 */
+    body-margin, /*new new ver0.3.0*/
+    whole-spacing, /*new new ver0.3.0*/
     ..args,
+    style-type: ExportType.default,
   )
 }
 
 /// Configures paragraph styling for `list`.
 ///
 /// See `default-enum-list`.
-///
-/// - doc (content): The document to process.
-/// - indent (length, array, function, auto): The indentation level.
-/// - body-indent (length, array, function, auto): The body indentation level.
-/// - label-indent (length, array, function, auto): The label indentation level.
-/// - is-full-width (bool): Whether the element spans full width.
-/// - item-spacing (length, array, function, auto): Spacing between items.
-/// - enum-spacing (length, array, dictionary, auto): Spacing specific to enumerations.
-/// - enum-margin (length, array, auto, function): Margin around enumerations.
-/// - hanging-indent (length, array, function, auto): The hanging indentation level.
-/// - line-indent (length, array, function, auto): The line indentation level.
-/// - label-width (auto, length, dictionary, array, function): The width of the label.
-/// - body-format (none, dictionary): Formatting for the body.
-/// - label-format (none, function, array): Formatting for the label.
-/// - item-format (function, array, none): Formatting for individual items.
-/// - auto-base-level (bool): Whether to auto-detect the base level.
-/// - label-align (alignment, array, auto, function): Alignment for the label.
-/// - label-baseline (auto, length, array, function, dictionary, "center", "top", "bottom"): Baseline alignment for the label.
-/// - auto-resuming (none, auto, array, bool): Whether to auto-resume the element.
-/// - auto-label-width (none, auto, array, "all", "each", "list", "enum"): Whether to auto-adjust the label width.
-/// - checklist (boolean, array): Whether the list is a checklist.
-/// - args (any): Used to format the text of the numbering. Accepts all named parameters of the `text` function
-/// -> content
 #let paragraph-list(
   doc,
   indent: auto,
   body-indent: auto,
   label-indent: auto,
-  is-full-width: true,
+  // is-full-width: if sys.version <= version(0, 14, 2) { true } else { false }, /**new ver0.3.0 native*/
   item-spacing: auto,
-  enum-spacing: auto,
-  enum-margin: auto,
+  // enum-spacing: none, //
+  // enum-margin: auto, //
   hanging-indent: auto,
   line-indent: auto,
-  auto-base-level: false,
+  auto-base-level: true,
   label-width: auto,
   body-format: none,
   label-format: none,
-  item-format: none,
+  // item-format: none,
   label-align: auto,
   label-baseline: auto,
   auto-label-width: none,
   checklist: false,
+  supplement: auto, /** new ver0.3.0*/
+  tight-mode: auto, /** new ver0.3.0 */
+  tight-item-mode: auto, /** new ver0.3.0 */
+  label-inset: auto, /** new ver0.3.0 */
+  first-line-inset: auto, /** new ver0.3.0 */
+  description-config: none, /** new ver0.3.0 */
+  body-margin: auto, /*new new ver0.3.0*/
+  whole-spacing: auto, /*new new ver0.3.0*/
   ..args,
-) = context {
+) = {
   return get-list-enum-method(
     doc,
-    "list", // "both", "list", "enum"
+    ElemType.list, // "both", "list", "enum"
     indent,
     body-indent,
     label-indent,
-    is-full-width,
+    // is-full-width, //
     item-spacing,
-    enum-spacing,
-    enum-margin,
-    "paragraph",
+    // enum-spacing, //
+    // enum-margin, //
+    HangingType.paragraph,
     hanging-indent,
     line-indent,
     label-width,
     body-format,
     label-format,
-    item-format,
+    // item-format,
     auto-base-level,
     label-align,
     label-baseline,
@@ -851,6 +2046,239 @@
     checklist,
     (:),
     (:),
+    none,
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    auto,
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
+    description-config, /** new ver0.3.0 */
+    body-margin, /*new new ver0.3.0*/
+    whole-spacing, /*new new ver0.3.0*/
     ..args,
+    style-type: ExportType.default,
+  )
+}
+
+// new ver0.3.0: inline-enum-list
+
+/// Inline layout for `enum` and `list`. That is, it does not use block elements and instead interprets the list content as paragraphs.
+/// - In particular, any block elements appearing in the list are laid out flush left.
+/// - Content at every level of the list spans the full width of the parent container.
+/// - Because of this paragraph behavior, some features of the method `default-enum-list` no longer take effect:
+///   - `label-baseline` is not supported.
+///   - `Border` of the `body-format` is not supported.
+///   - `body-margin` is not supported.
+///
+/// See `default-enum-list`.
+#let inline-enum-list(
+  doc,
+  indent: auto,
+  body-indent: auto,
+  label-indent: auto,
+  item-spacing: auto,
+  hanging-type: "classic",
+  hanging-indent: auto,
+  line-indent: auto,
+  auto-base-level: true, // change to true in default
+  label-width: auto,
+  body-format: none,
+  label-format: none,
+  label-align: auto,
+  // label-baseline: auto,
+  // auto-resuming: none,
+  // auto-label-width: none,
+  checklist: false,
+  ref-numbering: none, /** new ver0.3.0 */
+  supplement: auto, /** new ver0.3.0*/
+  tight-mode: auto, /** new ver0.3.0 */
+  tight-item-mode: auto, /** new ver0.3.0 */
+  step: auto, /** new ver0.3.0*/
+  label-inset: auto, /** new ver0.3.0 */
+  first-line-inset: auto, /** new ver0.3.0 */
+  description-config: none, /** new ver0.3.0 */
+  // body-margin: auto, /*new new ver0.3.0*/
+  whole-spacing: auto, /*new new ver0.3.0*/
+  enum-config: (:),
+  list-config: (:),
+  ..args,
+) = {
+  return get-list-enum-method(
+    doc,
+    ElemType.all, // "both", "list", "enum"
+    indent,
+    body-indent,
+    label-indent,
+    // is-full-width, //
+    item-spacing,
+    // enum-spacing, //
+    // enum-margin, //
+    hanging-type,
+    hanging-indent,
+    line-indent,
+    label-width,
+    body-format,
+    label-format,
+    // item-format,
+    auto-base-level,
+    label-align,
+    auto, // label-baseline
+    none, // auto-resuming
+    none, // auto-label-width
+    checklist,
+    enum-config,
+    list-config,
+    ref-numbering, /** new ver0.3.0 */
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    step, /** new ver0.3.0*/
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
+    description-config, /** new ver0.3.0 */
+    auto, /*new new ver0.3.0*/
+    whole-spacing, /*new new ver0.3.0*/
+    ..args,
+    style-type: ExportType.inline,
+  )
+}
+
+/// Inline layout for `enum`
+///
+/// See `default-enum-list` and `inline-enum-list`.
+#let inline-enum(
+  doc,
+  indent: auto,
+  body-indent: auto,
+  label-indent: auto,
+  item-spacing: auto,
+  hanging-type: "classic",
+  hanging-indent: auto,
+  line-indent: auto,
+  auto-base-level: true, // change to true in default
+  label-width: auto,
+  body-format: none,
+  label-format: none,
+  // item-format: none,
+  label-align: auto,
+  checklist: false,
+  ref-numbering: none, /** new ver0.3.0 */
+  supplement: auto, /** new ver0.3.0*/
+  tight-mode: auto, /** new ver0.3.0 */
+  tight-item-mode: auto, /** new ver0.3.0 */
+  step: auto, /** new ver0.3.0*/
+  label-inset: auto, /** new ver0.3.0 */
+  first-line-inset: auto, /** new ver0.3.0 */
+  description-config: none, /** new ver0.3.0 */
+  // body-margin: auto, /*new new ver0.3.0*/
+  whole-spacing: auto, /*new new ver0.3.0*/
+  enum-config: (:),
+  list-config: (:),
+  ..args,
+) = {
+  return get-list-enum-method(
+    doc,
+    ElemType.enum, // "both", "list", "enum"
+    indent,
+    body-indent,
+    label-indent,
+    item-spacing,
+    hanging-type,
+    hanging-indent,
+    line-indent,
+    label-width,
+    body-format,
+    label-format,
+    // item-format,
+    auto-base-level,
+    label-align,
+    auto, // label-baseline
+    none, // auto-resuming
+    none, // auto-label-width
+    checklist,
+    enum-config,
+    list-config,
+    ref-numbering, /** new ver0.3.0 */
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    step, /** new ver0.3.0*/
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
+    description-config, /** new ver0.3.0 */
+    auto, /*new new ver0.3.0*/
+    whole-spacing, /*new new ver0.3.0*/
+    ..args,
+    style-type: ExportType.inline,
+  )
+}
+
+/// Inline layout for `list`.
+///
+/// See `default-enum-list` and `inline-enum-list`.
+#let inline-list(
+  doc,
+  indent: auto,
+  body-indent: auto,
+  label-indent: auto,
+  item-spacing: auto,
+  hanging-type: "classic",
+  hanging-indent: auto,
+  line-indent: auto,
+  auto-base-level: true, // change to true in default
+  label-width: auto,
+  body-format: none,
+  label-format: none,
+  // item-format: none,
+  label-align: auto,
+  checklist: false,
+  // ref-numbering: none, /** new ver0.3.0 */
+  supplement: auto, /** new ver0.3.0*/
+  tight-mode: auto, /** new ver0.3.0 */
+  tight-item-mode: auto, /** new ver0.3.0 */
+  label-inset: auto, /** new ver0.3.0 */
+  first-line-inset: auto, /** new ver0.3.0 */
+  description-config: none, /** new ver0.3.0 */
+  // body-margin: auto, /*new new ver0.3.0*/
+  whole-spacing: auto, /*new new ver0.3.0*/
+  enum-config: (:),
+  list-config: (:),
+  ..args,
+) = {
+  return get-list-enum-method(
+    doc,
+    ElemType.list, // "both", "list", "enum"
+    indent,
+    body-indent,
+    label-indent,
+    item-spacing,
+    hanging-type,
+    hanging-indent,
+    line-indent,
+    label-width,
+    body-format,
+    label-format,
+    // item-format,
+    auto-base-level,
+    label-align,
+    auto, // label-baseline
+    none, // auto-resuming
+    none, // auto-label-width
+    checklist,
+    enum-config,
+    list-config,
+    none, /** new ver0.3.0 */
+    supplement, /** new ver0.3.0*/
+    tight-mode, /** new ver0.3.0 */
+    tight-item-mode, /** new ver0.3.0 */
+    auto, /** new ver0.3.0*/
+    label-inset, /** new ver0.3.0 */
+    first-line-inset, /** new ver0.3.0 */
+    description-config, /** new ver0.3.0 */
+    auto, /*new new ver0.3.0*/
+    whole-spacing, /*new new ver0.3.0*/
+    ..args,
+    style-type: ExportType.inline,
   )
 }

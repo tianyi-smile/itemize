@@ -1,59 +1,26 @@
-#import "identifier.typ": LOOP
+#import "identifier.typ": *
+#import "func-type.typ": *
+#import "../lib/parize-internal.typ": prevent-parize-recursion-label as parize-prevent-label
 
-
-/// Group an array by a function.
-///
-/// -> any
-#let _continue-group-by(array, function) = {
-  let arr = ()
-  if array == () {
-    return arr
-  }
-  let befor = function(array.first())
-  let temp = ()
-
-  for value in array {
-    if function(value) {
-      if befor {
-        temp.push(value)
-      } else {
-        arr.push(temp)
-        temp = ()
-        temp.push(value)
-      }
-      befor = true
-    } else {
-      if not befor {
-        temp.push(value)
-      } else {
-        arr.push(temp)
-        temp = ()
-        temp.push(value)
-      }
-      befor = false
-    }
-  }
-  arr.push(temp)
-  return arr
+#let panic(message) = if type(message) == str { assert(false, message: message) } else {
+  std.panic(message)
 }
 
-
-/// Get the type of an element, handling 'enum' and 'list' cases.
+/// Test if arr1 contains all elements of arr2
 ///
-/// -> any
-#let get_type-enum-or-list(elem) = {
-  if elem == "enum" {
-    enum
-  } else if elem == "list" {
-    list
-  } else {
-    elem
+/// - arr1 (array): The array to check against
+/// - arr2 (array): The array containing elements to check for
+/// -> bool
+#let contains-all(arr1, arr2) = {
+  for v in arr2 {
+    if v not in arr1 {
+      return false
+    }
   }
+  return true
 }
 
 /// Rebuild a label for an element, optionally adding a suffix.
-///
-/// -> any
 #let rebuild-label(elem, _label) = {
   if _label == none {
     return elem
@@ -63,10 +30,7 @@
 }
 
 
-// for number-body and marker-body in order to not override
 /// Define default arguments for text styling.
-///
-/// -> any
 #let default-text-args = (
   alternates: false,
   baseline: 0pt,
@@ -107,16 +71,7 @@
   weight: "regular",
 )
 
-/// Define default text styling with specified arguments.
-///
-/// -> any
-#let default-text = text.with(
-  ..default-text-args,
-)
-
-/// Get the current text arguments from an object.
-///
-/// -> any
+/// Get the current text arguments
 #let get_current-text-args(it) = (
   alternates: it.alternates,
   baseline: it.baseline,
@@ -152,35 +107,30 @@
   weight: it.weight,
 )
 
-// in order do not override by the users using `set`
 /// Define default arguments for box elements.
-///
-/// -> any
 #let default-box-args = (
   // width: auto,
   height: auto,
-  baseline: 0em,
+  baseline: 0pt,
   fill: none,
   stroke: none,
-  radius: (:),
+  radius: 0pt,
   inset: 0em,
-  outset: (:),
+  outset: 0pt,
   clip: false,
 )
 
 
-/// Define default arguments for block elements.
-///
-/// -> any
+/// Default arguments of block.
 #let default-block-args = (
-  // width: 100%,
+  width: auto,
   height: auto,
   fill: none,
-  stroke: none,
-  radius: (:),
-  inset: (:),
-  outset: (:),
-  // spacing: relativefraction,
+  stroke: none, /**/
+  radius: 0pt,
+  inset: 0pt,
+  outset: 0pt,
+  // spacing: 0pt,
   above: auto,
   below: auto,
   clip: false,
@@ -189,30 +139,51 @@
 )
 
 
-/// Fixes the indentation issue for the first line of a paragraph.
-///
-/// -> any
-/// Fixes the indentation issue for the first line of a paragraph.
-///
-/// -> any
-#let fix-first-line = context {
-  if par.first-line-indent.all and par.first-line-indent.amount != 0 {
-    h(-par.first-line-indent.amount)
-  }
+
+
+
+/// Get the current block arguments
+#let get-current-block-args(it) = (
+  width: it.width,
+  height: it.height,
+  fill: it.fill,
+  stroke: it.stroke,
+  radius: it.radius,
+  inset: it.inset,
+  outset: it.outset,
+  // spacing: block.spacing, // through `above`, `below`
+  above: it.above,
+  below: it.below,
+  clip: it.clip,
+  sticky: it.sticky,
+  breakable: it.breakable,
+)
+
+
+/// Wrap content in a box with default arguments
+#let label-box(body, ..args) = {
+  box(..default-box-args, ..args, body)
 }
 
 
+/// Creates a formatted block to wrap content.
+#let make-format-box(body, format-args: (:), ..args) = {
+  if format-args not in ((:), none, auto, ()) {
+    block.with(..default-block-args, ..format-args, ..args)(
+      body,
+    )
+  } else {
+    body
+  }
+}
+
 /// Get the label of an element if it exists.
-///
-/// -> any
-#let get_elem_label(e) = {
+#let get-elem-label(e) = {
   return if e.has("label") { e.label } else { none }
 }
 
 /// Get a label from a string, label, or object with a text property.
-///
-/// -> any
-#let get_label(it) = {
+#let get-label(it) = {
   return if type(it) == str {
     label(it)
   } else if type(it) == label {
@@ -224,11 +195,123 @@
   }
 }
 
+/// Helper function to get the dir's inset value from a dictionary or length
+///
+/// Parameters:
+///   - inset: The inset value (can be length, relative, ratio, or dictionary)
+///   - dir: The direction to get the inset value for
+///
+/// Returns:
+///   Inset value for the given dir
+#let get-dir-inset(inset, dir: "left") = {
+  let left-inset = 0pt
+  if type(inset) in length-type {
+    //(length, relative, ratio)
+    left-inset = inset
+  } else if type(inset) == dictionary {
+    // dictionary (not none)
+    let left = inset.at(dir, default: none)
+    if left == none {
+      let two-dir = if dir in ("left", "right") { "x" } else { "y" }
+      left = inset.at(two-dir, default: none)
+      if left == none {
+        left = inset.at("rest", default: none)
+        if left == none {
+          left = 0pt
+        }
+        left-inset = left
+      } else {
+        left-inset = left
+      }
+    } else {
+      left-inset = left
+    }
+  }
+  return left-inset
+}
+
+
+/// Parse inset values excluding the given dir's inset.
+#let parse-inset-without-dir(inset, dir: "left") = {
+  if type(inset) in length-type {
+    return (rest: inset)
+  } else if type(inset) == dictionary {
+    let _ = inset.remove(dir, default: none)
+    return inset
+  } else {
+    panic("Invalid arguments.")
+  }
+}
+
+/// Get the ratio component of a relative length
+#let get-relative-ratio(inset) = {
+  if type(inset) == relative {
+    return inset.ratio
+  } else if type(inset) == ratio {
+    return inset
+  } else {
+    return 0%
+  }
+}
+
+/// Get the length component of a relative length
+///
+/// - inset (relative, length, any): The inset value to extract length from
+/// -> length
+#let get-relative-length(inset) = {
+  if type(inset) == relative {
+    return inset.length
+  } else if type(inset) == length {
+    return inset
+  } else {
+    return auto
+  }
+}
+
+#let parse-relative(inset) = {
+  let _type = type(inset)
+  if _type == relative {
+    return (inset.ratio, inset.length)
+  } else if _type == length {
+    return (0%, inset)
+  } else if _type == ratio {
+    return (inset, 0pt)
+  } else {
+    return (0%, 0pt)
+  }
+}
+
+/// Check if a body is marked to prevent recursion
+///
+/// Determines if the body contains metadata indicating recursion prevention.
+///
+/// - body (content): The body to check
+/// -> bool
+#let is-prevent-recursion-body(body) = {
+  return (
+    body.func() == [].func()
+      and {
+        let flag = for e in body.children {
+          if e.func() == metadata {
+            if e.value == prevent-recursion-ID {
+              true
+              break
+            }
+          }
+        }
+        flag != none
+      }
+  )
+}
 
 /// Get the value at a specific index in an array, handling LOOP cases.
 ///
+/// Supports cyclic array access when the last element is `LOOP`.
+///
+/// - arr (array): The array to access
+/// - n (int): The index to retrieve
 /// -> any
-#let get_array-value(arr, n) = {
+#let get-array-value(arr, n) = {
   // arr is an array
   if arr != () {
     let last = arr.last()
@@ -253,12 +336,12 @@
 /// - value: The value or array of values.
 /// - level: The current nesting level.
 /// -> any
-#let get_depth-value(value, level) = {
+#let get-depth-value(value, level) = {
   if type(value) == array {
     if value == () {
       return value
     } else {
-      return get_array-value(value, level)
+      return get-array-value(value, level)
     }
   } else {
     return value
@@ -267,51 +350,46 @@
 
 
 /// Get the default value for a given parameter.
-///
-/// -> any
-#let get_default-value(value, initial, default) = {
+#let get-default-value(value, initial, default) = {
   if value == initial { default } else { value }
 }
-#let get_auto-value(value, default) = {
-  return get_default-value(value, auto, default)
+
+/// Get the auto value for a given parameter.
+#let get-auto-value(value, default) = {
+  return get-default-value(value, auto, default)
 }
 
-
-
-// form: n => value
-// return : n => value
 /// Get the value at a specific index in an array.
-///
-/// -> any
-#let get_value-by-n(func, initial, default) = {
+/// form: n => value
+/// return : n => value
+#let get-value-by-n(func, initial, default) = {
   if type(func) == function {
     // form: n => value
-    return n => get_default-value(func(n + 1), initial, default)
+    return n => get-default-value(func(n + 1), initial, default)
   } else if type(func) == array {
-    n => get_default-value(get_array-value(func, n), initial, default)
+    n => get-default-value(get-array-value(func, n), initial, default)
   } else {
-    return _ => get_default-value(func, initial, default)
+    return _ => get-default-value(func, initial, default)
   }
 }
-// form: level => n => value
-// return: n => vallue
+
 /// Get the value at a specific depth in a nested structure.
-///
-/// -> any
-#let get_depth-value-by-n(func, level, initial, default) = {
+/// form: level => n => value
+/// return: n => vallue
+#let get-depth-value-by-n(func, level, initial, default) = {
   if type(func) == function {
     // func: level => n => value; level => array; level => value;
-    return get_value-by-n(func(level + 1), initial, default)
+    return get-value-by-n(func(level + 1), initial, default)
   } else {
     // func: array; value
-    return get_value-by-n(get_depth-value(func, level), initial, default)
+    return get-value-by-n(get-depth-value(func, level), initial, default)
   }
 }
 
 /// Return a default 'none' value.
 ///
 /// -> none
-#let get_none-value(value1, value2) = {
+#let get-none-value(value1, value2) = {
   if value2 != none {
     return value2
   } else {
@@ -319,243 +397,9 @@
   }
 }
 
-/// func : it => value; it => array; array; value
-/// Parse a general function with a specified level of nesting.
-///
-/// -> any
-#let parse-general-func-with-level-n(func, initial, default, ..args) = level => n => {
-  if type(func) == function {
-    let level-n-args = (level: level + 1, n: n + 1, ..args.named())
-
-    // form: it => value; it => array
-    return get_value-by-n(func(level-n-args), initial, default)(n)
-  } else {
-    // func: array; value
-    return get_value-by-n(get_depth-value(func, level), initial, default)(n)
-  }
-}
-
-/// Parses named arguments with support for level-based value selection.
-///
-/// - args: Named arguments to parse.
-/// - level: The current nesting level for value selection.
-/// -> arguments
-#let parse-args(..args, level, n-last: 0) = {
-  let dic = for (k, v) in args.named() {
-    let value = parse-general-func-with-level-n(v, auto, auto, n-last)(level)
-    if k in default-text-args.keys() and value != auto {
-      (str(k): value)
-    }
-  }
-  let dic-f = n => {
-    if dic != none {
-      for (k, v) in dic {
-        if v(n) != auto {
-          // (str(k): v(n))
-          let value = if type(v(n)) == length { v(n).to-absolute() } else { v(n) }
-          (str(k): value)
-        }
-      }
-    } else {
-      (:)
-    }
-  }
-  return dic-f
-}
-
-
-
-/// Parse a format function for styling.
-///
-/// -> any
-#let parse-format-func(format, ..args) = level => n => body => {
-  if type(format) == function {
-    // form: it => any
-    return [#format(
-      (level: level + 1, n: n + 1, body: body, ..args.named()),
-    )]
-  } else {
-    let item = get_depth-value(format, level)
-    if type(item) == function {
-      return [#item(body)]
-    } else {
-      let item-n = get_value-by-n(item, none, none)(n)
-      if type(item-n) == function {
-        return [#item-n(body)]
-      } else {
-        if item-n in (none, auto, (), (:)) {
-          return body
-        }
-        return [#item-n]
-      }
-    }
-  }
-}
-
-
-/// Parse the width of a label.
-///
-/// -> any
-#let parse-label-width(label-width, max-width, level, labels-width: (), ..args) = {
-  let width-f = parse-general-func-with-level-n(label-width, auto, auto, ..args)(level)
-  return n => {
-    let width = width-f(n)
-    if width == auto {
-      return (amount: max-width, style: "native")
-    }
-    let _type = type(width)
-    if _type == dictionary {
-      let (amount, style) = width
-      assert(
-        amount == auto or type(amount) in (length, relative, ratio) or amount == "max" or type(amount) == function,
-        message: "`amount` should be a length, `auto` or a string \"max\".",
-      )
-      assert(
-        style in ("default", "constant", "auto", "native"),
-        message: "Unknown style. The label-width's style should be one of the following strings: \"default\", \"constant\", \"auto\" and \"native\".",
-      )
-      if amount == "max" {
-        return (amount: max-width, style: style)
-      }
-      if type(amount) == function {
-        return (amount: amount(labels-width), style: style)
-      }
-      return width
-    } else if _type in (length, relative, ratio) {
-      return (amount: width, style: "default")
-    } else {
-      panic("`label-width` should be a length or `auto`.")
-    }
-  }
-}
-
-/// Parse general arguments with a specified level of nesting.
-///
-/// -> any
-#let parse-general-args-with-level-n(curr-args, rel-level, enum-args, abs-level, default, ..args) = {
-  let _curr-args = parse-general-func-with-level-n(curr-args, auto, default, ..args.named())(rel-level)
-  let _enum-args = parse-general-func-with-level-n(enum-args, auto, default, ..args.named())(abs-level)
-  return n => get_none-value(_curr-args(n), _enum-args(n))
-}
-
-
-/// Parse the format of an item.
-///
-/// -> any
-#let parse-item-format(item-format, level, ..args) = {
-  let outer
-  let inner
-  let whole
-  if type(item-format) == dictionary {
-    outer = item-format.at("outer", default: none)
-    inner = item-format.at("inner", default: none)
-    whole = item-format.at("whole", default: none)
-  } else {
-    outer = item-format
-  }
-  let outer-format = parse-format-func(outer, ..args)(level)
-  let inner-format = parse-format-func(inner, ..args)(level)
-  let whole-format = parse-format-func(whole, ..args)(level)
-  return (outer: outer-format, inner: inner-format, whole: whole-format)
-}
-
-
-/// Define border arguments for styling.
-///
-/// -> any
-#let border-args = ("stroke", "radius", "outset", "fill", "inset", "clip", "breakable")
-
-
-/// Parse the body format with additional parameters.
-///
-/// -> any
-/// Parse the format of a body.
-///
-/// -> any
-#let parse-body-format-with(format, level, ..args) = {
-  let border = (:)
-  if type(format) == dictionary and level >= 0 {
-    for k in border-args {
-      let v = format.at(k, default: (:))
-      if v != (:) {
-        let value = parse-general-func-with-level-n(v, auto, (:), ..args)(level)
-        border.insert(k, value)
-      }
-    }
-  }
-  let border-f = n => {
-    for (k, v) in border {
-      if v(n) not in ((:), none) {
-        (str(k): v(n))
-      }
-    }
-  }
-  return border-f
-}
-
-/// Parse the text format of a body with additional parameters.
-///
-/// -> any
-#let parse-body-text-format-with(format, level, ..args) = {
-  let style = (:)
-  // text
-  if format not in (none, (), (:)) {
-    // let style-format = format.at("style", default: (:))
-    for k in default-text-args.keys() {
-      let v = format.at(k, default: auto)
-      if v != auto {
-        let value = parse-general-func-with-level-n(v, auto, none, ..args)(level)
-        style.insert(k, value)
-      }
-    }
-  }
-  let style-f = n => {
-    for (k, v) in style {
-      if v(n) != none {
-        // (str(k): v(n))
-        let value = if type(v(n)) == length { v(n).to-absolute() } else { v(n) }
-        (str(k): value)
-      }
-    }
-  }
-  return style-f
-}
-
-/// Parse the format of a body.
-///
-/// -> any
-#let parse-body-format(body-format, level, ..args) = {
-  let border = (outer: _ => (:), inner: _ => (:), whole: _ => (:))
-  let style = _ => (:)
-  // assert(body-format != none and type(body-format) == dictionary)
-
-  if type(body-format) == dictionary {
-    let outer = body-format.at("outer", default: none)
-    let inner = body-format.at("inner", default: none)
-    let whole = body-format.at("whole", default: none)
-
-    let text-style = body-format.at("style", default: none)
-
-    if outer == none and inner == none and whole == none {
-      outer = body-format
-    }
-
-    border.outer = parse-body-format-with(outer, level, ..args)
-    border.inner = parse-body-format-with(inner, level, ..args)
-    border.whole = parse-body-format-with(whole, level, ..args)
-
-    style = parse-body-text-format-with(text-style, level)
-  }
-
-  return (border, style)
-}
-
-
 /// Display text with specified formatting.
-///
-/// -> any
 #let show-text(args, body) = {
-  if args not in (none, (:)) {
+  if args not in (none, (:)) and body not in (none, [], [ ], auto) {
     set text(..args)
     body
   } else {
@@ -563,142 +407,121 @@
   }
 }
 
-/// Parse inset values excluding the left inset.
+/// Measure the baseline height of the content (for first line)
 ///
-/// -> any
-#let parse-inset-without-left(inset) = {
-  // `relative` and `ratio` are not supported yet. Use `length` instead.
-  if type(inset) in (length, relative, ratio) {
-    return (rest: inset)
-  } else if type(inset) == dictionary {
-    let _ = inset.remove("left", default: none)
-    return inset
-  } else {
-    panic("Invalid arguments.")
-  }
+/// - body (content): the content of the box
+/// -> (length, length)
+#let get-baseline-inset-in-box(body, height: auto) = {
+  // improve when using: https://github.com/typst/typst/pull/8799
+  let body-height = if height == auto { measure(body).height.to-absolute() } else { height }
+  let box-body = box(baseline: auto, body)
+  let all-height = measure([#box(baseline: bottom, body)#box-body]).height
+  let below-height = all-height - body-height
+  // TODO: if baseline is not in body, not correct
+  return (
+    (measure([#box(baseline: bottom, body)#box-body]).height.to-absolute() - body-height, body-height)
+  )
 }
 
-
-/// Get the baseline value with specified style.
-///
-/// -> any
-#let get-basline-with-style(same-line-style, prev-label-height, curr-label-height, curr-baseline) = {
-  if same-line-style == "center" {
-    curr-baseline + (prev-label-height - curr-label-height) * 0.5
-  } else if same-line-style == "top" {
-    curr-baseline + (prev-label-height - curr-label-height)
-  } else if same-line-style == "bottom" {
-    curr-baseline
+#let get-first-line-height-in-box(body, width: auto) = {
+  // improve when using: https://github.com/typst/typst/pull/8799
+  let body-height = measure(body, width: width).height
+  let box-body = box(width: width, body)
+  let all-height = measure([#box(baseline: top, width: width, body)#box-body]).height
+  let first-line-height = all-height - body-height
+  let EPS = 0.0001pt
+  if calc.abs(first-line-height - body-height) < EPS {
+    // no baseline
+    return (0pt, body-height)
   }
-  // "alone"
+  // TODO: if baseline is not in body, not correct
+  // TODO: if float-figure and place.float == true is in body, not correct
+  return (
+    (
+      first-line-height,
+      body-height,
+    )
+  )
 }
 
-/// Parse the baseline value.
-///
-/// -> any
-#let parse-baseline(baseline, number, text-style) = {
-  let label-height = measure(number).height.to-absolute()
-  let text-height = 0pt
-  let base-align = top
-  let alone = false
-  let amount
-  let same-line-style = "bottom"
-  if type(baseline) == dictionary {
-    amount = baseline.at("amount", default: none)
-    same-line-style = baseline.at("same-line-style", default: "center")
-    alone = baseline.at("alone", default: false)
-    if amount == none {
-      panic("The legel keys are: `amount`, `same-line-style` and `alone`, and the values are not `none`.")
-    }
-    // if amount not in (length, relative, ratio, "center", "top", "bottom") {
-    //   panic(
-    //     "The value of amount should be: `length`, `relative`, `ratio`; or one of the following strings: \"center\", \"top\", \"bottom\".",
-    //   )
-    // }
-    assert(
-      type(amount) in (length, relative, ratio) or amount in ("center", "top", "bottom") or amount == auto,
-      message: "The value of amount should be: `length`, `relative`, `ratio`, `auto`; or one of the following strings: \"center\", \"top\", \"bottom\".",
-    )
-    assert(
-      same-line-style in ("center", "top", "bottom"),
-      message: "The value of the key `same-line-style` should be one of the following strings: \"center\", \"top\", \"bottom\".",
-    )
-    assert(
-      type(alone) == bool,
-      message: "The value of the key `alone` should be a bool.",
-    )
-  } else {
-    amount = baseline
-  }
-  // panic(amount)
-  if amount == auto {
-    amount = 0pt
-  } else if amount == "center" {
-    base-align = horizon
-    text-height = measure(show-text(text-style, [A])).height.to-absolute()
-    let body-baseline = text-style.at("baseline", default: 0pt).to-absolute()
-    amount = (label-height - text-height) * .5 + body-baseline
-  } else if amount == "top" {
-    let body-baseline = text-style.at("baseline", default: 0pt)
-    text-height = measure(show-text(text-style, [A])).height.to-absolute().to-absolute()
-    amount = label-height - text-height + body-baseline
-  } else if amount == "bottom" {
-    let body-baseline = text-style.at("baseline", default: 0pt).to-absolute()
-    base-align = bottom
-    amount = 0pt + body-baseline
-  } else {
-    assert(
-      type(amount) in (length, relative, ratio),
-      message: "The value of `label-baseline` should be: `length`, `relative`, `ratio`, `auto`; or one of the following strings: \"center\", \"top\", \"bottom\".",
-    )
-  }
-  return (amount, same-line-style, base-align, alone, label-height)
+#let move-block(height, ..args) = {
+  [#block(
+      height: height,
+      spacing: 0pt,
+      stroke: none,
+      outset: 0pt,
+      // outset: (left: 2pt),
+      inset: 0pt,
+      sticky: true,
+      breakable: false,
+      ..args,
+    )#parize-prevent-label]
 }
 
-/// Define default formatting arguments for an element.
-///
-/// -> any
-#let default-elem-format-args = (
-  "indent",
-  "body-indent",
-  "label-indent",
-  "is-full-width",
-  "item-spacing",
-  "enum-spacing",
-  "enum-margin",
-  "hanging-indent",
-  "line-indent",
-  "label-width",
-  "body-format",
-  "label-format",
-  "item-format",
-  "label-align",
-  "label-baseline",
-)
+// #let sticky-block = {
+//   [#block(spacing: 0pt, width: 0pt, height: 0pt, inset: 0pt, sticky: true)#parize-prevent-label]
+// }
 
-/// Parse arguments for an element.
+/// Create a hidden line with specified spacing
 ///
-/// -> any
-#let parse-elem-args(elem-args: (:)) = {
-  if type(elem-args) == dictionary {
-    for k in default-elem-format-args {
-      let value = elem-args.at(k, default: none)
-      (str(k): value)
-    }
-    // text args
-    let dic = for k in default-text-args.keys() {
-      let v = elem-args.at(k, default: none)
-      if v != none {
-        (str(k): v)
+/// - below (length): spacing below the line
+/// - above (length): spacing above the line
+/// -> content
+#let hide-line(below: 0pt, above: 0pt, ..args) = [#block(
+    width: 0pt,
+    height: 0pt,
+    stroke: none,
+    outset: 0pt,
+    above: above,
+    below: below,
+    inset: 0pt,
+    ..args,
+  )#parize-prevent-label]
+
+
+#let v-line-tag(height: 0pt, baseline: 0pt) = {
+  box(
+    height: height,
+    baseline: baseline,
+    width: 0pt,
+    stroke: none,
+    inset: 0pt,
+    outset: 0pt,
+    // outset: (right: 2pt),
+  )
+  h(0pt, weak: true)
+}
+
+#let get-baseline-at-auto(at: auto, height: 0pt, baseline: 0pt) = {
+  // assert height >= 0pt
+  // switch to `at: auto`
+  let below-height
+  let above-height
+  if height >= 0pt {
+    if at == auto {
+      if baseline < 0pt {
+        above-height = height - baseline
+        below-height = 0pt
+      } else if baseline > height {
+        above-height = 0pt
+        below-height = baseline
+      } else {
+        above-height = height - baseline
+        below-height = baseline
       }
+    } else if at == bottom {
+      above-height = height
+      below-height = 0pt
+    } else if at == top {
+      above-height = 0pt
+      below-height = height
+    } else if at == horizon {
+      above-height = height * .5
+      below-height = height * .5
     }
-    (text-args: arguments(..dic))
+    return (above-height: above-height, below-height: below-height)
   } else {
-    for k in default-elem-format-args {
-      (str(k): none)
-    }
-    (text-args: none)
+    (above-height, below-height) = get-baseline-at-auto(at: at, height: -height, baseline: baseline)
+    return (above-height: below-height, below-height: above-height)
   }
 }
-
-

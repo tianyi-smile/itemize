@@ -1,9 +1,3 @@
-// #import "fix-enum-list.typ": *
-// #import "inline-enum-list.typ": *
-#import "../lib/resume-lib.typ" as rl
-#import "../lib/label-width-lib.typ" as lw
-
-
 #import "../lib/checklist.typ": character-symbol
 #import "../util/numbering.typ": *
 #import "../util/text-dir.typ": *
@@ -22,18 +16,19 @@
 
 #import "../foundation/export-lib.typ": *
 
-#import "../foundation/auto-resume.typ": *
 
 /// Ver0.3.0: Reimplement lists using a new layout method
-/// Support additional features: auto-label-width, auto-resuming
-#let feat-enum(
+#let new-enum(
   it,
   elem: ElemType.enum,
   indent: auto,
   body-indent: auto,
   label-indent: auto,
+  // is-full-width: false, /**new ver0.3.0 native, default change to false, delete in ver0.3.0*/
   item-spacing: auto,
-  whole-spacing: auto, /**new ver0.3.0, whole-spacing is the new name of enum-spacing */
+  // enum-spacing: auto, /**enum-spacing is deprecated, rename to whole-spacing ??? ver0.3.0 */
+  whole-spacing: auto, /**new ver0.3.0, whole-spacing is the new name of enum-spacing ????*/
+  // enum-margin: auto, /*deprecated in ver0.3.0*/
   body-margin: auto, /*new ver0.3.0, dict: (left, right)*/
   hanging-type: HangingType.classic, // paragraph
   hanging-indent: auto,
@@ -73,32 +68,27 @@
   parent-fields-info: (), /** internal: new ver0.3.0 */
   enum-level-info: (), /** internal: new ver0.3.0 */
   list-level-info: (), /** internal: new ver0.3.0 */
-
-  auto-resuming: none, /*new ver0.2.0*/
-  auto-label-width: none, /*new ver0.2.0*/
   ..args,
 ) = {
   if it.has("label") and it.label == prevent-recursion-label or it.children.len() == 0 {
     return it
   }
+
   item-level.update(push("enum"))
   enum-level.update(it => it + 1)
 
   auto-id-state.update(auto-record-id)
 
-  //feat: resume a list
-  rl.update_resume-level(it => it + 1)
-
-  lw.update-auto_label-level(it => it + 1)
-  lw.update-global_label-level(it => it + 1)
+  // TODO: ver0.2.0 关于需要level信息的处理: continue-...
 
   {
     // levels
-    let abs-elem-level = item-level.get().len()
+    // let abs-elem-level = item-level.get().len()
     let abs-enum-level = enum-level.get()
     let curr-abs-enum-level = if auto-base-level { 0 } else { get-auto-value(curr-abs-enum-level, abs-enum-level) }
     let it-enum-level = if auto-base-level { curr-enum-level } else { curr-abs-enum-level }
     let rel-level = if absolute-level { curr-level } else { curr-enum-level }
+    // let it-abs-level = if absolute-level { abs-elem-level } else { abs-enum-level } // for auto-base-level is false
 
     let curr-enum-level-info = enum-level-info + (curr-level + 1,) // contains info: curr-enum-level
     let by-level(level) = {
@@ -112,6 +102,7 @@
       if absolute-level { level } else { enum-level-info.at(level - 1) }
     }
 
+    // parent elem args
     let parent-elem-args = (
       get: level => parent-fields-info.at(by-level(level) - 1),
       parent: if rel-level == 0 { (:) } else { parent-fields-info.at(by-level(rel-level) - 1) },
@@ -156,9 +147,6 @@
       curr-abs-list-level: curr-abs-list-level,
       enum-level-info: curr-enum-level-info,
       list-level-info: list-level-info,
-
-      auto-resuming: auto-resuming, /*new ver0.2.0*/
-      auto-label-width: auto-label-width, /*new ver0.2.0*/
     )
     let next-show(
       is-prior-label-v-align: false,
@@ -241,9 +229,10 @@
 
     let curr-e-field = it.fields()
     _ = curr-e-field.remove("children")
-    let curr-e-args = (e: it.func()) // curr-field
+    let curr-e-args = (e: curr-e-field) // curr-field
 
     // current item's fields
+    // TODO: should add parent-elem-args for every argument fields ???
     let args-with-tags = (tag: item-tag, elem-tag: item-elem-tag, n-last: len, ..curr-e-args)
     let args-with-tags-item = (elem-tag: item-elem-tag, n-last: len, ..curr-e-args)
 
@@ -267,6 +256,7 @@
         if child.has("number") and child.number not in (none, auto) { child.number } else { auto }
       },
     )
+    // feat: custom step (enhance enum.reverse)
     // Parse step
     let _step = parse-step(
       rel-level,
@@ -278,85 +268,21 @@
       args-with-tags-item,
     )
 
-    // Parse step
-    let _step = parse-general-args-with-level(
-      step,
-      rel-level,
-      enum-config-args.step,
-      curr-enum-level,
-      ..args-with-tags-item,
-    )
-
-    // feat: resume a list
-    let cur-resume = auto
-    if auto-resuming != none {
-      let curr-auto-resuming = parse-auto-resume(rel-level, auto-resuming, ..args-with-tags-item)
-      rl.restart_resuming()
-      if it.start == auto {
-        let key-label = rl.resume-label-list.get()
-        let target-enum = get-target-enum(key-label)
-        cur-resume = if target-enum != none {
-          // label-case
-          let dic = rl.item-counter-dic.at(target-enum)
-          let target-level = item-level.at(target-enum).len() - 1 // absolute level;
-          let increment = abs-enum-level - curr-level // TODO
-          dic.counter.at(target-level - increment, default: auto)
-        } else if curr-auto-resuming == true {
-          // auto-case (using *-enum)
-          let dic = rl.item-counter-dic.get()
-          dic.counter.at(dic.level, default: auto)
-        } else if rl.resume-list.get() {
-          // auto-resume-enum
-          curr-auto-resuming = true
-          let dic = rl.item-counter-dic.get()
-          dic.counter.at(dic.level, default: auto)
-        } else {
-          // sublist case
-          let resume-sublist = auto-resuming-form.get()
-          if resume-sublist != none {
-            let (form, current-level, current-enum-level) = resume-sublist
-            // use the enum's absolute level
-            let form-level = if absolute-level { abs-elem-level - current-level } else {
-              abs-enum-level - current-enum-level
-            }
-            let curr-form = parse-auto-resume-form(form, form-level, ..args-with-tags-item)
-            if curr-form != none {
-              if curr-form {
-                curr-auto-resuming = true
-                let dic = rl.item-counter-dic.get()
-                dic.counter.at(dic.level, default: auto)
-              } else {
-                auto
-              }
-            } else {
-              auto
-            }
-          } else { auto }
-        }
-      }
-      rl.init_resuming-number(it.start, curr-auto-resuming)
-    }
-
     let item-skipped = n => item-config-dic.at(n).at(item-args.skipped, default: false)
     for n in range(len) {
       let skipped = item-skipped(n)
       assert(type(skipped) == bool, message: "`skipped` must be a bool;" + "\nbut found: " + repr(skipped))
     }
-    let cur = if it.start == auto { if cur-resume != auto { cur-resume + 1 } else { auto } } else { it.start }
     // enum'number
     let numbers = get-enum-numbers(
       _step,
       child-numbers,
       item-skipped,
-      start: cur,
+      start: it.start,
       reversed: it.reversed,
       len: len,
     )
-    if auto-resuming != none {
-      for number in numbers {
-        rl.update_resuming-number(number)
-      }
-    }
+
     // args-with-tags.insert("number", n => numbers.at(n))
     args-with-tags-item.insert("number", n => numbers.at(n))
 
@@ -450,52 +376,6 @@
       })
     let numbers-width = styled-numbers.map(number => measure(number).width)
     let number-max-width = calc.max(..numbers-width)
-
-    // feat: auto-label-width
-    if auto-label-width != none {
-      if auto-label-width == auto {
-        let curr-max-width-label = lw.max-width-label.get()
-        if curr-max-width-label.unlock {
-          let (form, current-level, current-enum-level) = width-label-form.get()
-          let form-level = if absolute-level { abs-elem-level - current-level } else {
-            abs-enum-level - current-enum-level
-          }
-          let curr-form = parse-auto-label(form, form-level, ..args-with-tags-item)
-          // "each" (default), "all", "only enum or list"
-          if auto-label-elem(curr-form, "enum") {
-            lw.update-auto_width-label-dic(number-max-width, "enum")
-            let locate-end = selector(metadata.where(value: enum-label-ID, label: label(auto-label-ID))).after(here())
-            let sel = query(locate-end)
-            if sel.len() > 0 {
-              let dic = lw.max-width-label.at(sel.first().location())
-              let c-level = curr-max-width-label.level
-              let width-dic = dic.width.at(c-level, default: lw.default-width)
-              number-max-width = if curr-form == AutoLabelWidth.all {
-                calc.max(width-dic.list, width-dic.enum)
-              } else {
-                width-dic.enum
-              }
-            }
-          }
-        }
-      } else {
-        let curr-auto-label = parse-auto-label(auto-label-width, rel-level, ..args-with-tags-item)
-        if auto-label-elem(curr-auto-label, "enum") {
-          lw.update-global_width-label-dic(number-max-width, "enum")
-          let locate-end = selector(metadata.where(value: global-auto-label-ID)).after(here())
-          let sel = query(locate-end)
-          if sel.len() > 0 {
-            let dic = lw.max-width-label-global.at(sel.first().location())
-            let width-dic = dic.width.at(rel-level, default: lw.default-width)
-            number-max-width = if curr-auto-label == AutoLabelWidth.all {
-              calc.max(width-dic.list, width-dic.enum)
-            } else {
-              width-dic.enum
-            }
-          }
-        }
-      }
-    }
 
     // label-width
     let curr-label-width = get-label-width(
@@ -642,14 +522,7 @@
         item.fields()
       }
     })
-    let (
-      desc-dic,
-      term-format,
-      description-format,
-      desc-style,
-      desc-term-width,
-      desc-format,
-    ) = get-description-setting(
+    let (desc-dic, term-format, description-format, desc-style, desc-term-width, desc-format) = get-description-setting(
       description-config,
       enum-config-args.description-config,
       get-item-config(item-args.description-config),
@@ -761,6 +634,12 @@
       if end-margin-abs < min-end-margin-abs { min-end-margin-abs = end-margin-abs }
 
       let start-margin-len = if start-margin == auto {
+        // if hanging-type == "paragraph" {
+        //   // box-width + _label-indent + _body-indent
+        //   box-width - number-width.amount
+        // } else {
+        //   box-width - number-width.amount
+        // }
         number-width.width - number-width.amount
       } else {
         let (start-margin-ratio, start-margin-abs) = parse-relative(start-margin)
@@ -777,6 +656,7 @@
           body-indent: _body-indent,
           indent: _indent,
           body-margin: _body-margin,
+          // inner-dir-inset : inner-dir-inset // TODO ???
         )
           + curr-label-width-args
       )
@@ -980,7 +860,7 @@
       // process paragraph
       let label-cell-width = if _hanging-type == HangingType.classic { 0pt } else {
         box-width + _body-indent + _label-indent - start-margin-len + inner-dir-inset
-      }
+      } // TODO
 
       // TODO: enable-process???
       let process-par(
@@ -1242,24 +1122,16 @@
       )
     }
   }
-
   item-level.update(pop)
   enum-level.update(it => it - 1)
 
   enum-numbering.update(pop)
 
   auto-id-state.update(auto-pop-id)
-
-  lw.update-auto_label-level(it => it - 1)
-  lw.update-global_label-level(it => it - 1)
-  //feat: resume a list
-  rl.update_resume-level(it => it - 1)
-  rl.restart_resuming()
 }
 
 /// Ver0.3.0: Reimplement lists using a new layout method
-/// Support additional features: auto-label-width, auto-resuming
-#let feat-list(
+#let new-list(
   it,
   elem: ElemType.list,
   indent: auto,
@@ -1306,9 +1178,6 @@
   parent-fields-info: (), /** internal: new ver0.3.0 */
   enum-level-info: (), /** internal: new ver0.3.0 */
   list-level-info: (), /** internal: new ver0.3.0 */
-
-  auto-resuming: none, /*new ver0.2.0*/
-  auto-label-width: none, /*new ver0.2.0*/
   ..args,
 ) = {
   if it.has("label") and it.label == prevent-recursion-label or it.children.len() == 0 {
@@ -1318,14 +1187,9 @@
   item-level.update(push("list"))
   list-level.update(it => it + 1)
 
-  rl.update_resume-level(it => it + 1)
-
-  lw.update-auto_label-level(it => it + 1)
-  lw.update-global_label-level(it => it + 1)
-
   {
     // levels
-    let abs-level = item-level.get().len()
+    // let abs-elem-level = item-level.get().len()
     let abs-list-level = list-level.get()
     let curr-abs-list-level = if auto-base-level { 0 } else { get-auto-value(curr-abs-list-level, abs-list-level) }
     let it-list-level = if auto-base-level { curr-list-level } else { curr-abs-list-level }
@@ -1387,9 +1251,6 @@
       curr-abs-list-level: curr-abs-list-level + 1, // TODO: ??????
       enum-level-info: enum-level-info,
       list-level-info: curr-list-level-info,
-
-      auto-resuming: auto-resuming, /*new ver0.2.0*/
-      auto-label-width: auto-label-width, /*new ver0.2.0*/
     )
     let next-show(
       is-prior-label-v-align: false,
@@ -1436,11 +1297,6 @@
         )
         body
       }
-    }
-
-    // feat: resume a list
-    if auto-resuming != none {
-      rl.init_resuming-zero()
     }
 
     // format list function
@@ -1511,7 +1367,7 @@
       args-with-tags-item,
     )
 
-    //feat: custom label (list's marker)
+    // feat: custom label (list's marker)
     let text-args = get-label-text-args(
       rel-level,
       curr-list-level,
@@ -1559,7 +1415,7 @@
     }
 
     let get-marker = n => {
-      //feat: checklist
+      // feat: checklist
       let desc-marker = parse-item-body.at(n).at("checklist", default: none)
       if desc-marker != none {
         return desc-marker.checklist-marker
@@ -1591,51 +1447,6 @@
 
     let markers-width = styled-markers.map(marker => measure(marker).width)
     let marker-max-width = calc.max(..markers-width)
-
-    // feat: auto-label-width
-    if auto-label-width != none {
-      if auto-label-width == auto {
-        if lw.max-width-label.get().unlock {
-          let (form, current-level, current-list-level) = width-label-form.get() // TODO
-          let form-level = if absolute-level { abs-elem-level - current-level } else {
-            abs-list-level - current-list-level
-          }
-          let curr-form = parse-auto-label(form, form-level, ..args-with-tags-item)
-          // "each" (default), "all", "only enum or list"
-          if auto-label-elem(curr-form, "list") {
-            lw.update-auto_width-label-dic(marker-max-width, "list")
-            let locate-end = selector(metadata.where(value: enum-label-ID, label: label(auto-label-ID))).after(here())
-            let sel = query(locate-end)
-            if sel.len() > 0 {
-              let dic = lw.max-width-label.at(sel.first().location())
-              let c-level = lw.max-width-label.get().level
-              let width-dic = dic.width.at(c-level, default: lw.default-width)
-              marker-max-width = if curr-form == AutoLabelWidth.all {
-                calc.max(width-dic.list, width-dic.enum)
-              } else {
-                width-dic.list
-              }
-            }
-          }
-        }
-      } else {
-        let curr-auto-label = parse-auto-label(auto-label-width, rel-level, ..args-with-tags-item)
-        if auto-label-elem(curr-auto-label, "list") {
-          lw.update-global_width-label-dic(marker-max-width, "list")
-          let locate-end = selector(metadata.where(value: global-auto-label-ID)).after(here())
-          let sel = query(locate-end)
-          if sel.len() > 0 {
-            let dic = lw.max-width-label-global.at(sel.first().location())
-            let width-dic = dic.width.at(rel-level, default: lw.default-width)
-            marker-max-width = if curr-auto-label == AutoLabelWidth.all {
-              calc.max(width-dic.list, width-dic.enum)
-            } else {
-              width-dic.list
-            }
-          }
-        }
-      }
-    }
 
     // label-width
     let curr-label-width = get-label-width(
@@ -1860,6 +1671,7 @@
         label-border-align,
         label-width-amount,
         label-height-amount,
+        // label-height-stretched,
       ) = label-length-info.at(i)
 
       let curr-label-width-args = (label-width: (max: marker-max-width, current: box-width))
@@ -2361,11 +2173,7 @@
       )
     }
   }
+
   item-level.update(pop)
   list-level.update(it => it - 1)
-
-  rl.update_resume-level(it => it - 1)
-
-  lw.update-auto_label-level(it => it - 1)
-  lw.update-global_label-level(it => it - 1)
 }
