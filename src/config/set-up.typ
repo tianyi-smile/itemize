@@ -8,11 +8,11 @@
 /// Configure checklist settings for a document.
 /// - doc (content): The document to apply the checklist settings to.
 /// - args (argument): Contains the following arguments:
-///   - baseline (auto, "center", "top", "bottom", "baseline" array): The baseline alignment for checklist labels (same as `label-baseline` with `"center"`, `"top"`, `"bottom"`). Default is `auto`, controlled by `label-baseline` of the method `*-enum-list` (`*-enum`, `*-list`).
-///   - fill (auto, color, none, array): The fill color for checklist items. If set to `auto`, it uses the current label's text style. Default is `auto`.
-///   - radius (auto, length, dictionary, array): The border radius for checklist items (default: `.1em`). See also `block.radius`.
-///   - solid (none, color, array): The solid border style for checklist items (default: `none`).
-///   - extras (bool, array): Whether to enable extra features (default: `false`). If `true`, then use the following additional commands:
+///   - baseline (`auto`, `"center"`, `"top"`, `"bottom"`, `"baseline"`, `array`): The baseline alignment for checklist labels (same as `label-baseline` with `"center"`, `"top"`, `"bottom"`, `"baseline"`). Default is `auto`, controlled by `label-baseline` of the method `*-enum-list` (`*-enum`, `*-list`).
+///   - fill (`auto`, `color`, `none`, `array`): The fill color for checklist items. If set to `auto`, it uses the current label's text style. Default is `auto`.
+///   - radius (`auto`, `length`, `dictionary`, `array`): The border radius for checklist items (default: `.1em`). See also `block.radius`.
+///   - solid (`none`, `color`, `array`): The solid border style for checklist items (default: `none`).
+///   - extras (`bool`, `array`): Whether to enable extra features (default: `false`). If `true`, then use the following additional commands:
 ///     ```
 ///     ">": "➡",
 ///     "<": "📆",
@@ -33,16 +33,16 @@
 ///     "u": "🔼",
 ///     "d": "🔽",
 ///     ```
-///   - enable-character (bool, array): Whether to enable character-based labels (default: `true`). When set to `true`, if the character in `[...]` is not among `x`, ` `, `-`, `/` or the extras characters (if `extras` is `true`), the character in `[...]` will be displayed.
-///   - enable-format (bool, array): Whether to enable formatting for the item body, with the format content determined by `format-map` (default: `false`). The default formatting is for the character `"-"`, with the formatting function:
+///   - enable-character (`bool`, `array`): Whether to enable character-based labels (default: `true`). When set to `true`, if the character in `[...]` is not among `x`, ` `, `-`, `/` or the extras characters (if `extras` is `true`), the character in `[...]` will be displayed.
+///   - enable-format (`bool`, `array`): Whether to enable formatting for the item body, with the format content determined by `format-map` (default: `false`). The default formatting is for the character `"-"`, with the formatting function:
 ///     ```typst
 ///     it => strike(text(fill: rgb("#888888"), it))
 ///     ```
-///   - symbol-map (dictionary, function, array): A map of symbols for checklist items (default: `(:)`).
+///   - symbol-map (`dictionary`, `function`, `array`): A map of symbols for checklist items (default: `(:)`).
 ///     - `dictionary`: Can replace built-in commands or add new ones.
 ///       - The key-value pair is: `("some-character": content)`.
 ///     - `function`: The function form is: `it => dictionary` (the `dictionary` is the above form), where `it` provides three properties: `fill`, `radius`, `solid`.
-///   - format-map (dictionary, array): A map of formats for checklist items (default: `(:)`). Formatting for list items.
+///   - format-map (`dictionary`, `array`): A map of formats for checklist items (default: `(:)`). Formatting for list items.
 ///     - The key-value pair is: `("some-character": func)`.
 ///     - `func` takes the form `it => content`. It applies the body of the current `some-character` item to this method.
 /// -> content
@@ -73,13 +73,13 @@
 
 /// Configure enum reference settings for a document.
 /// - doc (content): The document to apply the reference settings to.
-/// - full (auto, bool, "ref"): Determine to display the full number.
+/// - full (auto`, `bool, "ref"): Determine to display the full number.
 ///   - `auto`: Use the `enum.full` setting.
 ///   - `true` displays the full number (including parent levels).
 ///   - `false` displays only the current item's number.
 ///   - `"ref"` displays the reference number items in a relative manner (i.e., If the current item and the reference item have the same parent level, the same parent level is not displayed.)
 /// - numbering (auto, string, function): Numbering pattern.
-///   - `auto` Use the `enum.numbering`.
+///   - `auto`: Use the `enum.numbering`.
 ///   - `string`, `function`: Customize the style of the referenced item number. See also `enum.numbering`.
 /// - supplement (auto, content, dictionary, function, array): Supplemental content for the reference.
 ///   - `auto`: No supplementary content will be added.

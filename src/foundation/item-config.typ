@@ -40,7 +40,7 @@
 /// Configure for the current item
 /// - args (arguments): Arguments for the current item.
 ///   - Positional arguments.
-///     - body (content): Content for the current label body (`enum` or `list`); defaults to `none` to preserve existing label body
+///     - body (`content`): Content for the current label body (`enum` or `list`); defaults to `none` to preserve existing label body
 ///       - *Note*: Both `enum` and `list` support referencing the content of the `body`. However, the `label` needs to be placed after this method, for example:
 ///         ```typst
 ///         #show: el.default-enum-list
@@ -67,27 +67,27 @@
 ///       - others: absolute, for-elem.
 ///     - Details:
 ///     - any `text` named arguments (like: `fill`, `size`, `font`, etc.): Format the current item label.
-///     - indent (auto, length, array, function, none): The indentation of the `enum` or `list`.
-///     - body-indent (auto, length, function, array, none): The indentation of the body, i.e., the space between the label and the body of each item.
-///     - label-indent (auto, length, array, function, none): The indentation for the label (the enum's number or the list's marker).
-///     - label-inset (auto, length, array, function, none): Adds an inset to the label. It translates labels horizontally (without affecting the label width and the inset of the first line).
-///     - item-spacing (auto, relative, fraction, dictionary, array, function, none): Spacing between items.
-///     - whole-spacing (auto, relative, fraction, dictionary, array, function, none): The above and below spacing of the current `enum` or `list`. Only used when `item` is in the first item.
-///     - tight-mode (auto, "always-tight", "never-tight", "compact-tight", dictionary, array, function, none): If `whole-spacing` are `auto`, then `tight-mode` is used to determine the above and below spacing of `enum` or `list`. Only used when `item` is in the first item.
-///     - tight-item-mode (auto, "always-tight", "never-tight", dictionary, array, function, none): If `item-spacing` is `auto`, then `tight-item-mode` is used to determine the spacing between items. Only used when `item` is in the first item.
-///     - hanging-indent (auto, length, array, function, none): The hanging indentation for item body.
-///     - line-indent (auto, length, array, function, none): The indentation for the first line of a paragraph, excluding the first paragraph (default: `auto`).
-///     - first-line-inset (auto, length, array, function, none): Adds an inset to the first line of the item body (default: `0pt` if `auto`). If there is no first line, it is ignored.
-///     - hanging-type ("classic", "paragraph", array, function): Hanging type for multiline content; defaults to "classic". Only used when `item` is in the first item.
-///     - label-align (auto, alignment, array, function, none): The `alignment` that enum numbers and list markers should have. In general, this parameter is used to set *horizontal* alignment for label. If want 2D-alignment, then see `label-baseline`.
-///     - label-width (auto, relative, "max", dictionary, function, array, none): Render the width of the label.
-///     - body-format (dictionary, array, function, none): Customize item bodies.
-///     - label-format (dictionary, array, function, none): Customize item labels.
-///     - label-baseline (auto, relative, "center", "top", "bottom", "top-item", "horizon-item", "bottom-item", dictionary, array, function, none): Set the baseline style of the label body.
-///     - body-margin (auto, relative, dictionary, array, function, none): The left and right margin of the current item body. Based on the `itemize` design, `label-indent`, the label's content, `body-indent` are belong to the label's body. For `ltr`, the left margin starts from the left of the label's body; for `rtl`, the right margin starts from the right of the label's body.
-///     - description-config (dictionary, none): Configure the description list.
-///     - step (auto, int, function, array, none): Used to set the step size for `enum`'s number.
-///     - ref-numbering (string, function, none): How to number the `enum`'s reference (default: `none`, determined by `enum.numbering` or `el.config.ref.numbering`). Only used when `item` is in the first item of `enum`.
+///     - indent (`auto`, `length`, `array`, `function`, `none`): The indentation of the `enum` or `list`.
+///     - body-indent (`auto`, `length`, `function`, `array`, `none`): The indentation of the body, i.e., the space between the label and the body of each item.
+///     - label-indent (`auto`, `length`, `array`, `function`, `none`): The indentation for the label (the enum's number or the list's marker).
+///     - label-inset (`auto`, `length`, `array`, `function`, `none`): Adds an inset to the label. It translates labels horizontally (without affecting the label width and the inset of the first line).
+///     - item-spacing (`auto`, `relative`, `fraction`, `dictionary`, `array`, `function`, `none`): Spacing between items.
+///     - whole-spacing (`auto`, `relative`, `fraction`, `dictionary`, `array`, `function`, `none`): The above and below spacing of the current `enum` or `list`. Only used when `item` is in the first item.
+///     - tight-mode (`auto`, `"always-tight"`, `"never-tight"`, `"compact-tight"`, `dictionary`, `array`, `function`, `none`): If `whole-spacing` are `auto`, then `tight-mode` is used to determine the above and below spacing of `enum` or `list`. Only used when `item` is in the first item.
+///     - tight-item-mode (`auto`, `"always-tight"`, `"never-tight"`, `dictionary`, `array`, `function`, `none`): If `item-spacing` is `auto`, then `tight-item-mode` is used to determine the spacing between items. Only used when `item` is in the first item.
+///     - hanging-indent (`auto`, `length`, `array`, `function`, `none`): The hanging indentation for item body.
+///     - line-indent (`auto`, `length`, `array`, `function`, `none`): The indentation for the first line of a paragraph, excluding the first paragraph (default: `auto`).
+///     - first-line-inset (`auto`, `length`, `array`, `function`, `none`): Adds an inset to the first line of the item body (default: `0pt` if `auto`). If there is no first line, it is ignored.
+///     - hanging-type (`"classic"`, `"paragraph"`, `array`, `function`): Hanging type for multiline content; defaults to "classic". Only used when `item` is in the first item.
+///     - label-align (`auto`, `alignment`, `array`, `function`, `none`): The `alignment` that enum numbers and list markers should have. In general, this parameter is used to set *horizontal* alignment for label. If want 2D-alignment, then see `label-baseline`.
+///     - label-width (`auto`, `relative`, `"max"`, `dictionary`, `function`, `array`, `none`): Render the width of the label.
+///     - body-format (`dictionary`, `array`, `function`, `none`): Customize item bodies.
+///     - label-format (`dictionary`, `array`, `function`, `none`): Customize item labels.
+///     - label-baseline (`auto`, `relative`, `"center"`, `"top"`, `"bottom"`, `"baseline"`, `"top-item"`, `"horizon-item"`, `"bottom-item"`, `dictionary`, `array`, `function`, `none`): Set the baseline style of the label body.
+///     - body-margin (`auto`, `relative`, `dictionary`, `array`, `function`, `none`): The left and right margin of the current item body. Based on the `itemize` design, `label-indent`, the label's content, `body-indent` are belong to the label's body. For `ltr`, the left margin starts from the left of the label's body; for `rtl`, the right margin starts from the right of the label's body.
+///     - description-config (`dictionary`, `none`): Configure the description list.
+///     - step (`auto`, `int`, `function`, `array`, `none`): Used to set the step size for `enum`'s number.
+///     - ref-numbering (`string`, `function`, `none`): How to number the `enum`'s reference (default: `none`, determined by `enum.numbering` or `el.config.ref.numbering`). Only used when `item` is in the first item of `enum`.
 ///       - *Note*: Only work for the current `enum` (not for the nested `enum`).
 ///       - Example:
 ///         ```typst
@@ -100,7 +100,7 @@
 ///         @enum:a // Output: (1)
 ///         @enum:b // Output: 1.
 ///         ```
-///     - supplement (auto, content, dictionary, function, array, none):  Used to set supplementary content when referencing enum labels.
+///     - supplement (`auto`, `content`, `dictionary`, `function`, `array`, `none`):  Used to set supplementary content when referencing enum labels.
 ///       - *Note*: This only work when referencing the label body.
 ///       - Example:
 ///         ```typst
@@ -111,11 +111,11 @@
 ///         @enum:a // Output: Item Enum
 ///         @enum:b // Output: 1
 ///         ```
-///     - skipped (bool): Only for `enum`, whether to skip current label numbering; if `true`, the label's number will use the previous one, otherwise, the label's number will remain unchanged; defaults to `false`.
-///     - absolute (bool): Whether to use absolute nesting levels.
+///     - skipped (`bool`): Only for `enum`, whether to skip current label numbering; if `true`, the label's number will use the previous one, otherwise, the label's number will remain unchanged; defaults to `false`.
+///     - absolute (`bool`): Whether to use absolute nesting levels.
 ///       - `true`: When using the method `*-enum-list`, the meaning of the nesting levels includes `enum` and `list`.
 ///       - `false` (default): In `list`, the meaning of levels only includes `list`; and in `enum`, the meaning of levels only includes `enum`.
-///     - for-elem (bool): Whether the properies set by `item` is applied for current `enum` or `list` (not only for the current item); defaults to `false`. Only used when `item` is in the first item.
+///     - for-elem (`bool`): Whether the properies set by `item` is applied for current `enum` or `list` (not only for the current item); defaults to `false`. Only used when `item` is in the first item.
 ///       - Example: In the following, for `List A`, all the labels of  are colored by `red`, but for `List B`, only the first item is colored by `red`:
 ///         ```typst
 ///         #show: el.default-enum-list
@@ -127,8 +127,8 @@
 ///         + #el.item(fill: red) List A item one
 ///         + List A item one
 ///         ```
-///     - tag (any): The identifier of the item.
-///     - elem-tag (any): The identifier of the lists (`list` or `enum`).
+///     - tag (`any`): The identifier of the item.
+///     - elem-tag (`any`): The identifier of the lists (`list` or `enum`).
 #let item(..args) = {
   let pos-args = args.pos()
   let named-args = args.named()
