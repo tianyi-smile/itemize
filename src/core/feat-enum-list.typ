@@ -1325,7 +1325,7 @@
 
   {
     // levels
-    let abs-level = item-level.get().len()
+    let abs-elem-level = item-level.get().len()
     let abs-list-level = list-level.get()
     let curr-abs-list-level = if auto-base-level { 0 } else { get-auto-value(curr-abs-list-level, abs-list-level) }
     let it-list-level = if auto-base-level { curr-list-level } else { curr-abs-list-level }
