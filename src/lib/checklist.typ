@@ -1,122 +1,96 @@
-
-#import "../util/level-state.typ": setting-checklist as setting
-
 /// See: https://github.com/OrangeX4/typst-cheq
 
-/// Gets the effective color for checklist items
-///
-/// Parameters:
+/// Gets the color for checklist items
 ///   - color (auto, color): The color to evaluate. If `auto`, uses text color
 #let get-color(color) = {
   if color == auto { text.fill } else { color }
 }
 
+#let box-baseline = if sys.version >= version(0, 15, 0) { (baseline: (at: bottom, shift: 0.1em)) } else { (:) }
 
 /// Creates an unchecked checkbox symbol
-///
-/// Parameters:
-///   - fill (auto, color): Fill color (default: auto)
-///   - radius (length): Corner radius (default: 0.1em)
-///   - solid (none, color): Inner fill color (default: none)
-///
-/// Returns:
-///   A box element representing an unchecked checkbox
-#let unchecked(fill: auto, radius: .1em, solid: none) = context box(
-  stroke: .05em + get-color(fill),
-  height: 0.8em,
-  width: 0.8em,
-  radius: radius,
-  fill: solid,
-)
+#let unchecked(fill: auto, radius: .1em, solid: none) = context [
+  #set text(dir: ltr, baseline: 0pt)
+  #box(
+    stroke: .05em + get-color(fill),
+    height: 0.8em,
+    width: 0.8em,
+    radius: radius,
+    fill: solid,
+    ..box-baseline,
+  )]
 
 /// Creates a checked checkbox symbol with checkmark
-///
-/// Parameters:
-///   - fill (auto, color): Stroke color (default: auto)
-///   - radius (length): Corner radius (default: 0.1em)
-///   - solid (none, color): Inner fill color (default: none)
-///
-/// Returns:
-///   A box element representing a checked checkbox
-#let checked(fill: auto, radius: .1em, solid: none) = context box(
-  stroke: .05em + get-color(fill),
-  height: 0.8em,
-  width: 0.8em,
-  radius: radius,
-  fill: solid,
-  align(right + top, {
-    box(move(dy: .43em, dx: 0.04em, rotate(45deg, reflow: false, line(length: 0.26em, stroke: get-color(fill) + .1em))))
-    box(move(dy: .41em, dx: -0.08em, rotate(-45deg, reflow: false, line(
-      length: 0.48em,
-      stroke: get-color(fill) + .1em,
-    ))))
-  }),
-)
+#let checked(fill: auto, radius: .1em, solid: none) = context [
+  #set text(dir: ltr, baseline: 0pt)
+  #box(
+    stroke: .05em + get-color(fill),
+    height: 0.8em,
+    width: 0.8em,
+    radius: radius,
+    fill: solid,
+    ..box-baseline,
+    {
+      set align(right + top)
+      move(dy: .43em, dx: -.45em, rotate(45deg, reflow: false, line(
+        length: 0.26em,
+        stroke: .1em + get-color(fill),
+      )))
+      move(dy: -.78em, dx: -0.08em, rotate(-45deg, reflow: false, line(
+        length: 0.48em,
+        stroke: .1em + get-color(fill),
+      )))
+    },
+  )]
 
 /// Creates an incomplete/partially-checked checkbox symbol
-///
-/// Parameters:
-///   - fill (auto, color): Stroke and fill color (default: auto)
-///   - radius (length): Corner radius (default: 0.1em)
-///   - solid (none, color): Background fill (default: none)
-#let incomplete(fill: auto, radius: .1em, solid: none) = context box(
-  stroke: .05em + get-color(fill),
-  height: 0.8em,
-  width: 0.8em,
-  radius: radius,
-  clip: true,
-  fill: solid,
-  align(left, box(fill: get-color(fill), height: 1em, width: .42em)),
-)
+#let incomplete(fill: auto, radius: .1em, solid: none) = context [
+  #set text(dir: ltr, baseline: 0pt)
+  #box(
+    stroke: .05em + get-color(fill),
+    height: 0.8em,
+    width: 0.8em,
+    radius: radius,
+    clip: true,
+    fill: solid,
+    ..box-baseline,
+    align(left, box(fill: get-color(fill), height: 1em, width: .42em)),
+  )]
 
 
 /// Creates a canceled/disabled checkbox symbol
-///
-/// Parameters:
-///   - fill (auto, color): Stroke color (default: auto)
-///   - radius (length): Corner radius (default: 0.1em)
-///   - solid (none, color): Background fill (default: none)
-#let canceled(fill: auto, radius: .1em, solid: none) = context box(
-  stroke: .05em + get-color(fill),
-  height: 0.8em,
-  width: 0.8em,
-  radius: radius,
-  align(center + horizon, box(height: .125em, width: 0.55em, fill: get-color(fill))),
-  fill: solid,
-)
+#let canceled(fill: auto, radius: .1em, solid: none) = context [
+  #set text(dir: ltr, baseline: 0pt)
+  #box(
+    stroke: .05em + get-color(fill),
+    height: 0.8em,
+    width: 0.8em,
+    radius: radius,
+    ..box-baseline,
+    align(center + horizon, box(height: .125em, width: 0.55em, fill: get-color(fill))),
+    fill: solid,
+  )]
 
 /// Creates small centered text for symbol rendering
-///
-/// Parameters:
-///   - body (content): Text content to display
-#let small-text(body) = box(width: 0.8em, height: 0.8em)[#align(center + horizon)[#text.with(size: 0.8em, top-edge: "bounds", bottom-edge: "bounds")(body)]]
+#let small-text(body, ..args) = box(width: 0.8em, height: 0.8em, {
+  set align(center + horizon)
+  set text(top-edge: "bounds", bottom-edge: "bounds", ..args)
+  body
+})
 
 
 /// Creates a character-based symbol (e.g., emoji or letter)
-///
-/// Parameters:
-///   - symbol (str): Character to display (default: " ")
-///   - fill (auto, color): Border color (default: auto)
-///   - radius (length): Corner radius (default: 0.1em)
-///   - solid (none, color): Background fill (default: none)
-#let character-symbol(symbol: " ", fill: auto, radius: .1em, solid: none) = context box(
+#let character-symbol(symbol: none, fill: auto, radius: .1em, solid: none) = context box(
   stroke: .05em + get-color(fill),
   height: 0.8em,
   width: 0.8em,
   radius: radius,
   fill: solid,
-  [#small-text(symbol)],
+  ..box-baseline,
+  [#small-text(symbol, fill: get-color(fill))],
 )
 
-/// Defines basic checklist symbols (checked, unchecked, etc.)
-///
-/// Parameters:
-///   - fill (auto, color): Default symbol color
-///   - radius (length): Default corner radius
-///   - solid (none, color): Default background fill
-///
-/// Returns:
-///   A dictionary mapping symbol keys to their rendered forms
+/// Defines basic checklist symbols (checked, unchecked, incomplete, canceled)
 #let basic-symbol(fill: auto, radius: 0.1em, solid: none) = (
   "x": checked(fill: fill, radius: radius, solid: solid),
   " ": unchecked(fill: fill, radius: radius, solid: solid),
@@ -125,17 +99,6 @@
 )
 
 /// Extended symbol mapping for special characters
-///
-/// Returns:
-///   A dictionary mapping keys to their Unicode symbol equivalents
-///
-/// Symbol Key Mapping:
-///   - ">": Right arrow (➡)
-///   - "<": Calendar (📆)
-///   - "?": Question mark (❓)
-///   - "!": Exclamation (❗)
-///   - "*": Star (⭐)
-///   - ... (and other special symbols)
 #let extend-symbol = (
   ">": "➡",
   "<": "📆",
@@ -156,6 +119,7 @@
   "u": "🔼",
   "d": "🔽",
 )
+
 /// Creates the complete symbol map combining basic and extended symbols
 ///
 /// Parameters:
@@ -163,10 +127,12 @@
 ///   - radius (length): Default corner radius
 ///   - solid (none, color): Default background fill
 ///   - extras (bool): Whether to include extended symbols (default: false)
-#let default-symbol-map(fill: auto, radius: 0.1em, solid: none, extras: false) = (
-  if extras { for (k, v) in extend-symbol { (str(k): small-text(v)) } }
-    + basic-symbol(fill: fill, radius: radius, solid: solid)
-)
+#let default-symbol-map(fill: auto, radius: 0.1em, solid: none, extras: false) = {
+  (
+    if extras { for (k, v) in extend-symbol { (str(k): small-text(v)) } }
+      + basic-symbol(fill: fill, radius: radius, solid: solid)
+  )
+}
 
 /// Default formatting rules for special checklist items
 ///
