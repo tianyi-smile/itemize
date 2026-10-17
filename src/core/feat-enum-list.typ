@@ -1210,7 +1210,7 @@
     whole-outset.insert(dir-rev, -(min-end-margin-abs + min-end-margin-ratio) + whole-dir-rev-outset)
 
     // display-whole
-    if whole-border != (:) {
+    if whole-border != (:) or (min-end-margin-abs + min-end-margin-ratio != 0pt + 0%) {
       show enum.where(label: prevent-recursion-label): set block(
         ..default-block-args,
         ..whole-border,
@@ -2329,13 +2329,13 @@
     whole-outset.insert(dir-rev, -(min-end-margin-abs + min-end-margin-ratio) + whole-dir-rev-outset)
 
     // display-whole
-    if whole-border != (:) {
+    if whole-border != (:) or (min-end-margin-abs + min-end-margin-ratio != 0pt + 0%) {
       show enum.where(label: prevent-recursion-label): set block(
         ..default-block-args,
         ..whole-border,
         outset: whole-outset,
         // fill: gray,
-        above: if is-pre-list { auto } else { elem-above-spacing.block }, // TODO:????
+        above: if is-pre-list { auto } else { elem-above-spacing.block },
         below: elem-below-spacing,
       )
       [#enum(

@@ -259,29 +259,30 @@
         and (type(relative-to.at(0)) in (content,) + length-type)
         and relative-to.at(1) in baseline-align-style.item-first-line
     ) {
+      let at = get-to-baseline-at.at(relative-to.at(1))
       if type(relative-to.at(0)) == content {
         relative-dic = (
           to: show-text(text-style, relative-to.at(0)),
-          at: auto,
+          at: at,
           shift: 0pt,
         )
       } else {
         relative-dic = (
           to: show-text(text-style, [A]),
-          at: auto,
+          at: at,
           shift: relative-to.at(0),
         )
       }
-      relative-to = relative-to.at(1)
+      // relative-to = relative-to.at(1)
     } else if relative-to in baseline-align-style.item {
       base-align = get-to-baseline-at.at(relative-to)
+      baseline-at = base-align
     } else if _type == dictionary {
       relative-dic = (
         to: relative-to.remove("to", default: auto),
         at: relative-to.remove("at", default: auto),
         shift: relative-to.remove("shift", default: 0pt),
       )
-
       assert(
         relative-to == (:),
         message: "The keys of `relative-to` should be: `to`, `at`, `shift`. "
@@ -372,7 +373,6 @@
   } else if amount == "center" {
     baseline-at = horizon
     amount = baseline-inset - to-height * .5
-
     base-align = none
   } else if amount == "top" {
     baseline-at = top

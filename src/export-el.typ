@@ -99,28 +99,21 @@
   }
   if auto-label-width != none {
     if auto-label-width != auto {
-      context if fel.item-level.get().len() > 0 {
-        panic(
-          (
-            "Inside `list` or `enum`, `auto-label-width` can not be set to `"
-              + repr(auto-label-width)
-              + "`."
-              + "\nHint: set `auto-label-width` to be `auto` and then use the method `auto-label-item`."
-          ),
-        )
-      }
+      let global-label-width = fel.global-setting-ID-auto-label-width
       context {
-        let global-label-width = fel.global-setting-ID-auto-label-width
         assert(
           not global-label-width.get(),
           message: (
             "Inside this method, `auto-label-width` can be set once for non `auto` or `none`."
+              + "\nBut found: "
+              + repr(auto-label-width)
+              + "."
               + "\nHint: set `auto-label-width` to be `auto` and then use the method `auto-label-item`."
               + "\nHint: Wrap the method in `#[]`."
           ),
         )
-        global-label-width.update(true)
       }
+      global-label-width.update(true)
     }
   }
 
@@ -359,7 +352,7 @@
 /// - label-inset (auto, length, array, function): Adds an inset to the label (default: `0pt` if `auto`).
 ///   - Note: It translates labels horizontally (without affecting the label width and the inset of the first line).
 ///   - Usage: See `indent`.
-///   - `auto`: The label is not inset (equivalent to `0pt`).
+///   - `auto`: The label has not inset (equivalent to `0pt`).
 ///   - `length`: The inset is the specified value.
 ///   - `array` (level-property): The elements are `length`, `auto` or `array`, each level of the item will be inset by the corresponding value of the array at position `level - 1`.
 ///     - See also `indent`.
@@ -708,7 +701,7 @@
 ///   - `"max"`: This is the same as `auto`.
 ///   - `dictionary`: The keys are `amount` and `style`.
 ///     - `amount` can be taken `relative`, `auto` or `"max"`
-///       - `relative`: The value is `amount.length + amount.ratio * real-width`.
+///       - `relative`: The value is `amount.length + amount.ratio × real-width`.
 ///       - `auto`: `real-width`.
 ///       - `"max"`: `max-width`.
 ///     - `style` can be `"default"`, `"constant"`, `"auto"`, or `"native"`.
@@ -791,7 +784,7 @@
 ///     - `at` (`auto`, `top`, `bottom`, `horizon`): Used to set what the position of the label body to be aligned; the default of `at` is `auto`, meaning the the baseline of the (first line of the) label body. See also the `baseline` parameter of `box`, https://typst.app/docs/reference/layout/box/#parameters-baseline.
 ///     - `relative-to` (`string`, `content`, `relative`, `array`, `dictionary`): Used to set the offset relative to what position (of item body). Default is `"baseline"`.
 ///       - `"bottom"`, `"center"`, `"top"`, `"baseline"`: Relative to the first line of the current item body.
-///       - `"top-item"`, `"horizon-item"`, `"bottom-item"`: Relative to the top, horizontal, or bottom of the whole item.
+///       - `"top-item"`, `"horizon-item"`, `"bottom-item"`: Relative to the top, horizontal, or bottom of the whole item. In this case, `at` is set to `top`, `horizon`, `bottom`, respectively. Users can not set it again.
 ///       - `content`: The passed content is used to calculate the height. The same as `(to: relative-to, at: auto, shift: 0pt)`.
 ///       - `relative`: Representing the height of the first line of the current item body. The same as `(to: [A], at: auto, shift: relative-to)`.
 ///         - The ratio part is relative to the (rendered) height of the (whole) item body.
@@ -800,14 +793,14 @@
 ///          - The second element `relative-to` can be `"bottom"`, `"center"`, `"top"`, `"baseline"`.
 ///       - `dictionary` with keys: `to`, `at`, `shift`. This means the label body should be aligned to the content of `to`, at the `at` position with the offset of `shift`.
 ///          - *Note*: Usually, the content of `to` should be added to the first line of the item body.
-///          - `to` (`auto`, `content`): If `auto`, it is `[A]`.
-///          - `at` (`auto`, `top`, `bottom`, `horizon`): Used to set what the position of `to` to be aligned.
-///          - `shift` (`relative`): The offset of `shift` at `at` position. The ratio part is relative to the height of the content `to`.
+///          - `to` (`auto`, `content`): If `auto`, it is `[A]`. Default is `[A]`.
+///          - `at` (`auto`, `top`, `bottom`, `horizon`): Used to set what the position of `to` to be aligned. Default is `auto`.
+///          - `shift` (`relative`): The offset of `shift` at `at` position. The ratio part is relative to the height of the content `to`. Default is `0pt`.
 ///     - `impact-first-line` (`auto`, `bool`): Whether to impact the first line of the label body by `label-baseline`.
 ///       - `auto`: If `hanging-typ` is `"paragraph"`, then `true`, else `false`.
 ///     - `same-line-style` (`auto`, `string`, `dictionary`): If labels from different levels appear on the same line, their alignment is determined by `same-line-style`. That is, it deals with like `+ + Item`. Default is `auto`.
 ///       - In Typst 0.15, like `+ + Item`, the first label is "top-aligned" to `+ Item` (since `enum` or `list` has no baseline). In default, in `itemize` (since ver0.2.0), the first label and `+ Item` is aligned at baseline.
-///       - `auto`: The same as `"baseline"`.
+///       - `auto`: Use the current setting of `label-baseline`.
 ///       - `"top"`, `"center"`, `"bottom"`, `"baseline"`: The (first line of the) label body on the same line and the first line of the item body will be aligned at the specified (i.e., top, horizontal, bottom, baseline) position.
 ///       - `"top-item"`, `"horizon-item"`, `"bottom-item"`: The top, horizontal, or bottom of the label body on the same line will be aligned to the top, horizontal, or bottom of the whole item body, respectively.
 ///       - `"top-label"`, `"center-label"`, `"bottom-label"`, `"baseline-label"`: The top, horizontal, or bottom of the label body on the same line will be aligned to the top, horizontal, or bottom of the *last* label body, respectively.
@@ -872,18 +865,21 @@
 ///     })
 ///     ```
 ///   - `none`: Does not take effect.
+///   - `content`: The content of the label.
 ///   - `dictionary`: The keys are
-///     - `format` : The format of the label.
+///     - `format`: The format of the label.
 ///       - `none` == `auto` (default): The same as `it => it.body`.
+///       - `content`: The content of the label.
 ///       - `function` (base-property):
 ///         - The function form: `body => content`. Apply the function to the label's content (generated by `enum.item.number` + `enum.numbering` or `list.marker`).
 ///         - The `function` should be wrapped in an `array`, like: `(strong, )`.
-///       - `array` (level-property): The elements are `function` (base-property) or `array`. The element at the position `level - 1` will be used for the `level`-th level.
+///       - `array` (level-property): The elements are `content`, `function` (base-property) or `array`. The element at the position `level - 1` will be used for the `level`-th level.
 ///         - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
 ///         - otherwise, the last value of the array will be used for residual levels.
+///         - If `array`, the (`n-1`)-th element of the array applies to the `n`-th item label at the current level.
 ///       - `function` (level-property):
 ///         - The function form: `it => content | array`.
-///         - If the return value is `array`, then each element in the array should be `function` (base-property), which will be applied to the label's content for each item in the current level.
+///         - If the return value is `array`, then each element in the array should be `auto`, `content` or `function` (base-property), which will be applied to the label's content for each item in the current level.
 ///         - Access the following values available on `it`:
 ///           - `it.body`: The current label's content.
 ///           - `it.level`: The level of the item, starting from 1.
@@ -895,7 +891,7 @@
 ///           - `it.hanging-type`: The hanging type of the current level.
 ///         - Example:
 ///           ```typst
-///           #show: el.default-enum-list(label-format: (format: it => {
+///           #show: el.default-enum-list.with(label-format: (format: it => {
 ///             if it.tag == "strong" {
 ///               set text(fill: red, weight: "bold")
 ///               it.body
@@ -924,7 +920,7 @@
 ///           - `it.elem-tag`: The tag of the `enum` or `list`.
 ///           - `it.e`: The field of the current construct element (`enum` or `list`), but excluding the `children`.
 ///           - `it.hanging-type`: The hanging type of the current level.
-///     - `align` (auto, alignment, array, function): The alignment of the label. See `stroke` etc.
+///     - `align` (`auto`, `alignment`, `array`, `function`): The alignment of the label. See `stroke` etc. Default is `start`.
 ///     - `width-style`, `height-style`: Set the width and height style of the label.
 ///       - `width-style`:
 ///         - *Note*: This does not affect the maximum width of the labels in the current level.
@@ -939,7 +935,8 @@
 ///         - `"real-height"`, `relative`: The same as `(amount: len, stretched: false)`.
 ///         - `"real-height"`: The real height of the label.
 ///         - `dictionary`: The keys are
-///           - `amount` (`"real-height"`, `relative`): Set the height of the label to be the specified value.            - The ratio part of `amount` is relative to the real height of the label, i.e., the value of `amount` is `amount.ratio × real-height + amount.length`, where `real-height` is the real height of the label.
+///           - `amount` (`"real-height"`, `relative`): Set the height of the label to be the specified value.
+///             - The ratio part of `amount` is relative to the real height of the label, i.e., the value of `amount` is `amount.ratio × real-height + amount.length`, where `real-height` is the real height of the label.
 ///           - `stretched` (bool): If `true`, the rendered height of the label will be set to `amount` + `inset.y`, else use the real height of the label (in particular, it does not affect the layout of the item body.).
 ///     - Example
 ///       ```typst
@@ -1016,9 +1013,9 @@
 ///             + Sub Item two
 ///           + Item two
 ///           ```
-///       - *Note*: If `whole`, `outer`, or `inner` is omitted, the default is `outer`.
+///       - *Note*: If `whole`, `outer`, and `inner` are omitted, the default is `outer`.
 ///       - `whole`, `outer`, or `inner` can be taken `dictionary` with the following keys:
-///         - `format` (function, array): The format of the item body.
+///         - `format` (`none`, `function`, `array`): The format of the item body.
 ///           - See the `format` in `label-format`.
 ///           - *Note*: Use the `format` function (since ver0.3.0) to replace the `item-format` (in ver0.2.0) parameter .
 ///         - `stroke`, `radius`, `outset`, `fill`, `inset`, `clip`, `breakable`, `sticky`, `width`: The *border* of the item body, which are the same as the `block` named elements (note: `width` only works for `whole`).
@@ -1126,7 +1123,7 @@
 ///       - `#show : el.default-enum-list.with(auto-resuming: it => /* ... */)`.
 /// - auto-label-width (none, auto, string, array, function): Used to share the same maximum label width for different `enum`s and `list`s.
 ///   - `none`: Disable this feature.
-///   - `auto`: Enable this feature. In this case, use the method `el.auto-label-item[...]` to share the same maximum label width for `enum` or `list` in `[...]`.
+///   - `auto`: Enable this feature. In this case, use the method `auto-label-item[...]` to share the same maximum label width for `enum` or `list` in `[...]`.
 ///     - Example: In the following, `List A` and `List B` share the same maximum label width.
 ///       ```typst
 ///       #show: el.default-enum-list.with(auto-label-width: auto)
@@ -1177,7 +1174,7 @@
 ///         + #el.item(elem-tag: "auto-label") Sub Item one
 ///         + Sub item two
 ///       + Item one
-///         + #el.item(elem-tag: "auto-label") Sub Item one
+///         10. #el.item(elem-tag: "auto-label") Sub Item one
 ///         + Sub item two
 ///       ```
 /// - auto-base-level (bool): By default (since ver0.3.0), `auto-base-level` is set to `true`, meaning each `default-*` (`inline-*`, `paragraph-*`) method now maintains its own level counter, starting from 1. This behavior almost only affects the display of `enum.number` (by `enum.numbering`).
