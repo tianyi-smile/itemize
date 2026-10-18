@@ -701,9 +701,15 @@
       let outer-top-inset = _outer-top-inset.to-absolute()
 
       // deal with: end body margin
-      let outer-dir-rev-inset = get-dir-inset(outer-inset, dir: dir-rev)
-      outer-inset = parse-inset-without-dir(outer-inset, dir: dir-rev)
-      outer-inset.insert(dir-rev, outer-dir-rev-inset + end-margin)
+      if end-margin-abs != 0pt or end-margin-ratio != 0% {
+        let outer-dir-rev-inset = get-dir-inset(outer-inset, dir: dir-rev)
+        outer-inset = parse-inset-without-dir(outer-inset, dir: dir-rev)
+        outer-inset.insert(dir-rev, outer-dir-rev-inset + end-margin)
+
+        let outer-dir-rev-outset = get-dir-inset(outer-outset, dir: dir-rev)
+        outer-outset = parse-inset-without-dir(outer-outset, dir: dir-rev)
+        outer-outset.insert(dir-rev, outer-dir-rev-outset - end-margin)
+      }
 
       let curr-text-style = (curr-body-style)(i)
       let curr-text-size = {
@@ -1079,23 +1085,25 @@
     }
 
     let whole-outset = whole-border.remove("outset", default: (:))
-    let whole-dir-outset = get-dir-inset(whole-outset, dir: dir)
-    whole-outset = parse-inset-without-dir(whole-outset, dir: dir)
-    // indent outset
-    whole-outset.insert(dir, -min-indent + whole-dir-outset)
-
-    let whole-dir-rev-outset = get-dir-inset(whole-outset, dir: dir-rev)
-    whole-outset = parse-inset-without-dir(whole-outset, dir: dir-rev)
-    // end margin outset
-    whole-outset.insert(dir-rev, -(min-end-margin-abs + min-end-margin-ratio) + whole-dir-rev-outset)
 
     // display-whole
-    if whole-border != (:) or (min-end-margin-abs + min-end-margin-ratio != 0pt + 0%) {
+    if whole-border != (:) {
+      let whole-dir-outset = get-dir-inset(whole-outset, dir: dir)
+      whole-outset = parse-inset-without-dir(whole-outset, dir: dir)
+      // indent outset
+      whole-outset.insert(dir, -min-indent + whole-dir-outset)
+
+      let whole-dir-rev-outset = get-dir-inset(whole-outset, dir: dir-rev)
+      whole-outset = parse-inset-without-dir(whole-outset, dir: dir-rev)
+      // end margin outset
+      let whole-end-marging = min-end-margin-abs + min-end-margin-ratio
+      whole-outset.insert(dir-rev, -whole-end-marging + whole-dir-rev-outset)
+
       show enum.where(label: prevent-recursion-label): set block(
         ..default-block-args,
         ..whole-border,
         outset: whole-outset,
-        // fill: gray,
+        // fill: gray, // debug
         above: if is-pre-list { auto } else { elem-above-spacing.block },
         below: elem-below-spacing,
       )
@@ -1757,9 +1765,15 @@
       let outer-top-inset = _outer-top-inset.to-absolute()
 
       // deal with: end body margin
-      let outer-dir-rev-inset = get-dir-inset(outer-inset, dir: dir-rev)
-      outer-inset = parse-inset-without-dir(outer-inset, dir: dir-rev)
-      outer-inset.insert(dir-rev, outer-dir-rev-inset + get-auto-value(end-margin, 0pt))
+      if end-margin-abs != 0pt or end-margin-ratio != 0% {
+        let outer-dir-rev-inset = get-dir-inset(outer-inset, dir: dir-rev)
+        outer-inset = parse-inset-without-dir(outer-inset, dir: dir-rev)
+        outer-inset.insert(dir-rev, outer-dir-rev-inset + end-margin)
+
+        let outer-dir-rev-outset = get-dir-inset(outer-outset, dir: dir-rev)
+        outer-outset = parse-inset-without-dir(outer-outset, dir: dir-rev)
+        outer-outset.insert(dir-rev, outer-dir-rev-outset - end-margin)
+      }
 
       let curr-text-style = (curr-body-style)(i)
       let curr-text-size = {
@@ -2130,23 +2144,25 @@
     }
 
     let whole-outset = whole-border.remove("outset", default: (:))
-    let whole-dir-outset = get-dir-inset(whole-outset, dir: dir)
-    whole-outset = parse-inset-without-dir(whole-outset, dir: dir)
-    // indent outset
-    whole-outset.insert(dir, -min-indent + whole-dir-outset)
-
-    let whole-dir-rev-outset = get-dir-inset(whole-outset, dir: dir-rev)
-    whole-outset = parse-inset-without-dir(whole-outset, dir: dir-rev)
-    // end margin outset
-    whole-outset.insert(dir-rev, -(min-end-margin-abs + min-end-margin-ratio) + whole-dir-rev-outset)
 
     // display-whole
-    if whole-border != (:) or (min-end-margin-abs + min-end-margin-ratio != 0pt + 0%) {
+    if whole-border != (:) {
+      let whole-dir-outset = get-dir-inset(whole-outset, dir: dir)
+      whole-outset = parse-inset-without-dir(whole-outset, dir: dir)
+      // indent outset
+      whole-outset.insert(dir, -min-indent + whole-dir-outset)
+
+      let whole-dir-rev-outset = get-dir-inset(whole-outset, dir: dir-rev)
+      whole-outset = parse-inset-without-dir(whole-outset, dir: dir-rev)
+      // end margin outset
+      let whole-end-marging = min-end-margin-abs + min-end-margin-ratio
+      whole-outset.insert(dir-rev, -whole-end-marging + whole-dir-rev-outset)
+
       show enum.where(label: prevent-recursion-label): set block(
         ..default-block-args,
         ..whole-border,
         outset: whole-outset,
-        // fill: gray,
+        // fill: gray, // debug
         above: if is-pre-list { auto } else { elem-above-spacing.block },
         below: elem-below-spacing,
       )
