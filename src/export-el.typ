@@ -1230,14 +1230,29 @@
 ///         } else { auto }
 ///       })
 ///       ```
-/// - ref-numbering (function, string, none): How to number the `enum`'s reference (default: `none`, determined by `enum.numbering` or `el.config.ref.numbering`).
-///   - See also `enum.numbering`.
+/// - ref-numbering (function, string, dictionary, none): How to number the `enum`'s reference.
+///   - Usage:
+///     ```typst
+///     #show: el.default-enum-list.with(ref-numbering: "(1).(a)")
+///     #show: el.default-enum-list.with(ref-numbering: (numbering: "(1).(a)", full: true))
+///     ```
+///   - `none`: Determined by `enum.numbering` or `config.ref.numbering`.
+///   - `function`, `string`: See also `enum.numbering`.
+///   - `dictionary`: The keys are `numbering` and `full`.
+///     - `numbering` (`function`, `string`, `none`): See also `enum.numbering`.
+///     - `full`: (`bool`, `"rel"` `auto`).
+///       - If `auto`, determined by `enum.full` or `config.ref.full`.
+///       - See also `config.ref.full`.
 /// - supplement (auto, content, dictionary, function, array): Used to set supplementary content when referencing enum labels.
-///   - Note: This is independent of the `el.config.ref.supplement` setting, meaning the supplement content and the referenced enum or list label will be passed as a whole to `el.config.ref.supplement`.
+///   - Note: This is independent of the `config.ref.supplement` setting, meaning the supplement content and the referenced enum or list label will be passed as a whole to `config.ref.supplement`.
 ///   - Usage:
 ///     ```typst
 ///     #show: el.default-enum-list.with(supplement: [Item])
 ///     #show: el.default-enum-list.with(supplement: (prefix: [第], suffix: [项]))
+///     #show: el.default-enum-list.with(supplement: it => {
+///       set text(fill: red, weight: "bold")
+///       std.numbering("(1).(a)", ..it.numbers)
+///     })
 ///     #show: el.default-enum-list.with(supplement: it => [#numbering(heading.numbering, ..counter(heading).at(it.target)).#it.body])
 ///     ```
 ///   - `auto`: No supplementary content will be added.
@@ -1246,19 +1261,20 @@
 ///   - `array` (level-property): Sets `supplement` by level. The elements are `content`, `dictionary`, `auto`, `array`.
 ///     - See also `indent`.
 ///   - `function` (level-property): The return value will be used for each level and each item.
-///     - The function form: `it => content | dictionary | auto | array`
-///     - If the returned value is a `array`, then the elements in the array will be used for each item.
-///       - Access the following values available on `it`:
-///         - `it.body`: The referenced `enum` labels.
-///         - `it.level`: The level of the item, starting from 1.
-///         - `it.n`: The index of the item, starting from 1.
-///         - `it.n-last`: The index of the last item in the current level.
-///         - `it.tag` (since ver0.3.0): The tag of the item.
-///         - `it.elem-tag` (since ver0.3.0): The tag of the `enum` or `list`.
-///         - `it.e` (since ver0.3.0): The field of the current construct element (`enum` or `list`), but excluding the `children`.
-///         - `it.hanging-type` (since ver0.3.0): The hanging type of the current level.
-///         - `it.target` (since ver0.3.0): The target of the referenced label.
-/// - checklist (bool, array): Whether to use checklist (default: `false`). If set to `true` (since ver0.3.0), then configure checklist-related features using the method `el.config.checklist`.
+///     - The function form: `it => content`.
+///     - Access the following values available on `it`:
+///       - `it.body`: The referenced `enum` labels.
+///       - `it.level`: The level of the item, starting from 1.
+///       - `it.n`: The index of the item, starting from 1.
+///       - `it.n-last`: The index of the last item in the current level.
+///       - `it.tag` (since ver0.3.0): The tag of the item.
+///       - `it.elem-tag` (since ver0.3.0): The tag of the `enum` or `list`.
+///       - `it.e` (since ver0.3.0): The field of the current construct element (`enum` or `list`), but excluding the `children`.
+///       - `it.hanging-type` (since ver0.3.0): The hanging type of the current level.
+///       - `it.number` (since ver0.3.0): The number of the current label if it is a `enum`.
+///       - `it.target` (since ver0.3.0): The target of the referenced label.
+///       - `it.numbers` (since ver0.3.0): The full numbers of the referenced item (including the parent `enum`'s numbers).
+/// - checklist (bool, array): Whether to use checklist (default: `false`). If set to `true` (since ver0.3.0), then configure checklist-related features using the method `config.checklist`.
 ///   - Usage:
 ///     ```typst
 ///     #show: el.default-enum-list.with(checklist: true)
@@ -1266,7 +1282,7 @@
 ///       // configure
 ///     )
 ///     ```
-///     See the method `el.config.checklist` for more details.
+///     See the method `config.checklist` for more details.
 ///   - `array` (level-property): The elements are `bool`, each level of the item will be set to the corresponding value of the array at position `level - 1`; now `true` means to use checklist for the current level.
 ///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
 ///     - otherwise, the last value of the array will be used for residual levels.

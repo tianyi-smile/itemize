@@ -12,7 +12,7 @@
 /// - *Note*: Use this when regular `label(<...>)` won't work with enum references
 ///
 /// - name (string, label, content): Label identifier
-/// 
+///
 /// -> content
 #let elabel(name) = {
   let _label = get-label(name)
@@ -49,10 +49,8 @@
       auto-base-level,
       curr-enum-level,
       supplement-format,
-      n-last,
       level-item,
-      tag,
-      elem-tag,
+      ..args-with-tags,
     ) = enum-numbering-info.last()
     if ref-numbering != none {
       numbering = ref-numbering
@@ -108,25 +106,30 @@
       pre-parse-supplement(
         item-supp,
         level-item(index-n),
-        n: index-n,
-        n-last: n-last,
-        tag: tag,
-        target: it.target,
+        ..args-with-tags,
       )
     } else { supplement-format }
-    let enum-supp = item-supp-format(index-n)(number-body, target: it.target)
+    let enum-supp = item-supp-format(index-n)(
+      number-body,
+      target: it.target,
+      numbers: base-num-count.map(it => {it.number}),
+      numbering: numbering,
+    )
     // fix(ver0.3.0): ref.supplement
     let origin-supp = ref-supplement(it.supplement)
+    let ref-supp
     link(it.element.location(), [#origin-supp#parse-supplement(
         supplement,
         level - 1,
         none,
         0,
-        n: index-n,
-        n-last: n-last,
-        tag: tag,
-        elem-tag: elem-tag,
-      )(index-n)(enum-supp, target: it.target)])
+        ..args-with-tags,
+      )(index-n)(
+        enum-supp,
+        target: it.target,
+        numbers: base-num-count.map(it => it.number),
+        numbering: numbering,
+      )])
   } else {
     it
   }
@@ -142,7 +145,7 @@
   if e != none {
     assert(
       full in (auto, true, false, "rel"),
-      message: "`full` must be `auto`, bool, or \"rel\", " + "\nbut found: " + repr(full),
+      message: "`full` must be `auto`, bool, or \"rel\";" + "\nbut found: " + repr(full),
     )
     assert(
       numbering == auto or type(numbering) in (str, function),
@@ -166,17 +169,17 @@
           let list-level = item-elem.filter(it => it == "list").len() - 1 // use list-level
           let list-supp = if item-supp != none {
             let item-supp-format = pre-parse-supplement(item-supp, list-level)
-            item-supp-format(0)(body, target: it.target)
+            item-supp-format(0)(body, target: it.target, numbers: ())
           } else {
             body
           }
-          let origin-supp = let origin-supp = ref-supplement(it.supplement)
+          let origin-supp = ref-supplement(it.supplement)
           link(it.element.location(), [#origin-supp#parse-supplement(
               supplement,
               list-level,
               none,
               0,
-            )(0)(list-supp, target: it.target)])
+            )(0)(list-supp, target: it.target, numbers: ())])
         }
       } else {
         // reference for enum

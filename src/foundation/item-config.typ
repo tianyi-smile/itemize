@@ -87,7 +87,7 @@
 ///     - body-margin (`auto`, `relative`, `dictionary`, `array`, `function`, `none`): The left and right margin of the current item body. Based on the `itemize` design, `label-indent`, the label's content, `body-indent` are belong to the label's body. For `ltr`, the left margin starts from the left of the label's body; for `rtl`, the right margin starts from the right of the label's body.
 ///     - description-config (`dictionary`, `none`): Configure the description list.
 ///     - step (`auto`, `int`, `function`, `array`, `none`): Used to set the step size for `enum`'s number.
-///     - ref-numbering (`string`, `function`, `none`): How to number the `enum`'s reference (default: `none`, determined by `enum.numbering` or `el.config.ref.numbering`). Only used when `item` is in the first item of `enum`.
+///     - ref-numbering (`string`, `function`, `dictionary`, `none`): How to number the `enum`'s reference (default: `none`, determined by `enum.numbering` or `config.ref.numbering`). Only used when `item` is in the first item of `enum`.
 ///       - *Note*: Only work for the current `enum` (not for the nested `enum`).
 ///       - Example:
 ///         ```typst

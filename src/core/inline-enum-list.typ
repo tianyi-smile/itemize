@@ -209,7 +209,7 @@
 
     let curr-e-field = it.fields()
     _ = curr-e-field.remove("children")
-    let curr-e-args = (e: it.func()) // curr-field
+    let curr-e-args = (e: curr-e-field) // curr-field
 
     // current item's fields
     let args-with-tags = (tag: item-tag, elem-tag: item-elem-tag, n-last: len, ..curr-e-args)
@@ -260,17 +260,14 @@
       len: len,
     )
 
-    // args-with-tags.insert("number", n => numbers.at(n))
-    args-with-tags-item.insert("number", n => numbers.at(n))
+    args-with-tags.insert("number", n => numbers.at(n))
+    // args-with-tags-item.insert("number", n => numbers.at(n))
 
     // ref-numbering
-    let _ref-numbering = get-none-value(ref-numbering, get-none-value(
+    let (_ref-numbering, _full) = parse-ref-numbering(
+      ref-numbering,
       enum-config-args.ref-numbering,
       item-config-dic.at(0).at(item-args.ref-numbering, default: none),
-    ))
-    assert(
-      _ref-numbering == none or type(_ref-numbering) in (str, function),
-      message: "`ref-numbering` must be a string or a function",
     )
     // supplement
     let _supplement = parse-supplement(
@@ -284,7 +281,7 @@
     enum-numbering.update(push((
       numbering: it.numbering,
       ref-numbering: _ref-numbering,
-      full: it.full,
+      full: if _full != auto { _full } else { it.full },
       auto-base-level: auto-base-level,
       curr-enum-level: curr-enum-level,
       supplement-format: _supplement,
@@ -949,7 +946,7 @@
 
     let curr-e-field = it.fields()
     _ = curr-e-field.remove("children")
-    let curr-e-args = (e: it.func()) // curr-field
+    let curr-e-args = (e: curr-e-field) // curr-field
 
     // current item's fields
     let args-with-tags = (tag: item-tag, elem-tag: item-elem-tag, n-last: len, ..curr-e-args)
@@ -1053,8 +1050,8 @@
       }
     }
 
-    // args-with-tags.insert("marker", get-marker)
-    args-with-tags-item.insert("marker", get-marker)
+    args-with-tags.insert("marker", get-marker)
+    // args-with-tags-item.insert("marker", get-marker)
 
     let styled-markers = range(len).map(i => custom-text(i)((get-marker(i))))
 

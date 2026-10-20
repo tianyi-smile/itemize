@@ -17,7 +17,7 @@
 
 #import "elem-args.typ": ElemType, parse-elem-args
 
-#import "reference.typ": parse-supplement
+#import "reference.typ": parse-ref-numbering, parse-supplement
 
 #import "description-lib.typ": get-description-setting, parse-description, process-terms-item
 
