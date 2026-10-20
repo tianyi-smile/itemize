@@ -298,9 +298,10 @@
         cur-resume = if target-enum != none {
           // label-case
           let dic = rl.item-counter-dic.at(target-enum)
-          let target-level = item-level.at(target-enum).len() - 1 // absolute level;
-          let increment = abs-enum-level - curr-level // TODO
-          dic.counter.at(target-level - increment, default: auto)
+          // let target-level = item-level.at(target-enum).len() - 1 // absolute level;
+          // let increment = abs-enum-level - curr-level // TODO
+          let dic-level = dic.level
+          dic.counter.at(dic-level - 1, default: auto)
         } else if curr-auto-resuming == true {
           // auto-case (using *-enum)
           let dic = rl.item-counter-dic.get()

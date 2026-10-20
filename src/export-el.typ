@@ -1,7 +1,7 @@
 #import "core/feat-enum-list.typ" as fel
 #import "core/new-enum-list.typ" as nel: ElemType, HangingType
 #import "core/inline-enum-list.typ" as iel
-
+#import "lib/resume-lib.typ" as rl
 #import "util/level-state.typ": *
 
 #let deprecated-args = (
@@ -52,7 +52,7 @@
   description-config, /** new ver0.3.0 */
   body-margin, /*new new ver0.3.0*/
   whole-spacing, /*new new ver0.3.0*/
-  style-type: ExportType.default, // TODO: inline??? feat-inline ???
+  style-type: ExportType.default, // TODO: inline??? feat-inline ??? (not export)
   ..args,
 ) = {
   // verfiy the deprecated arguments
@@ -69,34 +69,22 @@
   }
 
   let nested-auto-resume = fel.nested-auto-resume
-  if auto-resuming != none {
-    if auto-resuming == auto {
-      context if nested-auto-resume.get() {
-        panic(
-          (
-            "Inside `list` or `enum`, `auto-resuming` can not be set to be `auto` again."
-              + "\nHint: set `auto-resuming` to be `auto` and then use the method `auto-resume-enum`."
-          ),
-        )
-      }
-      nested-auto-resume.update(true)
-    } else {
-      context if fel.item-level.get().len() > 0 {
-        panic("Inside `list` or `enum`, `auto-resuming` can not be set to be`" + repr(auto-resuming) + "`.")
-      }
-      let global-resuming = fel.global-setting-ID-auto-resuming
-      context if global-resuming.get() {
-        panic(
-          (
-            "Inside this method, `auto-resuming` can be set once for non `auto` or `none`."
-              + "\nHint: set `auto-resuming` to be `auto` and then use the method `auto-resume-enum`."
-              + "\nHint: Wrap the method in `#[]`."
-          ),
-        )
-      }
-      global-resuming.update(true)
+  if auto-resuming not in (none, false) {
+    context if nested-auto-resume.get() {
+      panic(
+        (
+          "For this method, `auto-resuming` can not be set to `"
+            + repr(auto-resuming)
+            + "`; i.e., these methods can not be used nested."
+            + "\nHint: set `auto-resuming` to be `auto` only and then use the method `auto-resume-enum`."
+            + "\nHint: Wrap the method in `#[]`."
+        ),
+      )
     }
+    nested-auto-resume.update(true)
+    rl.hold_resume-dic()
   }
+
   if auto-label-width != none {
     if auto-label-width != auto {
       let global-label-width = fel.global-setting-ID-auto-label-width
@@ -138,12 +126,12 @@
     nel.new-list
   }
 
-  let override-enum = if auto-resuming == none and auto-label-width == none {
+  let override-enum = if auto-resuming in (none, false) and auto-label-width == none {
     my-enum
   } else {
     fel.feat-enum.with(auto-resuming: auto-resuming, auto-label-width: auto-label-width)
   }
-  let override-list = if auto-resuming == none and auto-label-width == none {
+  let override-list = if auto-resuming in (none, false) and auto-label-width == none {
     my-list
   } else {
     if elem == ElemType.list {
@@ -210,6 +198,7 @@
       func-list: override-list,
       absolute-level: true,
     )
+
     doc
   } else if elem == ElemType.enum {
     show enum: override-enum.with(
@@ -247,7 +236,9 @@
     )
     doc
   }
-  if auto-resuming == auto {
+
+  if auto-resuming not in (none, false) {
+    rl.recover_resume-dic()
     nested-auto-resume.update(false)
   }
 
@@ -256,11 +247,6 @@
       [#metadata(fel.global-auto-label-ID)]
       fel.lw.update-global_label-width-clear()
       fel.global-setting-ID-auto-label-width.update(false)
-    }
-  }
-  if auto-resuming != none {
-    if auto-resuming != auto {
-      fel.global-setting-ID-auto-resuming.update(false)
     }
   }
 }
@@ -1026,7 +1012,7 @@
 /// - auto-resuming (none, auto, bool, array, function): Relate to the feature *Resuming Enum*.
 ///   - `none`: Disable this feature.
 ///   - `auto`: Enable this feature. In this case, the following methods (`resume`, `resume-label`, `resume-list`, `auto-resume-enum`, `isolated-resume-enum`) can be used.
-///     - Use the method `el.resume()` to continue using the enum numbers from the previous enum at the same level.
+///     - Use the method `resume()` to continue using the enum numbers from the previous enum at the same level.
 ///       - Example:
 ///         ```typst
 ///         #show: el.default-enum-list.with(auto-resuming: auto)
@@ -1036,7 +1022,7 @@
 ///         #el.resume()
 ///         + new list item one
 ///         ```
-///     - Or use `el.resume[/*content*/]` to explicitly continue using the enum numbers from the previous level (especially in ambiguous cases) and treat the `[/*content*/]` as new `enum`s.
+///     - Or use `resume[/*content*/]` to explicitly continue using the enum numbers from the previous level (especially in ambiguous cases) and treat the `[/*content*/]` as new `enum`s.
 ///       - Example:
 ///         ```typst
 ///         #show: el.default-enum-list.with(auto-resuming: auto)
@@ -1051,7 +1037,7 @@
 ///         ]
 ///         + New list item one // not resume
 ///         ```
-///     - Use the method `el.resume-label(<some-label>)` to label the enum you want to resume, and then use `el.resume-list(<some-label>)` in the desired enum to continue using the labelled enum numbers.
+///     - Use the method `resume-label(<some-label>)` to label the enum you want to resume, and then use `resume-list(<some-label>)` in the desired enum to continue using the labelled enum numbers.
 ///       - If you use the following in your document:
 ///         ```typst
 ///         #show: el.config.ref-resume
@@ -1063,30 +1049,33 @@
 ///         + Item one
 ///         + Item two
 ///           + Sub item one
-///           + Sub item Two  #el.resume-label(<resume:sub>) // The enum you want to resume
+///           + Sub item Two
+///           + Sub item Three #el.resume-label(<resume:sub>) // The enum you want to resume
 ///         Paragraph
 ///         #el.resume-list(<resume:sub>)
 ///         + New Item // resume
 ///         ```
 ///     - Use the method `el.auto-resume-enum(auto-resuming: true)[...]`, where all enum numbers within `[...]` will continue from the previous ones.
-///       - See the method `el.auto-resume-enum` for the details of the argument `auto-resuming` (`bool`, `array`, `function`).
+///       - See the method `auto-resume-enum` for the details of the argument `auto-resuming` (`bool`, `array`, `function`).
 ///       - Example:
 ///         ```typst
 ///         #show: el.default-enum-list.with(auto-resuming: auto)
 ///         + Item one
 ///         + Item two
-///           + Sub item one
+///           + Sub item
 ///         Paragraph
 ///         #el.auto-resume-enum(auto-resuming: true)[
-///           + New list item // resume
-///             + Sub item // resume
 ///           + New list item
+///             + Sub item
+///             + Sub item
+///           + New list item
+///             + Sub item // resume
 ///           Paragraph
 ///           + New list item // resume
 ///         ]
 ///         + New list item // not resume
 ///         ```
-///     - The method `el.isolated-resume-enum[...]` allows the `[...]` to be treated as a new enum with independent numbering, without affecting other enums out of the `[...]`.
+///     - The method `isolated-resume-enum[...]` allows the `enum`s in `[...]` to be treated as new enums with independent numbering, without affecting other enums out of the `[...]`.
 ///   - `bool`: If `auto-resuming` is set to `true`, then all enum numbers will continue from the previous ones.
 ///   - `array` (level-property): The elements are `bool`. The `level`-th level will be set to the corresponding value of the array at position `level - 1`; now `true` means the enum numbers at the `level`-th level will continue from the previous ones.
 ///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
@@ -1112,14 +1101,11 @@
 ///       + Item one // not resume
 ///         + #el.item(elem-tag: "resume") Sub item // resume
 ///       ```
-///   - *Note*: Generally,
-///     - `el.default-enum-list.with(auto-resuming: true)` and
-///     - `el.default-enum-list.with(auto-resuming: auto)`
-///     may interfere with each other.
+///   - *Note*: If `auto-resuming` is not `none` or `false`, the the methold `default-enum-list(auto-resuming: ...)` can not be used nested.
 ///     - For large documents like books or articles, set `auto-resuming` to `auto` in the required sublists and use it with methods like `resume`, `resume-label`, `resume-list`, or `auto-resume-enum`.
 ///     - For small documents like exams, exercises, or CVs, if need to resume enum numbers throughout the document, then use the following at the beginning:
 ///       - `#show : el.default-enum-list.with(auto-resuming: true)`,
-///       or if specify certain enums to continue using the number of the previous enum (with the help of `el.item(elem-tag: ...)`)
+///       or if specify certain enums to continue using the number of the previous enum (with the help of `item(elem-tag: ...)`)
 ///       - `#show : el.default-enum-list.with(auto-resuming: it => /* ... */)`.
 /// - auto-label-width (none, auto, string, array, function): Used to share the same maximum label width for different `enum`s and `list`s.
 ///   - `none`: Disable this feature.

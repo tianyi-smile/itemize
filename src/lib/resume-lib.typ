@@ -1,7 +1,7 @@
 #import "../util/version.typ": package-version
 
 /// Default dictionary value for tracking counters and levels.
-#let default-counter-dic-value = (level: 0, counter: (), resume: (:))
+#let default-counter-dic-value = (level: 0, counter: (), resume: (:), copy: ())
 
 /// State variable to track counters and levels (Uses absolute-level).
 #let item-counter-dic = state("__cdl_item-counter-dic__" + package-version, default-counter-dic-value) // use absolute-level
@@ -122,7 +122,7 @@
 /// Temporarily holds the current state of the resume dictionary.
 #let hold_resume-dic() = {
   item-counter-dic.update(dic => {
-    dic.insert("copy", (level: dic.level, counter: dic.counter))
+    dic.copy.push((level: dic.level, counter: dic.counter))
     dic.level = default-counter-dic-value.level
     dic.counter = default-counter-dic-value.counter
     return dic
@@ -132,8 +132,8 @@
 /// Recovers the previously held state of the resume dictionary.
 #let recover_resume-dic() = {
   item-counter-dic.update(dic => {
-    let copy = dic.remove("copy", default: none)
-    if copy != none {
+    if dic.copy != () {
+      let copy = dic.copy.pop()
       dic.level = copy.level
       dic.counter = copy.counter
     }

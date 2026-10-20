@@ -102,11 +102,14 @@
 }
 
 
-/// Isolates resume operations within a scope, allows the `enum` in the `doc` to be treated as a new enum with independent numbering, without affecting other enums.
+/// Recovery operations within an isolation scope, allows the `enum` in the `doc` to be treated as a new enum with independent numbering, without affecting other enums.
+/// - doc (content): The `enum` in the `doc` to process
+///
+/// -> content
 #let isolated-resume-enum(doc) = {
-  context if "copy" in rl.item-counter-dic.get() {
-    panic("The function `isolated-resume-enum` and `auto-resume-enum` cannot be nested.")
-  }
+  // context if "copy" in rl.item-counter-dic.get() {
+  //   panic("The functions `isolated-resume-enum` and `auto-resume-enum` cannot be nested.")
+  // }
   rl.hold_resume-dic()
   { show enum: it => it }
   doc
@@ -116,7 +119,7 @@
 
 /// Resume enum in `doc`.
 ///
-/// - *Note*: The method `auto-label-item` cannot be nested.
+/// - *Note*: The method `auto-resume-enum` cannot be nested.
 ///
 /// - *Note*: In order to make `auto-resume-enum` work, should set the argument `auto-resuming` in `*-enum-list` (`*-enum`) to `auto`.
 ///
@@ -156,7 +159,7 @@
 /// -> content
 #let auto-resume-enum(doc, auto-resuming: none) = {
   context if fel.auto-resuming-form.get() != none {
-    panic("This function cannot be nested.")
+    panic("The function `auto-resume-enum` cannot be nested.")
   }
   context fel.auto-resuming-form.update((
     form: auto-resuming,
