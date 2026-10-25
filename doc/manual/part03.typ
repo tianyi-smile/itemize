@@ -106,7 +106,7 @@ You can set the reference format and supplement for each #m.builtin("enum") in t
   ]
   #example(read("../example/ref-counter.typ"))
 - [N] #m.since((0, 3, 0)) Use the `ref-numbering` and `supplement` of @cmd:item.args to set the reference format for the current #m.builtin("enum") and the reference supplement for the items of the current #m.builtin("enum").
-  - The `ref-numbering` of @cmd:item.args must be placed in the first item of the whole item to take effect, and it only applies to the current #m.builtin("enum"); nested #m.builtin("enum")s do not use this setting.
+  - The `ref-numbering` of @cmd:item.args must be placed in the first item of the whole item to take effect, and it only applies to the current #m.builtin("enum")\; nested #m.builtin("enum")s do not use this setting.
   - For the `supplement` of @cmd:item.args to take effect, the `label` needs to be placed after @cmd:item.
   #example(read("../example/ref-item-args.typ"))
 

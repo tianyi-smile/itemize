@@ -67,7 +67,7 @@ Using `itemize`, you can customize the _label_\s and _bodie_\s of #m.builtin("en
     - [E] Terms-like description list: Change the item label of the current item (#m.builtin("list") or #m.builtin("enum")) using the @cmd:item method.
     - [N] Horizontal description list, hanging description list, stacked description list, plain description list
       - Using the syntax `+ / term: description` and `- / term: description`
-      - Configure through the method @cmd:default-enum-list.description-config.
+      - Configure through the argument @cmd:default-enum-list.description-config.
 - [N]
   / Inline list: Interpret the list content as paragraphs: @cmd:inline-enum-list (@cmd:inline-enum, @cmd:inline-list)
 - / Individual setting:
