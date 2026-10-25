@@ -1,5 +1,6 @@
 #set page(height: auto, margin: 15pt, width: 12cm)
 #import "../../lib.typ" as el
+#show: el.config.ref
 #let theorem(doc) = {
   let number = context counter(figure.where(kind: "thm")).display("1")
   figure(
