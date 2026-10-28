@@ -361,7 +361,6 @@ Configure the description list through @cmd:default-enum-list.description-config
   #example(read("../example/description-enable-first-par.typ"))
 
 == Set-Rule
-
 In the current version of `Typst` (0.15.1), we cannot use custom functions with `set rule`, which prevents us from retaining previously set property values when using `default-item-list`, `paragraph-item-list`, etc. Now, with the `elembic` package, we can achieve this functionality. To this end, we have repackaged `default-item-list` and `paragraph-item-list` into `set-default` and `set-paragraph` methods.
 
 Usage: Include the following at the beginning of your document:

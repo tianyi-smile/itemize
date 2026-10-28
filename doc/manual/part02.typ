@@ -485,6 +485,19 @@ Its complete form is:
 
 #example(read("../example/step.typ"))
 
+=== Enhancement of #m.builtin("list.marker")
+#m.since(0, 1, 0)The `itemize` package improves the parsing of #m.builtin("list.marker") as a `function` type (supporting label control for each item). It takes the following form:
+- `level => (n => content) | array`
+
+Here:
+- `level`: The relative nesting level of the `list`, cyclically used.
+  - For compatibility with the native `list.marker` behavior, unlike the methods provided by `itemize`, the level here starts from 0 (see #link("https://github.com/tianyi-smile/itemize/issues/3", [`issue#3`])).
+  - Also, the item index starts from 0.
+  #example(read("../example/list-marker-level.typ"))
+
+- `n => content`\, `array`: The `marker` for each `item` in the same level.
+  #example(read("../example/list-marker.typ"))
+
 
 == Item body formatting
 
