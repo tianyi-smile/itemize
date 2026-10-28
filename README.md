@@ -213,7 +213,7 @@ By default, the `default-*` methods indent paragraphs after the item label, whil
 See the example below:
 
 <a href="asserts/styles-el.typ">
-<img src="asserts/styles-el.svg" width="350px", alt="Different styles of lists">
+<img src="asserts/styles-el.svg" width="550px", alt="Different styles of lists">
 </a>
 
 <details>
@@ -336,7 +336,7 @@ The diagram below illustrates the model for `enum` and `list` in `itemize`.
 Now (since version 0.3.0), each of the `default-*`, `paragraph-*`, and `inline-*` methods will have a separately maintained level counter. When the method is used, its level will start counting from 1 again. If you want to use the level counting from `itemize 0.2.0` (where a single level counter is maintained throughout the entire document), you need to set the parameter `auto-base-level` to `false`.
 
 <a href="asserts/model.typ">
-<img src="asserts/model.svg" width="350px", alt="Model">
+<img src="asserts/model.svg" width="550px", alt="Model">
 </a>
 
 <details>
