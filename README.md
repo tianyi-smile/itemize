@@ -389,6 +389,9 @@ Using `itemize`, you can customize the _labels_ and _bodies_ of `enum` and `list
   - `array` (level-property): Each element of the `array` sets the style of the item at the corresponding level; that is, the value at array index `l` sets the style of the item at level `l + 1`.
     - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
     - otherwise, the last element's value applies to subsequent levels.
+    - If the parameter allows setting the style of an individual item, then an element of the array may itself be an `array`, used to set the style of the items at the current level: for example, if the element at index `l` is an array `arrayItem`, then the element at index `n` of `arrayItem` sets the style of the `(n + 1)`-th item at level `l + 1`. Similarly,
+      - If the last element of `arrayItem` is `LOOP`, the values in the array will be used cyclically for other indexes of items;
+      - otherwise, the last element's value applies to subsequent indexes of items.
   - `function` (level-property): If it is a `function`, its form is `it => value`, where `value` is one of the values allowed by the parameter (in most cases).
     - You can usually access the relevant values provided by `itemize` through the keys available on `it`, for example:
       - `it.level`: The level of the item, starting from 1.
@@ -398,7 +401,7 @@ Using `itemize`, you can customize the _labels_ and _bodies_ of `enum` and `list
       
       ... (For more accessible values, see the API Reference)
 
-  For example: the `fill` parameter sets the style of the item label.
+  For example: the `fill` parameter sets the color of the item label.
   
   <a href="doc/example/level-array-arg.typ">
     <img src="doc/example/level-array-arg.svg" width="550px", alt="level array arg">
