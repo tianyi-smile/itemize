@@ -28,17 +28,17 @@ In the `*-enum-list` (`*-enum`, `*-list`) methods, most parameters support being
 - `array` (level-property): Each element of the `array` sets the style of the item at the corresponding level; that is, the value at array index `l` sets the style of the item at level `l + 1`.
   - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
   - otherwise, the last element's value applies to subsequent levels.
-  - The value of each element of the array is one of the values allowed by the parameter.
-  - If the parameter allows setting the style of an individual item (i.e., it is a `level-index-property`), then an element of the array may itself be an `array`, used to set the style of the items at the current level: for example, if the element at index `l` is an array `arrayItem`, then the element at index `n` of `arrayItem` sets the style of the `(n + 1)`-th item at level `l + 1`. Similarly,
+  - The value of each element of the array is usually one of the values allowed by the parameter.
+  - If the parameter allows setting the style of an individual item (i.e., it is a #llp), then an element of the array may itself be an `array`, used to set the style of the items at the current level: for example, if the element at index `l` is an array `arrayItem`, then the element at index `n` of `arrayItem` sets the style of the `(n + 1)`-th item at level `l + 1`. Similarly,
     - If the last element of `arrayItem` is `LOOP`, the values in the array will be used cyclically for other indexes of items;
     - otherwise, the last element's value applies to subsequent indexes of items.
 
-For example: the `fill` parameter in @cmd:default-enum-list.args sets the style of the item label, and it is #llp.
+For example: the `fill` parameter in @cmd:default-enum-list.args sets the color of the item label, and it is #llp.
 #example(read("../example/level-array-arg.typ"))
 
 
 - `function` (level-property): If it is a `function`, its form is `it => value`, where `value` is one of the values allowed by the parameter (in most cases).
-  - If the parameter allows setting the style of an individual item (i.e., it is a `level-index-property`), then `value` may be an `array`, where each element sets the style of the item at the corresponding index.
+  - If the parameter allows setting the style of an individual item (i.e., it is a #llp), then `value` may be an `array`, where each element sets the style of the item at the corresponding index.
   - You can usually access the relevant values provided by `itemize` through the keys available on `it`, for example:
     - `it.level`: The level of the item, starting from 1.
     - `it.n-last`: The index of the last item in the current level.
@@ -125,7 +125,7 @@ Using a `function` (level-property), you can implement some complex style settin
 === Mark item <subsec:markitem>
 
 #m.since((0, 3, 0)) You can use the parameters `elem-tag` and `tag` of @cmd:item to mark the whole item and a single item respectively, and then add styles to them or implement other complex customizations.
-- The parameters `elem-tag` and `tag` accept any type
+- The parameters `elem-tag` and `tag` accept any type.
   #warning-alert()[
     The parameter `elem-tag` must be placed in the first item of the whole item to take effect.
   ]
@@ -202,15 +202,13 @@ When `style` is
   - [!] #m.changed((0, 3, 0)) Also `amount` is set to `max-width`.
   #example(read("../example/label-width-native.typ"))
 
-Shorthand rules:
-
-`label-width` can also take
-- `auto`: Use the native behavior. That is, the current width of the label will be set to `max-width`. This is the same as `(style: "native")`.
-- `relative`: This is the same as `(amount: label-width, style: "default")`.
-- `"max"`: This is the same as `auto`.
+- Shorthand rules. `label-width` can also take
+  - `auto`: Use the native behavior. That is, the current width of the label will be set to `max-width`. This is the same as `(style: "native")`.
+  - `relative`: This is the same as `(amount: label-width, style: "default")`.
+  - `"max"`: This is the same as `auto`.
 
 #info-alert()[
-  In order to make the layout more in line with expectations, the `start-margin` (i.e., `body-margin.left` if `text.dir` is `ltr`, `body-margin.right` if `text.dir` is `rtl`) will be set to `amount + body-indent` (if `start-margin` is `auto`).
+  In order to make the layout more in line with expectations, the `start-margin` (i.e., @cmd:default-enum-list.body-margin\.`left` if `text.dir` is `ltr`, @cmd:default-enum-list.body-margin\.`right` if `text.dir` is `rtl`) will be set to `amount + body-indent` (if `start-margin` is `auto`).
 ]
 
 === Sharing the maximum label width
