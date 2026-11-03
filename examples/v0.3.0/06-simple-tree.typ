@@ -1,9 +1,4 @@
-#import "../../lib.typ" as el
-
-#show heading.where(level: 1): it => {
-  pagebreak(weak: true)
-  it
-}
+#import "@preview/itemize:0.3.0" as el
 
 #set page(height: auto, margin: 2em, width: 12cm)
 
