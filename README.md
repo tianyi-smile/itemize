@@ -4,7 +4,7 @@
 The `itemize` package allows users to easily customize `enum` and `list` for Typst. To use this package, include the following at the beginning of your document:
 
 ```typst
-#import "@preview/itemize:0.3.0" as el
+#import "@preview/itemize:0.3.1" as el
 ```
 
 Use the method `default-enum-list` to override the native behaviour of `enum` and `list` by adding the following at the beginning of your document:
@@ -35,7 +35,7 @@ Below is a comparison.
 
 ```typst
 #set page(height: auto, margin: 15pt, width: 12cm)
-#import "@preview/itemize:0.3.0" as el
+#import "@preview/itemize:0.3.1" as el
 #let test = [
   + + $vec(1, 1, 1)$ #lorem(2)
   #set list(marker: circle(width: 2em))
@@ -55,7 +55,7 @@ Below is a comparison.
 </details>
 
 - `itemize` currently does not support exporting to HTML format (see https://github.com/tianyi-smile/itemize/issues/18).
-- `itemize:0.3.0` requires at least Typst 0.15.1.
+- `itemize:0.3.1` requires at least Typst 0.15.1.
 - See [manual.pdf](doc/manual/manual.pdf) and also the source code [manual.typ](doc/manual/manual.typ) for more details. The manual contains the API reference and examples.
 - See [changelog.md](changelog/changelog.md) for the changes and new features for version 0.3.0.
  
@@ -220,7 +220,7 @@ See the example below:
 <summary>Code:</summary>
 
 ```typst
-#import "@preview/itemize:0.3.0" as el
+#import "@preview/itemize:0.3.1" as el
 #set page(height: auto, margin: 35pt)
 
 #[
@@ -344,7 +344,7 @@ Now (since version 0.3.0), each of the `default-*`, `paragraph-*`, and `inline-*
 
 ```typst
 #set page(height: auto, margin: 15pt, width: 12cm)
-#import "@preview/itemize:0.3.0" as el
+#import "@preview/itemize:0.3.1" as el
 #set par(justify: true)
 #set align(left)
 #show: el.default-enum-list.with(

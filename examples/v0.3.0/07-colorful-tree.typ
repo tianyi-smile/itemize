@@ -1,4 +1,4 @@
-#import "@preview/itemize:0.3.0" as el
+#import "@preview/itemize:0.3.1" as el
 
 #set page(height: auto, margin: 2em, width: 12cm)
 
