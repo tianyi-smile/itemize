@@ -3,9 +3,6 @@
 /// State variable to record the global setting of auto-label-width.
 #let global-setting-ID-auto-label-width = state("__cdl_global-setting-ID-auto-label-width__" + package-version, false)
 
-/// State varable to record the global setting of auto-resume.
-#let global-setting-ID-auto-resuming = state("__cdl_global-setting-ID-auto-resuming__" + package-version, false)
-
 /// State varable to record the setting of auto-resume for nested lists.
 #let nested-auto-resume = state("__nested-auto-resume___" + package-version, false)
 

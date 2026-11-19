@@ -147,7 +147,7 @@
 ) = {
   let curr-style = get-default-value(desc-style(index), none, auto)
 
-  curr-style = get-auto-value(curr-style, "plain")
+  curr-style = get-auto-value(curr-style, DescStyle.plain)
   assert(
     curr-style in style-allowed-keys,
     message: "The `style` should be `auto`, or the following strings: "
@@ -559,7 +559,7 @@
           }),
         )
       })
-    }
+    } // others: use-defined style (item-body: none)
 
     let desc-body-format = body => format(n)(
       body,
@@ -573,6 +573,8 @@
       enable-first-par: enable-strong-par,
       term-align: term-align,
       term-width: (current: term-width.width, max: term-width.max-width),
+      process-par: process-par, // for advanced usage
+      dir: dir, // for advanced usage
     )
 
     show terms.item.where(label: same-line-next-term-ID): it => {

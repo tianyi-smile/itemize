@@ -6,7 +6,7 @@
   if color == auto { text.fill } else { color }
 }
 
-#let box-baseline = if sys.version >= version(0, 15, 0) { (baseline: (at: bottom, shift: 0.1em)) } else { (:) }
+#let box-baseline = if sys.version >= version(0, 15, 0) { (baseline: (at: bottom, shift: 0.05em)) } else { (:) }
 
 /// Creates an unchecked checkbox symbol
 #let unchecked(fill: auto, radius: .1em, solid: none) = context [

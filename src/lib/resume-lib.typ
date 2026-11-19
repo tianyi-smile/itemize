@@ -23,9 +23,15 @@
   let cur-level = dic.level - 1
   if cur-level >= dic.counter.len() {
     let value = if type(v) == function { v(0) } else { v }
+    if value < 0 {
+      value = 0
+    }
     dic.counter.push(value)
   } else {
     let value = if type(v) == function { v(dic.counter.at(cur-level)) } else { v }
+    if value < 0 {
+      value = 0
+    }
     dic.counter.at(cur-level) = value
   }
   return dic

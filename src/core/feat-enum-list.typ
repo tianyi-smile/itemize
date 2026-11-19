@@ -345,21 +345,32 @@
     }
     let cur = if it.start == auto { if cur-resume != auto { cur-resume + 1 } else { auto } } else { it.start }
     // enum'number
-    let numbers = get-enum-numbers(
-      _step,
-      child-numbers,
-      item-skipped,
-      start: cur,
-      reversed: it.reversed,
-      len: len,
-    )
-    if auto-resuming != none {
-      for number in numbers {
-        rl.update_resuming-number(number)
-      }
+    let numbers
+    let resuming-content
+    if auto-resuming == none {
+      numbers = get-enum-numbers(
+        _step,
+        child-numbers,
+        item-skipped,
+        start: cur,
+        reversed: it.reversed,
+        len: len,
+        auto-resuming: auto-resuming,
+      )
+    } else {
+      (numbers, resuming-content) = get-enum-numbers(
+        _step,
+        child-numbers,
+        item-skipped,
+        start: cur,
+        reversed: it.reversed,
+        len: len,
+        auto-resuming: auto-resuming,
+      )
     }
+    resuming-content
+
     args-with-tags.insert("number", n => numbers.at(n))
-    // args-with-tags-item.insert("number", n => numbers.at(n))
 
     // ref-numbering
     let (_ref-numbering, _full) = parse-ref-numbering(
@@ -1591,7 +1602,6 @@
     }
 
     args-with-tags.insert("marker", get-marker)
-    // args-with-tags-item.insert("marker", get-marker)
 
     let styled-markers = range(len).map(i => custom-text(i)((get-marker(i))))
 

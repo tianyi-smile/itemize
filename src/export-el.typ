@@ -115,6 +115,10 @@
       + ".",
   )
 
+  if auto-resuming == false {
+    auto-resuming = none
+  }
+
   let my-enum = if style-type == ExportType.inline {
     iel.inline-enum
   } else {
@@ -126,12 +130,12 @@
     nel.new-list
   }
 
-  let override-enum = if auto-resuming in (none, false) and auto-label-width == none {
+  let override-enum = if auto-resuming == none and auto-label-width == none {
     my-enum
   } else {
     fel.feat-enum.with(auto-resuming: auto-resuming, auto-label-width: auto-label-width)
   }
-  let override-list = if auto-resuming in (none, false) and auto-label-width == none {
+  let override-list = if auto-resuming == none and auto-label-width == none {
     my-list
   } else {
     if elem == ElemType.list {
@@ -198,7 +202,6 @@
       func-list: override-list,
       absolute-level: true,
     )
-
     doc
   } else if elem == ElemType.enum {
     show enum: override-enum.with(
@@ -237,7 +240,7 @@
     doc
   }
 
-  if auto-resuming not in (none, false) {
+  if auto-resuming != none {
     rl.recover_resume-dic()
     nested-auto-resume.update(false)
   }
@@ -864,7 +867,7 @@
 ///         - otherwise, the last value of the array will be used for residual levels.
 ///         - If `array`, the (`n-1`)-th element of the array applies to the `n`-th item label at the current level.
 ///       - `function` (level-property):
-///         - The function form: `it => content | array`.
+///         - The function form: `it => content`.
 ///         - If the return value is `array`, then each element in the array should be `auto`, `content` or `function` (base-property), which will be applied to the label's content for each item in the current level.
 ///         - Access the following values available on `it`:
 ///           - `it.body`: The current label's content.
@@ -1392,6 +1395,7 @@
 ///       - *Note*: `separator` contains two parts: `prefix` and `suffix`.
 ///         - In default, `separator.prefix` is added after `term` and `separator.suffix` is added before `description`.
 ///       - `auto`: The `separator.prefix` is `[]` for "stacked" style and `[#h(.6em)#h(0pt, weak: true)]` for other styles. `separator.suffix` is `[]`.
+///       - `content`: The `separator.prefix` is `separator` and the `separator.suffix` is `[]`.
 ///       - `dictionary`:
 ///         - The keys are `prefix` and `suffix`, with `content` values.
 ///           - In default, the `prefix` is `[]` and the `suffix` is `[]`.
@@ -1419,7 +1423,8 @@
 ///       - `function` (level-property): The return value will be used for each level and each item.
 ///         - The function form: `it => auto | length | array`.
 ///         - Access the following values available on `it`: See `separator`.
-///     - `term-format` (function, array): The format of the `term`.
+///     - `term-format` (none, function, array): The format of the `term`.
+///       - `none`: Do not apply.
 ///       - `function` (base-property): Apply the function to the `term` (not the `term-body`).
 ///         - The function form: `body => content`.
 ///         - The `function` should be wrapped in an `array`, like: `(strong, )`.
@@ -1435,7 +1440,7 @@
 ///           ))
 ///           / Terms: #lorem(10)
 ///           ```
-///       - `array` (level-property): The elements are `function` or `array`.
+///       - `array` (level-property): The elements are `none`, `function` or `array`.
 ///         - See `style`.
 ///         - Example: In the following, the `Terms` and `Sub Terms` will be formatted by `strong` and `emph`, respectively.
 ///           ```typst
@@ -1481,7 +1486,7 @@
 ///             / CPU: #lorem(10)
 ///           - / GPU: #lorem(10)
 ///           ```
-///     - `description-format` (function, array): The format of the `description`.
+///     - `description-format` (none, function, array): The format of the `description`.
 ///       - See `term-format`.
 ///     - `checklist` (bool, array, function): Whether to use checklist style description list.
 ///       - *Note*: In order to enable checklist style, the `checklist` in `default-*` (or `paragraph-*`) must be `true`.
@@ -1498,7 +1503,7 @@
 ///       - `function` (level-property): The return value will be used for each level and each item.
 ///         - The function form: `it => bool | array`.
 ///         - Access the following values available on `it`: See `separator`.
-///     - `enable-first-par` (auto, bool, array, function): To make all the paragraphs in the description list like the first paragraph.
+///     - `enable-first-par` (auto, bool, array, function): Whether to make all the paragraphs in the description list like the first paragraph.
 ///       - `auto`: For `stacked` style, the `enable-first-par` is `true`, and for other styles, the `enable-first-par` is `false`.
 ///       - `bool`: Whether to enable the first paragraph.
 ///       - `array`: The elements are `bool` or `array`.
@@ -1506,7 +1511,8 @@
 ///       - `function` (level-property): The return value will be used for each level and each item.
 ///         - The function form: `it => bool | array`.
 ///         - Access the following values available on `it`: See `separator`.
-///     - `format` (function, array): The format of the description list.
+///     - `format` (none, function, array): The format of the description list.
+///       - `none`: Do not apply.
 ///       - If the default style is not suitable, you can use `format` to customize the style.
 ///       - `function` (base-property): Apply the function to the whole description list.
 ///         - The function form: `body => content`.
@@ -1519,11 +1525,10 @@
 ///           - / CPU: #lorem(10)
 ///           - / GPU: #lorem(10)
 ///           ```
-///       - `array` (level-property): The elements are `function` or `array`.
+///       - `array` (level-property): The elements are `none`, `function` or `array`.
 ///         See `term-format`.
 ///       - `function` (level-property): The return value will be used for each level and each item.
-///         - The function form: `it => content | array`.
-///           - If the return value is `array`, the elements are `function` (base-property).
+///         - The function form: `it => content`.
 ///         - Access the following values available on `it`:
 ///           - `it.body`: The current description list.
 ///           - `it.level`: The level of the item, starting from 1.
@@ -1545,6 +1550,8 @@
 ///           - `it.term-width` (dictionary): The width info of the current label.
 ///             - `it.term-width.max`: The maximum width of the `term-body` in the current level and in the current style.
 ///             - `it.term-width.current`: The current width of the `term-body`.
+///           - `it.process-par`: Usually use like `show: process-par.with(enable-strong-par: it.enable-first-par)`. Used for internal processing of paragraph models. Advanced usage.
+///           - `it.dir`: Current text direction.
 /// - args (arguments): Any `text` named arguments (like: `fill`, `size`, `font`, etc.; see https://typst.app/docs/reference/text/text/). Format the current item label.
 ///   - Usage:
 ///     ```typst

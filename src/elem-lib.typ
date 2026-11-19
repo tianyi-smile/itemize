@@ -445,12 +445,40 @@
 }
 
 
-/// Configures default styling for `enum` and `list`.
+/// Configures default styling for `enum` and `list`. Support `set-rule`.
+///
+/// Usage
+/// ```typst
+/// #let item = [
+///   + #lorem(5)
+///     + #lorem(5)
+///     + + #lorem(5)
+///   + #lorem(5)
+/// ]
+/// #show: el.set-default() // need `()`!!!
+/// #item
+///
+/// // change the label color
+/// #show: el.set-default(fill: (red, blue, green, auto))
+/// #item
+///
+/// // change the label size
+/// #show: el.set-default(size: (20pt, 16pt, 14pt, auto))
+/// #item
+///
+/// // change the body-indent and indent
+/// #show: el.set-default(body-indent: (auto, 0.5em), indent: (auto, 0em, 1em, auto))
+/// #item
+///
+/// // use the default style
+/// #show: el.set-default()
+/// #item
+/// ```
 ///
 /// See `default-enum-list`.
 #let set-default = set_elem-enum-list.with(elem: ex-el.ElemType.all)
 
-/// Configures paragraph styling for `enum` and `list`.
+/// Configures paragraph styling for `enum` and `list`. Support `set-rule`.
 ///
 /// See `default-enum-list`.
 #let set-paragraph = set_elem-enum-list.with(hanging-type: "paragraph", elem: ex-el.ElemType.all)

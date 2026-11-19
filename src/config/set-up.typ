@@ -64,7 +64,7 @@
     if "format-map" in args-dic { dic.checklist-format-map = args-dic.format-map }
     dic
   })
-  show list: it => it
+  { show list: it => it }
   doc
   setting-checklist.update(dic => {
     dic.prev-checklist.pop()
@@ -73,17 +73,17 @@
 
 /// Configure enum reference settings for a document.
 /// - doc (content): The document to apply the reference settings to.
-/// - full (auto`, `bool, "ref"): Determine to display the full enum numbers.
+/// - full (auto, bool, "ref"): Determine to display the full enum numbers.
 ///   - `auto`: Use the `enum.full` setting.
-///   - `true` displays the full number (including parent levels).
-///   - `false` displays only the current item's number.
-///   - `"ref"` displays the reference number items in a relative manner (i.e., If the current item and the reference item have the same parent level (in the same parent enum), the same parent level is not displayed.)
+///   - `true` Display the full number (including parent levels).
+///   - `false` Display only the current item's number.
+///   - `"ref"` Display the reference number items in a relative manner (i.e., If the current item and the reference item have the same parent level (in the same parent enum), the same parent level is not displayed.)
 /// - numbering (auto, string, function): Numbering pattern.
 ///   - `auto`: Use the `enum.numbering`.
 ///   - `string`, `function`: Customize the style of the referenced item number. See also `enum.numbering`.
 /// - supplement (auto, content, dictionary, function, array): Supplemental content for the reference.
 ///   - `auto`: No supplementary content will be added.
-///   - `content`: Uses `content` as supplementary content. The effect is that when referencing `enum` or `list` labels, then content is added before the label.
+///   - `content`: Use `content` as supplementary content. The effect is that when referencing `enum` or `list` labels, then content is added before the label.
 ///   - `dictionary`: The keys are: `prefix`, `suffix`, with values of `content`. The effect is that when referencing enum (list) labels, `prefix` content is added before the label, and `suffix` content is added after the label.
 ///   - `array` (level-property): The elements are `auto`, `content`, `dictionary` or `array`. The item at `level`-th level will be indented by the corresponding value of the array at position `level - 1`.
 ///     - If the last element of the array is `LOOP`, the values in the array will be used cyclically;
@@ -100,7 +100,7 @@
 ///       - `it.elem-tag` (since ver0.3.0) (Only for `enum`): The tag of the `enum` or `list`.
 ///       - `it.target` (since ver0.3.0): The target of the referenced label.
 ///       - `it.number` (since ver0.3.0) (Only for `enum`): The number of the referenced item.
-///       - `it.numbers` (since ver0.3.0): The numbers of the referenced item (including the parent `enum`'s numbers). For `list`, this is `()`.
+///       - `it.numbers` (since ver0.3.0): The full numbers of the referenced item (including the parent `enum`'s numbers). For `list`, this is `()`.
 /// - no-label-warning (bool): Whether to disable the warning when the reference label is not found (default: `false`); note that this applies to all references in the document, so we recommend _not_ setting it to `true`.
 ///
 /// -> content
